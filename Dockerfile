@@ -4,9 +4,9 @@ ARG SOLC_VERSION=0.4.19
 FROM ethereum/client-go:${ETHEREUM_VERSION} as geth
 FROM ethereum/solc:${SOLC_VERSION} as solc
 
-FROM ubuntu:bionic as CLI
+FROM ubuntu:bionic
 
-ARG NODEREPO=node_8.x
+ARG NODEREPO=node_14.x
 
 LABEL maintainer "Xiao Liang <https://github.com/yxliang01>, Luong Nguyen <luongnt.58@gmail.com>"
 
@@ -46,15 +46,3 @@ COPY . /oyente/
 
 WORKDIR /oyente/
 ENTRYPOINT ["python3", "/oyente/oyente/oyente.py"]
-
-FROM CLI as WEB
-
-RUN wget -O ruby-install-0.6.1.tar.gz https://github.com/postmodern/ruby-install/archive/v0.6.1.tar.gz
-RUN tar -xzvf ruby-install-0.6.1.tar.gz
-RUN cd ruby-install-0.6.1/ && make install
-RUN ruby-install --system ruby 2.4.4
-WORKDIR /oyente/web
-RUN ./bin/yarn install && gem install bundler && bundle install --with development
-
-EXPOSE 3000
-CMD ["./bin/rails", "server"]
