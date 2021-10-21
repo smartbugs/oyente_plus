@@ -109,19 +109,25 @@ class InputHelper:
         return self.compiled_contracts
 
     def _extract_bin_obj(self, com: CryticCompile):
-        return [(com.contracts_filenames[name].absolute + ':' + name, com.bytecode_runtime(name)) for name in com.contracts_names if com.bytecode_runtime(name)]
+        output = []
+        for file in com.compilation_units:
+            output.extend([(com.compilation_units[file].contracts_filenames[name].absolute + ':' + name, com.compilation_units[file].bytecode_runtime(name)) for name in com.compilation_units[file].contracts_names if com.compilation_units[file].bytecode_runtime(name)])
+        return output
 
     def _compile_solidity(self):
         try:
             options = []
             if self.allow_paths:
                 options.append(F"--allow-paths {self.allow_paths}")
-                
             com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=' '.join(options))
             contracts = self._extract_bin_obj(com)
 
-            libs = com.contracts_names.difference(com.contracts_names_without_libraries)
-            if libs:
+            libs = set()
+            for file in com.compilation_units:
+                tmp_lib = com.compilation_units[file].contracts_names.difference(com.compilation_units[file].contracts_names_without_libraries)
+                if tmp_lib:
+                    libs = libs.union(tmp_lib)
+            if len(libs) > 0:
                 return self._link_libraries(self.source, libs)
             
             return contracts
