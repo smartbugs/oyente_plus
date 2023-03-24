@@ -109,25 +109,31 @@ class InputHelper:
         return self.compiled_contracts
 
     def _extract_bin_obj(self, com: CryticCompile):
-        output = []
-        for file in com.compilation_units:
-            output.extend([(com.compilation_units[file].contracts_filenames[name].absolute + ':' + name, com.compilation_units[file].bytecode_runtime(name)) for name in com.compilation_units[file].contracts_names if com.compilation_units[file].bytecode_runtime(name)])
-        return output
+        #return [(com.contracts_filenames[name].absolute + ':' + name, com.bytecode_runtime(name)) for name in com.contracts_names if com.bytecode_runtime(name)]
+        bin_objs = []
+        for compilation_unit in com.compilation_units.values():
+            for filename,source_unit in compilation_unit.source_units.items():
+                for name in source_unit.contracts_names:
+                    bytecode_runtime = source_unit.bytecode_runtime(name)
+                    if bytecode_runtime:
+                        bin_objs.append((filename.used+':'+name, bytecode_runtime))
+        return bin_objs
 
     def _compile_solidity(self):
         try:
             options = []
             if self.allow_paths:
                 options.append(F"--allow-paths {self.allow_paths}")
+                
             com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=' '.join(options))
             contracts = self._extract_bin_obj(com)
 
+            #libs = com.contracts_names.difference(com.contracts_names_without_libraries)
             libs = set()
-            for file in com.compilation_units:
-                tmp_lib = com.compilation_units[file].contracts_names.difference(com.compilation_units[file].contracts_names_without_libraries)
-                if tmp_lib:
-                    libs = libs.union(tmp_lib)
-            if len(libs) > 0:
+            for compilation_unit in com.compilation_units.values():
+                for source_unit in compilation_unit.source_units.values():
+                    libs.update(source_unit.contracts_names.difference(source_unit.contracts_names_without_libraries))
+            if libs:
                 return self._link_libraries(self.source, libs)
             
             return contracts

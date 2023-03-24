@@ -1,6 +1,4 @@
-import tokenize
 import zlib, base64
-from tokenize import NUMBER, NAME, NEWLINE
 import re
 import math
 import sys
@@ -184,45 +182,11 @@ def compare_storage_and_gas_unit_test(global_state, analysis):
     test_status = unit_test.compare_with_symExec_result(global_state, analysis)
     exit(test_status)
 
-def change_format():
-    with open(g_disasm_file) as disasm_file:
-        file_contents = disasm_file.readlines()
-        i = 0
-        firstLine = file_contents[0].strip('\n')
-        for line in file_contents:
-            line = line.replace('SELFDESTRUCT', 'SUICIDE')
-            line = line.replace('Missing opcode 0xfd', 'REVERT')
-            line = line.replace('Missing opcode 0xfe', 'ASSERTFAIL')
-            line = line.replace('Missing opcode', 'INVALID')
-            line = line.replace(':', '')
-            lineParts = line.split(' ')
-            try: # removing initial zeroes
-                lineParts[0] = str(int(lineParts[0]))
-
-            except:
-                lineParts[0] = lineParts[0]
-            lineParts[-1] = lineParts[-1].strip('\n')
-            try: # adding arrow if last is a number
-                lastInt = lineParts[-1]
-                if(int(lastInt, 16) or int(lastInt, 16) == 0) and len(lineParts) > 2:
-                    lineParts[-1] = "=>"
-                    lineParts.append(lastInt)
-            except Exception:
-                pass
-            file_contents[i] = ' '.join(lineParts)
-            i = i + 1
-        file_contents[0] = firstLine
-        file_contents[-1] += '\n'
-
-    with open(g_disasm_file, 'w') as disasm_file:
-        disasm_file.write("\n".join(file_contents))
-
 def build_cfg_and_analyze():
-    change_format()
     with open(g_disasm_file, 'r') as disasm_file:
         disasm_file.readline()  # Remove first line
-        tokens = tokenize.generate_tokens(disasm_file.readline)
-        collect_vertices(tokens)
+        lines = disasm_file.read().splitlines()
+        collect_vertices(lines)
         construct_bb()
         construct_static_edges()
         full_sym_exec()  # jump targets are constructed on the fly
@@ -284,7 +248,7 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
 # 1. Parse the disassembled file
 # 2. Then identify each basic block (i.e. one-in, one-out)
 # 3. Store them in vertices
-def collect_vertices(tokens):
+def collect_vertices(lines):
     global g_src_map
     if g_src_map:
         idx = 0
@@ -295,74 +259,45 @@ def collect_vertices(tokens):
     global jump_type
 
     current_ins_address = 0
-    last_ins_address = 0
-    is_new_line = True
     current_block = 0
-    current_line_content = ""
-    wait_for_push = False
     is_new_block = False
-
-    for tok_type, tok_string, (srow, scol), _, line_number in tokens:
-        if wait_for_push is True:
-            push_val = ""
-            for ptok_type, ptok_string, _, _, _ in tokens:
-                if ptok_type == NEWLINE:
-                    is_new_line = True
-                    current_line_content += push_val + ' '
-                    instructions[current_ins_address] = current_line_content
-                    idx = mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
-                    log.debug(current_line_content)
-                    current_line_content = ""
-                    wait_for_push = False
-                    break
-                try:
-                    int(ptok_string, 16)
-                    push_val += ptok_string
-                except ValueError:
-                    pass
-
-            continue
-        elif is_new_line is True and tok_type == NUMBER:  # looking for a line number
-            last_ins_address = current_ins_address
-            try:
-                current_ins_address = int(tok_string)
-            except ValueError:
-                log.critical("ERROR when parsing row %d col %d", srow, scol)
-                quit()
-            is_new_line = False
-            if is_new_block:
-                current_block = current_ins_address
-                is_new_block = False
-            continue
-        elif tok_type == NEWLINE:
-            is_new_line = True
-            log.debug(current_line_content)
-            instructions[current_ins_address] = current_line_content
+    for line in lines:
+        assert line[5:7] == ": "
+        last_ins_address = current_ins_address
+        current_ins_address = int(line[0:5],16)
+        instruction = line[7:]
+        if instruction == "SELFDESTRUCT":
+            instruction = "SUICIDE"
+        elif instruction == "INVALID":
+            instruction = "ASSERTFAIL"
+        elif instruction.endswith("not defined"):
+            instruction = "INVALID " + instruction.split()[1]
+        current_line_content = instruction + ' ' # for some reason, the original Oyente adds a space
+        instructions[current_ins_address] = current_line_content
+        if is_new_block:
+            current_block = current_ins_address
+            is_new_block = False
+        if instruction == "JUMPDEST":
+            if last_ins_address not in end_ins_dict:
+                end_ins_dict[current_block] = last_ins_address
+            current_block = current_ins_address
+            is_new_block = False
+        elif instruction in ("STOP","RETURN","SUICIDE","REVERT","ASSERTFAIL"):
+            jump_type[current_block] = "terminal"
+            end_ins_dict[current_block] = current_ins_address
+        elif instruction == "JUMP":
+            jump_type[current_block] = "unconditional"
+            end_ins_dict[current_block] = current_ins_address
+            is_new_block = True
+        elif instruction == "JUMPI":
+            jump_type[current_block] = "conditional"
+            end_ins_dict[current_block] = current_ins_address
+            is_new_block = True
+        if instruction.startswith('PUSH'):
+            idx = mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
+        else:
             idx = mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
-            current_line_content = ""
-            continue
-        elif tok_type == NAME:
-            if tok_string == "JUMPDEST":
-                if last_ins_address not in end_ins_dict:
-                    end_ins_dict[current_block] = last_ins_address
-                current_block = current_ins_address
-                is_new_block = False
-            elif tok_string == "STOP" or tok_string == "RETURN" or tok_string == "SUICIDE" or tok_string == "REVERT" or tok_string == "ASSERTFAIL":
-                jump_type[current_block] = "terminal"
-                end_ins_dict[current_block] = current_ins_address
-            elif tok_string == "JUMP":
-                jump_type[current_block] = "unconditional"
-                end_ins_dict[current_block] = current_ins_address
-                is_new_block = True
-            elif tok_string == "JUMPI":
-                jump_type[current_block] = "conditional"
-                end_ins_dict[current_block] = current_ins_address
-                is_new_block = True
-            elif tok_string.startswith('PUSH', 0):
-                wait_for_push = True
-            is_new_line = False
-        if tok_string != "=" and tok_string != ">":
-            current_line_content += tok_string + " "
+        log.debug(current_line_content)
 
     if current_block not in end_ins_dict:
         log.debug("current block: %d", current_block)
