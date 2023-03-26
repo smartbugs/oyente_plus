@@ -186,10 +186,10 @@ def build_cfg_and_analyze():
     with open(g_disasm_file, 'r') as disasm_file:
         disasm_file.readline()  # Remove first line
         lines = disasm_file.read().splitlines()
-        collect_vertices(lines)
-        construct_bb()
-        construct_static_edges()
-        full_sym_exec()  # jump targets are constructed on the fly
+    collect_vertices(lines)
+    construct_bb()
+    construct_static_edges()
+    full_sym_exec()  # jump targets are constructed on the fly
 
 
 def print_cfg():
@@ -270,6 +270,8 @@ def collect_vertices(lines):
             instruction = "SUICIDE"
         elif instruction == "INVALID":
             instruction = "ASSERTFAIL"
+        elif instruction == "KECCAK256":
+            instruction = "SHA3"
         elif instruction.endswith("not defined"):
             instruction = "INVALID " + instruction.split()[1]
         current_line_content = instruction + ' ' # for some reason, the original Oyente adds a space
