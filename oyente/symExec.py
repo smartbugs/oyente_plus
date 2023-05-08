@@ -689,6 +689,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
 
     instr_parts = str.split(instr, ' ')
     opcode = instr_parts[0]
+    #print(opcode)
 
     if opcode == "INVALID":
         return
@@ -811,7 +812,9 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         if len(stack) > 1:
             global_state["pc"] = global_state["pc"] + 1
             first = stack.pop(0)
+            #print(first)
             second = stack.pop(0)
+            #print(second)
             if isAllReal(first, second):
                 if second == 0:
                     computed = 0
@@ -1238,6 +1241,44 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             stack.insert(0, computed)
         else:
             raise ValueError('STACK underflow')
+    # see https://github.com/enzymefinance/oyente/commit/50bf2dbeda79835c3c57a26c64800cd386660016
+    elif opcode == "SHL":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            first = stack.pop(0)
+            second = stack.pop(0)
+
+            computed = second << first
+            computed = simplify(computed) if is_expr(computed) else computed
+            stack.insert(0, computed)
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "SHR":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            first = stack.pop(0)
+            second = stack.pop(0)
+            # 256 bit logical shift right
+            # see https://github.com/enzymefinance/oyente/commit/f8b2c6cad5066167df3b800819777708a0440018
+            if isAllReal(first, second):
+                computed = (second % (1 << 256)) >> first
+            else:
+                computed = LShR(second, first)
+            computed = simplify(computed) if is_expr(computed) else computed
+            stack.insert(0, computed)
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "SAR":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            first = stack.pop(0)
+            second = stack.pop(0)
+
+            computed = second >> first
+            computed = simplify(computed) if is_expr(computed) else computed
+            stack.insert(0, computed)
+        else:
+            raise ValueError('STACK underflow')
     #
     # 20s: SHA3
     #
@@ -1565,6 +1606,20 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             global_state["miu_i"] = current_miu_i
         else:
             raise ValueError('STACK underflow')
+    # see https://github.com/enzymefinance/oyente/commit/26cf59c926889b3e56e6e7ed0fd50dcc71aebfb3
+    elif opcode == "EXTCODEHASH":
+        if len(stack) > 0:
+            global_state["pc"] = global_state["pc"] + 1
+            stack.pop(0)
+            new_var_name = "IH_codehash"
+            if new_var_name in path_conditions_and_vars:
+                new_var = path_conditions_and_vars[new_var_name]
+            else:
+                new_var = BitVec(new_var_name, 256)
+                path_conditions_and_vars[new_var_name] = new_var
+            stack.insert(0, new_var)
+        else:
+            raise ValueError('STACK underflow')
     elif opcode == "MSTORE":
         if len(stack) > 1:
             global_state["pc"] = global_state["pc"] + 1
@@ -1697,6 +1752,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "JUMP":
         if len(stack) > 0:
             target_address = stack.pop(0)
+            #print(target_address)
             if isSymbolic(target_address):
                 try:
                     target_address = int(str(simplify(target_address)))
@@ -1927,6 +1983,19 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 path_conditions_and_vars["path_condition"].append(is_enough_fund)
                 last_idx = len(path_conditions_and_vars["path_condition"]) - 1
                 analysis["time_dependency_bug"][last_idx] = global_state["pc"] - 1
+        else:
+            raise ValueError('STACK underflow')
+    # https://github.com/enzymefinance/oyente/commit/26cf59c926889b3e56e6e7ed0fd50dcc71aebfb3
+    elif opcode == "CREATE2":
+        if len(stack) > 3:
+            global_state["pc"] += 1
+            stack.pop(0)
+            stack.pop(0)
+            stack.pop(0)
+            stack.pop(0)
+            new_var_name = gen.gen_arbitrary_var()
+            new_var = BitVec(new_var_name, 256)
+            stack.insert(0, new_var)
         else:
             raise ValueError('STACK underflow')
     elif opcode in ("DELEGATECALL", "STATICCALL"):

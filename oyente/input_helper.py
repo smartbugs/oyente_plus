@@ -112,6 +112,9 @@ class InputHelper:
         #return [(com.contracts_filenames[name].absolute + ':' + name, com.bytecode_runtime(name)) for name in com.contracts_names if com.bytecode_runtime(name)]
         bin_objs = []
         for compilation_unit in com.compilation_units.values():
+            #print(compilation_unit.compiler_version.compiler)
+            #print(compilation_unit.compiler_version.version)
+            #print(compilation_unit.compiler_version.optimized)
             for filename,source_unit in compilation_unit.source_units.items():
                 for name in source_unit.contracts_names:
                     bytecode_runtime = source_unit.bytecode_runtime(name)
@@ -121,11 +124,11 @@ class InputHelper:
 
     def _compile_solidity(self):
         try:
-            options = []
+            options = None
             if self.allow_paths:
-                options.append(F"--allow-paths {self.allow_paths}")
-                
-            com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=' '.join(options))
+                options = [F"--allow-paths {self.allow_paths}"]
+
+            com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=(' '.join(options) if options else None))
             contracts = self._extract_bin_obj(com)
 
             #libs = com.contracts_names.difference(com.contracts_names_without_libraries)

@@ -67,7 +67,7 @@ def has_dependencies_installed():
 def analyze_bytecode():
     global args
 
-    helper = InputHelper(InputHelper.BYTECODE, source=args.source,evm=args.evm)
+    helper = InputHelper(InputHelper.BYTECODE, source=args.source, evm=args.evm)
     inp = helper.get_inputs()[0]
 
     result, exit_code = symExec.run(disasm_file=inp['disasm_file'])
