@@ -1,10 +1,10 @@
 ARG ETHEREUM_VERSION=alltools-v1.7.3
-ARG SOLC_VERSION=0.4.19
+ARG SOLC_VERSION=0.8.10
 
 FROM ethereum/client-go:${ETHEREUM_VERSION} as geth
 FROM ethereum/solc:${SOLC_VERSION} as solc
 
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 ARG NODEREPO=node_14.x
 
@@ -12,47 +12,29 @@ LABEL maintainer "Xiao Liang <https://github.com/yxliang01>, Luong Nguyen <luong
 
 SHELL ["/bin/bash", "-c", "-l"]
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y wget unzip python-virtualenv git build-essential software-properties-common curl
-RUN curl -s 'https://deb.nodesource.com/gpgkey/nodesource.gpg.key' | apt-key add -
-RUN apt-add-repository "deb https://deb.nodesource.com/${NODEREPO} $(lsb_release -c -s) main"
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+RUN apt-get -y install python3-pip
+
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository -y ppa:ethereum/ethereum
 RUN apt-get update
-RUN apt-get install -y musl-dev golang-go python3 python3-pip python-pip \
-        bison zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev \
-	zlib1g-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 \
-        libxml2-dev libxslt1-dev libcurl4-openssl-dev libffi-dev nodejs yarn && \
-        apt-get clean
+RUN apt-get install -y ethereum
+RUN apt-get install -y solc
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip2 1
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 2
-#RUN pip install multidict
-#RUN pip install typing-extensions
-#RUN pip install --upgrade attrs
-#RUN pip install yarl
-#RUN pip install requests
-#RUN pip install async_timeout
-#RUN pip install idna_ssl
-#RUN pip install aiosignal
-RUN pip install cython
-RUN pip install web3==3.16.0
+RUN apt install python-is-python3
+RUN pip install --upgrade pip
 
-RUN npm install npm@8.5.5 -g  && npm install n --global && n stable
+RUN pip install wheel
 
-RUN mkdir -p /deps/z3/ &&  wget https://github.com/Z3Prover/z3/archive/z3-4.5.0.zip -O /deps/z3/z3.zip && \
-        cd /deps/z3/ && unzip /deps/z3/z3.zip && \
-        ls /deps/z3 && mv /deps/z3/z3-z3-4.5.0/* /deps/z3/ &&  rm /deps/z3/z3.zip && \
-        python scripts/mk_make.py --python && cd build && make && make install
 
-# Install geth from official geth image
-COPY --from=geth /usr/local/bin/evm /usr/local/bin/evm
+# install the packages needed by Oyente
+RUN pip install six
+RUN pip install z3
+RUN pip install requests
+RUN pip install z3-solver==4.5.1
+RUN pip install crytic-compile==0.3.1
 
-# Install solc from official solc image
-COPY --from=solc /usr/bin/solc /usr/bin/solc
-
-RUN pip3 install crytic-compile six
 
 COPY . /oyente/
 

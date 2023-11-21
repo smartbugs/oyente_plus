@@ -54,13 +54,6 @@ def has_dependencies_installed():
     if not cmd_exists("solc"):
         logging.critical("solc is missing. Please install the solidity compiler and make sure solc is in the path.")
         return False
-    else:
-        cmd = "solc --version"
-        out = run_command(cmd).strip()
-        solc_version = re.findall(r"Version: (\d*.\d*.\d*)", out)[0]
-        tested_solc_version = '0.4.19'
-        if compare_versions(solc_version, tested_solc_version) > 0:
-            logging.warning("You are using solc version %s, The latest supported version is %s" % (solc_version, tested_solc_version))
 
     return True
 
