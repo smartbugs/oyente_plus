@@ -28,8 +28,18 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip2 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 2
-RUN pip install requests web3
-RUN npm install npm@latest -g  && npm install n --global && n stable
+#RUN pip install multidict
+#RUN pip install typing-extensions
+#RUN pip install --upgrade attrs
+#RUN pip install yarl
+#RUN pip install requests
+#RUN pip install async_timeout
+#RUN pip install idna_ssl
+#RUN pip install aiosignal
+RUN pip install cython
+RUN pip install web3==3.16.0
+
+RUN npm install npm@8.5.5 -g  && npm install n --global && n stable
 
 RUN mkdir -p /deps/z3/ &&  wget https://github.com/Z3Prover/z3/archive/z3-4.5.0.zip -O /deps/z3/z3.zip && \
         cd /deps/z3/ && unzip /deps/z3/z3.zip && \
