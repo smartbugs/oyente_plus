@@ -286,7 +286,7 @@ class InputHelper:
                         instr_name = "REVERT"
                     # This includes UNKNOWN_0xfe, which is INVALID by design
                     elif instr.name.startswith("UNKNOWN_0x"):
-                        logging.warning(f"{instr_address:05x}: {instr_name} is INVALID.")
+                        logging.warning(f"{instr_address:05x}: {instr_name} is an INVALID instruction.")
                         instr_name = "INVALID"
                     
                     line = f"{instr_address:05x}: {instr_name}"

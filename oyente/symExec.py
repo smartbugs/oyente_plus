@@ -207,7 +207,12 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
         if name.startswith("tag"):
             idx += 1
         else:
-            if name.startswith("PUSH"):
+            # Explicitly check for PUSH0, which pushes a 0 onto the stack, without any extra bytes
+            if name == "PUSH0":
+                g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
+                idx += 1
+                break
+            elif name.startswith("PUSH"):
                 if name == "PUSH":
                     value = positions[idx]['value']
                     instr_value = current_line_content.split(" ")[1]
@@ -1894,12 +1899,16 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             raise ValueError('STACK underflow')
     elif opcode == "MCOPY":
         if len(stack) > 2:
+            global_state["pc"] = global_state["pc"] + 1
             dst = stack.pop(0)
             src = stack.pop(0)
             length = stack.pop(0)
             # Minimal approach: Do nothing. We do not simulate this further.
         else:
             raise ValueError('STACK underflow')
+    elif opcode == "PUSH0":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, BitVecVal(0, 256))
 
     #
     #  60s & 70s: Push Operations
