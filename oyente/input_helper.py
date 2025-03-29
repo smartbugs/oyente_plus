@@ -9,6 +9,8 @@ import six
 from source_map import SourceMap
 from utils import run_command, run_command_with_err
 from crytic_compile import CryticCompile, InvalidCompilation
+from evmdasm import EvmBytecode
+from pyevmasm import disassemble_hex
 
 class InputHelper:
     BYTECODE = 0
@@ -23,6 +25,7 @@ class InputHelper:
             attr_defaults = {
                 'source': None,
                 'evm': False,
+                'disassembler': kwargs.get('disasm'),
             }
         elif input_type == InputHelper.SOLIDITY:
             attr_defaults = {
@@ -214,17 +217,67 @@ class InputHelper:
         with open(evm_file, 'w') as of:
             of.write(self._removeSwarmHash(bytecode))
 
+
     def _write_disasm_file(self, target):
         tmp_files = self._get_temporary_files(target)
         evm_file = tmp_files["evm"]
         disasm_file = tmp_files["disasm"]
         disasm_out = ""
+
         try:
-            disasm_p = subprocess.Popen(
-                ["evm", "disasm", evm_file], stdout=subprocess.PIPE)
-            disasm_out = disasm_p.communicate()[0].decode('utf-8', 'strict')
-        except:
-            logging.critical("Disassembly failed.")
+            with open(evm_file, 'r') as f:
+                bytecode = f.read().strip()
+
+            # Remove the 0x prefix, because evm disasm expects only the bytecode.
+            if bytecode.startswith("0x"):
+                bytecode = bytecode[2:]
+
+            # First we check for the disassembler we want to use, then we parse the output to 
+            # match the output of the evm disasm command, because it was previously used.
+            # "evm disasm" prints the address in 5 hex digits, followed by the instruction name.
+            # If the instruction has push data, it is printed after the instruction name.
+            # We want to keep that format, while using pyevmasm's or evmdasm's disassembly functions.
+            if self.disassembler == "pyevmasm":         
+                instructions = disassemble_hex(bytecode)
+                i = 0
+                for instr in instructions.splitlines():
+                    disasm_out += f"{i:05x}: {instr}\n"
+                    
+                    # With pyevmasm, we need to construct the index, because the disassembler doesn't
+                    # do it for us.
+                    # If the instruction is a PUSH, we need to add the length of the data to the index.
+                    # otherwise, we just add 1 to the index.
+                    if instr.startswith("PUSH"):
+                        i += 1 + int(instr.split()[0][4:])
+                    else:
+                        i += 1
+
+            elif self.disassembler == "evmdasm":
+                
+                instructions = EvmBytecode(bytecode).disassemble()
+                for instr in instructions:
+                    line = f"{instr.address:05x}: {instr.name}"
+                    if hasattr(instr, "operand") and instr.operand:
+                        line += f" 0x{instr.operand}"
+                    disasm_out += line + "\n"
+                
+                # evmdasm is to old to understand some newer opcodes, so we need to replace the UNKNOWN
+                # opcodes with the known ones.
+                disasm_out = disasm_out.replace("BREAKPOINT", "CREATE2")
+                disasm_out = disasm_out.replace("SSIZE", "STATICCALL")
+                disasm_out = disasm_out.replace("SUICIDE", "SELFDESTRUCT")
+                disasm_out = disasm_out.replace("UNKNOWN_0x49", "BLOBHASH")
+                disasm_out = disasm_out.replace("UNKNOWN_0x4a", "BLOBBASEFEE")
+                disasm_out = disasm_out.replace("UNKNOWN_0x5c", "TLOAD")
+                disasm_out = disasm_out.replace("UNKNOWN_0x5d", "TSTORE")
+                disasm_out = disasm_out.replace("UNKNOWN_0xfe", "INVALID")
+            else:
+                raise ValueError("Unknown disassembler: %s" % self.disassembler)
+
+            logging.debug("Raw instructions: %s", instructions)
+
+        except Exception as e:
+            logging.critical("Disassembly failed: %s", e)
             exit()
 
         with open(disasm_file, 'w') as of:
