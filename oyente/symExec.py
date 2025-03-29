@@ -1879,11 +1879,16 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
             stored_address = stack.pop(0)
-            if isReal(stored_address):
-                stored_value = global_state["It"].get(stored_address, 0)
+            if isReal(stored_address) and stored_address in global_state["It"]:
+                value_to_store = global_state["It"].get(stored_address, 0)
             else:
-                stored_value = global_state["It"].get(str(stored_address), 0)
-            stack.insert(0, stored_value)
+                new_var_name = gen.gen_gas_var()
+                if str(stored_address) in global_state["It"]:
+                    value_to_store = global_state["It"].get(str(stored_address), 0)
+                else:
+                    value_to_store = BitVec(new_var_name, 256)
+                    global_state["It"][str(stored_address)] = value_to_store
+            stack.insert(0, value_to_store)
         else:
             raise ValueError('STACK underflow')
     elif opcode == "TSTORE":
