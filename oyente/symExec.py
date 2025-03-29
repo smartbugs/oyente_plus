@@ -184,7 +184,6 @@ def compare_storage_and_gas_unit_test(global_state, analysis):
 
 def build_cfg_and_analyze():
     with open(g_disasm_file, 'r') as disasm_file:
-        disasm_file.readline()  # Remove first line
         lines = disasm_file.read().splitlines()
     collect_vertices(lines)
     construct_bb()
@@ -262,10 +261,14 @@ def collect_vertices(lines):
     current_block = 0
     is_new_block = False
     for line in lines:
+        logging.debug("Processing line: %s", line)
+        logging.debug("Before processing: current_block=%05x, current_ins_address=%05x, is_new_block=%s", 
+                      current_block, current_ins_address, is_new_block)
         assert line[5:7] == ": "
         last_ins_address = current_ins_address
-        current_ins_address = int(line[0:5],16)
+        current_ins_address = int(line[0:5], 16)
         instruction = line[7:]
+        logging.debug("Parsed instruction at %05x: %s", current_ins_address, instruction)
         if instruction == "SELFDESTRUCT":
             instruction = "SUICIDE"
         elif instruction == "INVALID":
@@ -276,43 +279,54 @@ def collect_vertices(lines):
             instruction = "INVALID " + instruction.split()[1]
         current_line_content = instruction + ' ' # for some reason, the original Oyente adds a space
         instructions[current_ins_address] = current_line_content
+        logging.debug("Current line content: %s", current_line_content)
         if is_new_block:
             current_block = current_ins_address
+            logging.debug("New block started at address: %05x", current_block)
             is_new_block = False
         if instruction == "JUMPDEST":
             if last_ins_address not in end_ins_dict:
                 end_ins_dict[current_block] = last_ins_address
+                logging.debug("Set end_ins_dict[%05x] = %05x", current_block, last_ins_address)
             current_block = current_ins_address
+            logging.debug("JUMPDEST: updating current_block to %05x", current_block)
             is_new_block = False
-        elif instruction in ("STOP","RETURN","SUICIDE","REVERT","ASSERTFAIL"):
+        elif instruction in ("STOP", "RETURN", "SUICIDE", "REVERT", "ASSERTFAIL"):
             jump_type[current_block] = "terminal"
             end_ins_dict[current_block] = current_ins_address
+            logging.debug("Terminal instruction: block %05x ends at %05x", current_block, current_ins_address)
         elif instruction == "JUMP":
             jump_type[current_block] = "unconditional"
             end_ins_dict[current_block] = current_ins_address
+            logging.debug("JUMP: block %05x ends at %05x", current_block, current_ins_address)
             is_new_block = True
         elif instruction == "JUMPI":
             jump_type[current_block] = "conditional"
             end_ins_dict[current_block] = current_ins_address
+            logging.debug("JUMPI: block %05x ends at %05x", current_block, current_ins_address)
             is_new_block = True
         if instruction.startswith('PUSH'):
             idx = mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
         else:
             idx = mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
-        log.debug(current_line_content)
+        logging.debug("After processing line: current_block=%05x, current_ins_address=%05x", current_block, current_ins_address)
 
     if current_block not in end_ins_dict:
-        log.debug("current block: %d", current_block)
-        log.debug("last line: %d", current_ins_address)
+        logging.debug("Final block %05x did not have an end; setting end_ins_dict[%05x] = %05x", current_block, current_block, current_ins_address)
         end_ins_dict[current_block] = current_ins_address
 
     if current_block not in jump_type:
         jump_type[current_block] = "terminal"
+        logging.debug("Final block %05x did not have a jump type; setting to terminal", current_block)
 
     for key in end_ins_dict:
         if key not in jump_type:
             jump_type[key] = "falls_to"
+            logging.debug("Setting jump type for block %05x to falls_to", key)
 
+    logging.debug("Vertices created: %s", sorted(vertices.keys()))
+    logging.debug("Edges keys: %s", sorted(edges.keys()))
+    logging.debug("Jump types: %s", sorted(jump_type.keys()))
 
 def construct_bb():
     global vertices
@@ -333,7 +347,6 @@ def construct_bb():
         vertices[key] = block
         edges[key] = []
 
-
 def construct_static_edges():
     add_falls_to()  # these edges are static
 
@@ -352,7 +365,7 @@ def add_falls_to():
 
 def get_init_global_state(path_conditions_and_vars):
     global_state = {"balance" : {}, "pc": 0}
-    init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = callData = None
+    init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = chainId = baseFee = blobHash = blobBaseFee = callData = None
 
     if global_params.INPUT_STATE:
         with open('state.json') as f:
@@ -379,6 +392,14 @@ def get_init_global_state(path_conditions_and_vars):
                 currentDifficulty = int(state["env"]["currentDifficulty"], 16)
             if state["env"]["currentGasLimit"]:
                 currentGasLimit = int(state["env"]["currentGasLimit"], 16)
+            if state["env"]["chainID"]:
+                chainId = int(state["env"]["chainID"], 16)
+            if state["env"]["baseFee"]:
+                baseFee = int(state["env"]["baseFee"], 16)
+            if state["env"]["blobHash"]:
+                blobHash = int(state["env"]["blobHash"], 16)
+            if state["env"]["blobBaseFee"]:
+                blobBaseFee = int(state["env"]["blobBaseFee"], 16)
 
     # for some weird reason these 3 vars are stored in path_conditions insteaad of global_state
     else:
@@ -433,12 +454,32 @@ def get_init_global_state(path_conditions_and_vars):
         new_var_name = "IH_l"
         currentGasLimit = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = currentGasLimit
+    
+    if not chainId:
+        new_var_name = "IH_id"
+        chainId = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = chainId
+    
+    if not baseFee:
+        new_var_name = "IH_bf"
+        baseFee = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = baseFee
+    
+    if not blobHash:
+        new_var_name = "IH_bh"
+        blobHash = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = blobHash
+    
+    if not blobBaseFee:
+        new_var_name = "IH_bbf"
+        blobBaseFee = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = blobBaseFee
 
     new_var_name = "IH_s"
     currentTimestamp = BitVec(new_var_name, 256)
     path_conditions_and_vars[new_var_name] = currentTimestamp
 
-    # the state of the current current contract
+    # the state of the current contract
     if "Ia" not in global_state:
         global_state["Ia"] = {}
     global_state["miu_i"] = 0
@@ -452,6 +493,10 @@ def get_init_global_state(path_conditions_and_vars):
     global_state["currentNumber"] = currentNumber
     global_state["currentDifficulty"] = currentDifficulty
     global_state["currentGasLimit"] = currentGasLimit
+    global_state["chainID"] = chainId
+    global_state["baseFee"] = baseFee
+    global_state["blobHash"] = blobHash
+    global_state["blobBaseFee"] = blobBaseFee
 
     return global_state
 
@@ -689,7 +734,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
 
     instr_parts = str.split(instr, ' ')
     opcode = instr_parts[0]
-    #print(opcode)
 
     if opcode == "INVALID":
         return
@@ -1224,7 +1268,9 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 if first >= 32 or first < 0:
                     computed = 0
                 else:
-                    computed = second & (255 << (8 * byte_index))
+                    # We have to convert the shift_amount to integer, because
+                    # otherwise we run into a TypeError
+                    computed = second & (255 << int(8 * byte_index))
                     computed = computed >> (8 * byte_index)
             else:
                 first = to_symbolic(first)
@@ -1234,7 +1280,9 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 if check_sat(solver) == unsat:
                     computed = 0
                 else:
-                    computed = second & (255 << (8 * byte_index))
+                    # We have to convert the shift_amount to integer, because
+                    # otherwise we run into a TypeError
+                    computed = second & (255 << int(8 * byte_index))
                     computed = computed >> (8 * byte_index)
                 solver.pop()
             computed = simplify(computed) if is_expr(computed) else computed
@@ -1291,7 +1339,8 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 # simulate the hashing of sha3
                 data = [str(x) for x in memory[s0: s0 + s1]]
                 position = ''.join(data)
-                position = re.sub('[\s+]', '', position)
+                #position = re.sub('[\s+]', '', position)
+                position = re.sub(r'\s+', '', position)
                 position = zlib.compress(six.b(position), 9)
                 position = base64.b64encode(position)
                 position = position.decode('utf-8', 'strict')
@@ -1558,6 +1607,22 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "GASLIMIT":  # information from block header
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["currentGasLimit"])
+    elif opcode == "CHAINID":  # information from block header
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["chainID"])
+    elif opcode == "SELFBALANCE":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["balance"]["Is"])
+    elif opcode == "BASEFEE":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["baseFee"])
+    elif opcode == "BLOBHASH":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["blobHash"])
+    elif opcode == "BLOBBASEFEE":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["blobBaseFee"])
+
     #
     #  50s: Stack, Memory, Storage, and Flow Information
     #
@@ -1805,6 +1870,31 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "JUMPDEST":
         # Literally do nothing
         global_state["pc"] = global_state["pc"] + 1
+    elif opcode == "TLOAD":
+        if len(stack) > 0:
+            tindex = stack.pop(0)
+            new_var_name = gen.gen_arbitrary_var()
+            new_var = BitVec(new_var_name, 256)
+            stack.insert(0, new_var)
+            # Minimal approach: Do nothing. We do not simulate this further
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "TSTORE":
+        if len(stack) > 1:
+            tindex = stack.pop(0)
+            tvalue = stack.pop(0)
+            # Minimal approach: Do nothing. We do not simulate this further
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "MCOPY":
+        if len(stack) > 2:
+            dst = stack.pop(0)
+            src = stack.pop(0)
+            length = stack.pop(0)
+            # Minimal approach: Do nothing. We do not simulate this further.
+        else:
+            raise ValueError('STACK underflow')
+
     #
     #  60s & 70s: Push Operations
     #
