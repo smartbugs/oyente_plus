@@ -322,10 +322,6 @@ def collect_vertices(lines):
             jump_type[key] = "falls_to"
             logging.debug("Setting jump type for block %05x to falls_to", key)
 
-    logging.debug("Vertices created: %s", sorted(vertices.keys()))
-    logging.debug("Edges keys: %s", sorted(edges.keys()))
-    logging.debug("Jump types: %s", sorted(jump_type.keys()))
-
 def construct_bb():
     global vertices
     global edges
@@ -345,6 +341,10 @@ def construct_bb():
         vertices[key] = block
         edges[key] = []
 
+    logging.debug("Vertices created: %s", sorted(vertices.keys()))
+    logging.debug("Edges keys: %s", sorted(edges.keys()))
+    logging.debug("Jump types: %s", sorted(jump_type.keys()))
+
 def construct_static_edges():
     add_falls_to()  # these edges are static
 
@@ -362,8 +362,8 @@ def add_falls_to():
 
 
 def get_init_global_state(path_conditions_and_vars):
-    global_state = {"balance" : {}, "pc": 0}
-    init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = chainId = baseFee = blobHash = blobBaseFee = callData = None
+    global_state = {"balance" : {}, "pc": 0, "It": {}}
+    init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = chainId = baseFee = blobHash = blobBaseFee = callData = It = None
 
     if global_params.INPUT_STATE:
         with open('state.json') as f:
@@ -480,6 +480,8 @@ def get_init_global_state(path_conditions_and_vars):
     # the state of the current contract
     if "Ia" not in global_state:
         global_state["Ia"] = {}
+    if "It" not in global_state:
+        global_state["It"] = {}
     global_state["miu_i"] = 0
     global_state["value"] = deposited_value
     global_state["sender_address"] = sender_address
@@ -1870,18 +1872,24 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         global_state["pc"] = global_state["pc"] + 1
     elif opcode == "TLOAD":
         if len(stack) > 0:
-            tindex = stack.pop(0)
-            new_var_name = gen.gen_arbitrary_var()
-            new_var = BitVec(new_var_name, 256)
-            stack.insert(0, new_var)
-            # Minimal approach: Do nothing. We do not simulate this further
+            global_state["pc"] = global_state["pc"] + 1
+            stored_address = stack.pop(0)
+            if isReal(stored_address):
+                stored_value = global_state["It"].get(stored_address, 0)
+            else:
+                stored_value = global_state["It"].get(str(stored_address), 0)
+            stack.insert(0, stored_value)
         else:
             raise ValueError('STACK underflow')
     elif opcode == "TSTORE":
         if len(stack) > 1:
-            tindex = stack.pop(0)
-            tvalue = stack.pop(0)
-            # Minimal approach: Do nothing. We do not simulate this further
+            global_state["pc"] = global_state["pc"] + 1
+            stored_address = stack.pop(0)
+            stored_value = stack.pop(0)
+            if isReal(stored_address):
+                global_state["It"][stored_address] = stored_value
+            else:
+                global_state["It"][str(stored_address)] = stored_value
         else:
             raise ValueError('STACK underflow')
     elif opcode == "MCOPY":
