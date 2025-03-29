@@ -236,7 +236,7 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
             idx += 1
         else:
             instr_name = current_line_content.split(" ")[0]
-            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SELFDESTRUCT" and instr_name == "SUICIDE":
+            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SELFDESTRUCT":
                 g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                 idx += 1
                 break;
@@ -269,9 +269,7 @@ def collect_vertices(lines):
         current_ins_address = int(line[0:5], 16)
         instruction = line[7:]
         logging.debug("Parsed instruction at %05x: %s", current_ins_address, instruction)
-        if instruction == "SELFDESTRUCT":
-            instruction = "SUICIDE"
-        elif instruction == "INVALID":
+        if instruction == "INVALID":
             instruction = "ASSERTFAIL"
         elif instruction == "KECCAK256":
             instruction = "SHA3"
@@ -291,7 +289,7 @@ def collect_vertices(lines):
             current_block = current_ins_address
             logging.debug("JUMPDEST: updating current_block to %05x", current_block)
             is_new_block = False
-        elif instruction in ("STOP", "RETURN", "SUICIDE", "REVERT", "ASSERTFAIL"):
+        elif instruction in ("STOP", "RETURN", "SELFDESTRUCT", "REVERT", "ASSERTFAIL"):
             jump_type[current_block] = "terminal"
             end_ins_dict[current_block] = current_ins_address
             logging.debug("Terminal instruction: block %05x ends at %05x", current_block, current_ins_address)
@@ -2123,7 +2121,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             pass
         else:
             raise ValueError('STACK underflow')
-    elif opcode == "SUICIDE":
+    elif opcode == "SELFDESTRUCT":
         global_state["pc"] = global_state["pc"] + 1
         recipient = stack.pop(0)
         transfer_amount = global_state["balance"]["Ia"]

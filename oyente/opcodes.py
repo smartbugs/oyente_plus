@@ -41,7 +41,6 @@ opcodes = {
     "GASPRICE": [0x3a, 0, 1],
     "EXTCODESIZE": [0x3b, 1, 1],
     "EXTCODECOPY": [0x3c, 4, 0],
-    "MCOPY": [0x3d, 3, 0],
     "RETURNDATASIZE": [0x3d, 0, 1],
     "RETURNDATACOPY": [0x3e, 3, 0],
     "EXTCODEHASH": [0x3f, 1, 1],
@@ -71,6 +70,7 @@ opcodes = {
     "TLOAD": [0x5c, 1, 1],
     "TSTORE": [0x5d, 2, 0],
     "MCOPY": [0x5e, 3, 0],
+    "PUSH0": [0x5f, 0, 1],
     "LOG0": [0xa0, 2, 0],
     "LOG1": [0xa1, 3, 0],
     "LOG2": [0xa2, 4, 0],
@@ -80,8 +80,6 @@ opcodes = {
     "CALL": [0xf1, 7, 1],
     "CALLCODE": [0xf2, 7, 1],
     "RETURN": [0xf3, 2, 0],
-    "REVERT": [0xfd, 2, 0],
-    "ASSERTFAIL": [0xfe, 0, 0],
     "DELEGATECALL": [0xf4, 6, 1],
     "CREATE2": [0xf5, 4, 1],
     "RNGSEED": [0xf6, 1, 1],
@@ -91,8 +89,9 @@ opcodes = {
     "STATICCALL": [0xfa, 6, 1],
     "STATEROOT": [0xfb, 1, 1],
     "TXEXECGAS": [0xfc, 0, 1],
-    "CALLSTATIC": [0xfd, 7, 1],
+    "REVERT": [0xfd, 2, 0],
     "INVALID": [0xfe, 0, 0],  # Not an opcode use to cause an exception
+    "ASSERTFAIL": [0xfe, 0, 0],
     "SELFDESTRUCT": [0xff, 1, 0],
     "---END---": [0x00, 0, 0]
 }
@@ -143,7 +142,8 @@ Wzero = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
 
 Wbase = ("ADDRESS", "ORIGIN", "CALLER", "CALLVALUE", "CALLDATASIZE",
          "CODESIZE", "GASPRICE", "COINBASE", "TIMESTAMP", "NUMBER",
-         "DIFFICULTY", "GASLIMIT", "POP", "PC", "MSIZE", "GAS", "BLOBHASH")
+         "DIFFICULTY", "GASLIMIT", "POP", "PC", "MSIZE", "GAS", "BLOBHASH",
+         "PUSH0")
 
 Wverylow = ("ADD", "SUB", "NOT", "LT", "GT", "SLT", "SHL", "SHR", "SAR",
             "SGT", "EQ", "ISZERO", "AND", "OR", "XOR", "BYTE", "CALLDATALOAD",
