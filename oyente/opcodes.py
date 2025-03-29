@@ -1,4 +1,4 @@
-# list of all opcodes except the PUSHi and DUPi
+# list of all opcodes except the SWAPi, PUSHi and DUPi
 # opcodes[name] has a list of [value (index), no. of items removed from stack, no. of items added to stack]
 opcodes = {
     "STOP": [0x00, 0, 0],
@@ -54,6 +54,8 @@ opcodes = {
     "CHAINID": [0x46, 0, 1],
     "SELFBALANCE": [0x47, 0, 1],
     "BASEFEE": [0x48, 0, 1],
+    "BLOBHASH": [0x49, 1, 1],
+    "BLOBBASEFEE": [0x4a, 0, 1],
     "POP": [0x50, 1, 0],
     "MLOAD": [0x51, 1, 1],
     "MSTORE": [0x52, 2, 0],
@@ -66,10 +68,9 @@ opcodes = {
     "MSIZE": [0x59, 0, 1],
     "GAS": [0x5a, 0, 1],
     "JUMPDEST": [0x5b, 0, 0],
-    "SLOADEXT": [0x5c, 2, 1],
-    "SSTOREEXT": [0x5d, 3, 0],
-    "SLOADBYTESEXT": [0x5c, 4, 0],
-    "SSTOREBYTESEXT": [0x5d, 4, 0],
+    "TLOAD": [0x5c, 1, 1],
+    "TSTORE": [0x5d, 2, 0],
+    "MCOPY": [0x5e, 3, 0],
     "LOG0": [0xa0, 2, 0],
     "LOG1": [0xa1, 3, 0],
     "LOG2": [0xa2, 4, 0],
@@ -82,19 +83,16 @@ opcodes = {
     "REVERT": [0xfd, 2, 0],
     "ASSERTFAIL": [0xfe, 0, 0],
     "DELEGATECALL": [0xf4, 6, 1],
-    "BREAKPOINT": [0xf5, 0, 0],
     "CREATE2": [0xf5, 4, 1],
     "RNGSEED": [0xf6, 1, 1],
     "SSIZEEXT": [0xf7, 2, 1],
     "SLOADBYTES": [0xf8, 3, 0],
     "SSTOREBYTES": [0xf9, 3, 0],
-    "SSIZE": [0xfa, 1, 1],
     "STATICCALL": [0xfa, 6, 1],
     "STATEROOT": [0xfb, 1, 1],
     "TXEXECGAS": [0xfc, 0, 1],
     "CALLSTATIC": [0xfd, 7, 1],
     "INVALID": [0xfe, 0, 0],  # Not an opcode use to cause an exception
-    "SUICIDE": [0xff, 1, 0],
     "SELFDESTRUCT": [0xff, 1, 0],
     "---END---": [0x00, 0, 0]
 }
@@ -137,18 +135,19 @@ GCOST = {
     "Gsha3": 30,
     "Gsha3word": 6,
     "Gcopy": 3,
-    "Gblockhash": 20
+    "Gblockhash": 20,
+    "GTransientStorage": 100
 }
 
 Wzero = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
 
 Wbase = ("ADDRESS", "ORIGIN", "CALLER", "CALLVALUE", "CALLDATASIZE",
          "CODESIZE", "GASPRICE", "COINBASE", "TIMESTAMP", "NUMBER",
-         "DIFFICULTY", "GASLIMIT", "POP", "PC", "MSIZE", "GAS")
+         "DIFFICULTY", "GASLIMIT", "POP", "PC", "MSIZE", "GAS", "BLOBHASH")
 
 Wverylow = ("ADD", "SUB", "NOT", "LT", "GT", "SLT", "SHL", "SHR", "SAR",
             "SGT", "EQ", "ISZERO", "AND", "OR", "XOR", "BYTE", "CALLDATALOAD",
-            "MLOAD", "MSTORE", "MSTORE8", "PUSH", "DUP", "SWAP")
+            "MLOAD", "MSTORE", "MSTORE8", "PUSH", "DUP", "SWAP", "BLOBBASEFEE")
 
 Wlow = ("MUL", "DIV", "SDIV", "MOD", "SMOD", "SIGNEXTEND")
 
@@ -157,6 +156,8 @@ Wmid = ("ADDMOD", "MULMOD", "JUMP")
 Whigh = ("JUMPI")
 
 Wext = ("EXTCODESIZE")
+
+Wtransientstorage = ("TLOAD", "TSTORE")
 
 def get_opcode(opcode):
     if opcode in opcodes:
@@ -205,7 +206,7 @@ def get_ins_cost(opcode):
         return GCOST["Gsha3"]
     elif opcode in ("CREATE", "CREATE2"):
         return GCOST["Gcreate"]
-    elif opcode in ("CALL", "CALLCODE"):
+    elif opcode in ("CALL", "CALLCODE", "STATICCALL"):
         return GCOST["Gcall"]
     elif opcode in ("LOG0", "LOG1", "LOG2", "LOG3", "LOG4"):
         num_topics = int(opcode[3:])
@@ -218,4 +219,8 @@ def get_ins_cost(opcode):
         return GCOST["Gbalance"]
     elif opcode == "BLOCKHASH":
         return GCOST["Gblockhash"]
+    elif opcode == ["TLOAD", "TSTORE"]:
+        return GCOST["GTransientStorage"]
+    elif opcode == ["MCOPY"]:
+        return GCOST["Gcopy"]
     return 0
