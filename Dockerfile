@@ -1,14 +1,14 @@
 ARG ETHEREUM_VERSION=alltools-v1.7.3
 ARG SOLC_VERSION=0.8.10
 
-FROM ethereum/client-go:${ETHEREUM_VERSION} as geth
-FROM ethereum/solc:${SOLC_VERSION} as solc
+FROM ethereum/client-go:${ETHEREUM_VERSION} AS geth
+FROM ethereum/solc:${SOLC_VERSION} AS solc
 
 FROM ubuntu:focal
 
 ARG NODEREPO=node_14.x
 
-LABEL maintainer "Xiao Liang <https://github.com/yxliang01>, Luong Nguyen <luongnt.58@gmail.com>"
+LABEL maintainer="Xiao Liang <https://github.com/yxliang01>, Luong Nguyen <luongnt.58@gmail.com>"
 
 SHELL ["/bin/bash", "-c", "-l"]
 RUN apt-get update && apt-get -y upgrade
@@ -34,6 +34,8 @@ RUN pip install z3
 RUN pip install requests
 RUN pip install z3-solver==4.5.1
 RUN pip install crytic-compile==0.3.1
+RUN pip install evmdasm
+RUN pip install pyevmasm
 
 
 COPY . /oyente/

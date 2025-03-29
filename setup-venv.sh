@@ -13,3 +13,6 @@ pip install z3
 pip install requests
 pip install z3-solver==4.5.1
 pip install crytic_compile==0.3.1
+pip install web3
+pip install evmdasm
+pip install pyevmdasm
