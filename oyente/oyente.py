@@ -125,7 +125,7 @@ def main():
     parser.add_argument("-rmp", "--remap",          help="Remap directory paths", action="store", type=str)
     parser.add_argument("-t",   "--timeout",        help="Timeout for Z3 in ms.", action="store", type=int)
     parser.add_argument("-gl",  "--gaslimit",       help="Limit Gas", action="store", dest="gas_limit", type=int)
-    parser.add_argument("-rp",   "--root-path",     help="Root directory path used for the online version", action="store", dest="root_path", type=str)
+    parser.add_argument("-rp",  "--root-path",      help="Root directory path used for the online version", action="store", dest="root_path", type=str)
     parser.add_argument("-ll",  "--looplimit",      help="Limit number of loops", action="store", dest="loop_limit", type=int)
     parser.add_argument("-dl",  "--depthlimit",     help="Limit DFS depth", action="store", dest="depth_limit", type=int)
     parser.add_argument("-ap",  "--allow-paths",    help="Allow a given path for imports", action="store", dest="allow_paths", type=str)
