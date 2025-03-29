@@ -253,28 +253,46 @@ class InputHelper:
                         i += 1
 
             elif self.disassembler == "evmdasm":
-                
-                instructions = EvmBytecode(bytecode).disassemble()
+                instructions = EvmBytecode(bytecode).disassemble()               
                 for instr in instructions:
-                    line = f"{instr.address:05x}: {instr.name}"
-                    if hasattr(instr, "operand") and instr.operand:
-                        line += f" 0x{instr.operand}"
+                    instr_address = instr.address
+                    instr_name = instr.name
+                    instr_operand = instr.operand
+
+                    # evmdasm is to old to understand some newer opcodes, so we need to replace the UNKNOWN
+                    # or old opcodes with current or known ones.
+                    if instr.name == "BREAKPOINT":
+                        instr_name = "CREATE2"
+                    elif instr.name == "SSIZE":
+                        instr_name = "STATICCALL"
+                    elif instr.name == "SUICIDE":
+                        instr_name = "SELFDESTRUCT"
+                    elif instr.name == "UNKNOWN_0x46":
+                        instr_name = "CHAINID"
+                    elif instr.name == "UNKNOWN_0x49":
+                        instr_name = "BLOBHASH"
+                    elif instr.name == "UNKNOWN_0x4a":
+                        instr_name = "BLOBBASEFEE"
+                    elif instr.name == "UNKNOWN_0x5c":
+                        instr_name = "TLOAD"
+                    elif instr.name == "UNKNOWN_0x5d":
+                        instr_name = "TSTORE"
+                    elif instr.name == "UNKNOWN_0x5f":
+                        instr_name = "PUSH0"
+                        logging.info("We found PUSH0!")
+                    elif instr.name == "UNKNOWN_0xfa":
+                        instr_name = "STATICCALL"
+                    elif instr.name == "UNKNOWN_0xfd":
+                        instr_name = "REVERT"
+                    # This includes UNKNOWN_0xfe, which is INVALID by design
+                    elif instr.name.startswith("UNKNOWN_0x"):
+                        logging.warning(f"{instr_address:05x}: {instr_name} is INVALID.")
+                        instr_name = "INVALID"
+                    
+                    line = f"{instr_address:05x}: {instr_name}"
+                    if hasattr(instr, "operand") and instr_operand:
+                        line += f" 0x{instr_operand}"
                     disasm_out += line + "\n"
-                
-                # evmdasm is to old to understand some newer opcodes, so we need to replace the UNKNOWN
-                # opcodes with the known ones.
-                disasm_out = disasm_out.replace("BREAKPOINT", "CREATE2")
-                disasm_out = disasm_out.replace("SSIZE", "STATICCALL")
-                disasm_out = disasm_out.replace("SUICIDE", "SELFDESTRUCT")
-                disasm_out = disasm_out.replace("UNKNOWN_0x46", "CHAINID")
-                disasm_out = disasm_out.replace("UNKNOWN_0x49", "BLOBHASH")
-                disasm_out = disasm_out.replace("UNKNOWN_0x4a", "BLOBBASEFEE")
-                disasm_out = disasm_out.replace("UNKNOWN_0x5c", "TLOAD")
-                disasm_out = disasm_out.replace("UNKNOWN_0x5d", "TSTORE")
-                disasm_out = disasm_out.replace("UNKNOWN_0x5f", "PUSH0")
-                disasm_out = disasm_out.replace("UNKNOWN_0xfa", "STATICCALL")
-                disasm_out = disasm_out.replace("UNKNOWN_0xfd", "REVERT")
-                disasm_out = disasm_out.replace("UNKNOWN_0xfe", "INVALID")
             else:
                 raise ValueError("Unknown disassembler: %s" % self.disassembler)
 
