@@ -35,7 +35,8 @@ class InputHelper:
                 'compiled_contracts': [],
                 'compilation_err': False,
                 'remap': "",
-                'allow_paths': ""
+                'allow_paths': "",
+                'disassembler': kwargs.get('disasm'),
             }
         elif input_type == InputHelper.STANDARD_JSON:
             attr_defaults = {
@@ -43,7 +44,8 @@ class InputHelper:
                 'evm': False,
                 'root_path': "",
                 'allow_paths': None,
-                'compiled_contracts': []
+                'compiled_contracts': [],
+                'disassembler': kwargs.get('disasm'),
             }
         elif input_type == InputHelper.STANDARD_JSON_OUTPUT:
             attr_defaults = {
@@ -51,6 +53,7 @@ class InputHelper:
                 'evm': False,
                 'root_path': "",
                 'compiled_contracts': [],
+                'disassembler': kwargs.get('disasm'),
             }
 
         for (attr, default) in six.iteritems(attr_defaults):

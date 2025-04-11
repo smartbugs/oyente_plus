@@ -47,7 +47,7 @@ def has_dependencies_installed():
         cmd = "evm --version"
         out = run_command(cmd).strip()
         evm_version = re.findall(r"evm version (\d*.\d*.\d*)", out)[0]
-        tested_evm_version = '1.15.6'
+        tested_evm_version = '1.15.8'
         if compare_versions(evm_version, tested_evm_version) > 0:
             logging.warning("You are using evm version %s. The supported version is %s" % (evm_version, tested_evm_version))
 
@@ -94,11 +94,11 @@ def analyze_solidity(input_type='solidity'):
     global args
 
     if input_type == 'solidity':
-        helper = InputHelper(InputHelper.SOLIDITY, source=args.source, evm=args.evm, compilation_err=args.compilation_error, root_path=args.root_path, remap=args.remap, allow_paths=args.allow_paths)
+        helper = InputHelper(InputHelper.SOLIDITY, source=args.source, evm=args.evm, compilation_err=args.compilation_error, root_path=args.root_path, remap=args.remap, allow_paths=args.allow_paths, disasm=args.disassembler)
     elif input_type == 'standard_json':
-        helper = InputHelper(InputHelper.STANDARD_JSON, source=args.source, evm=args.evm, allow_paths=args.allow_paths)
+        helper = InputHelper(InputHelper.STANDARD_JSON, source=args.source, evm=args.evm, allow_paths=args.allow_paths, disasm=args.disassembler)
     elif input_type == 'standard_json_output':
-        helper = InputHelper(InputHelper.STANDARD_JSON_OUTPUT, source=args.source, evm=args.evm)
+        helper = InputHelper(InputHelper.STANDARD_JSON_OUTPUT, source=args.source, evm=args.evm, disasm=args.disassembler)
     inputs = helper.get_inputs(global_params.TARGET_CONTRACTS)
     results, exit_code = run_solidity_analysis(inputs)
     helper.rm_tmp_files()
