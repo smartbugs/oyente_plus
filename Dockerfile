@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:jammy
 LABEL maintainer="Xiao Liang <https://github.com/yxliang01>, Luong Nguyen <luongnt.58@gmail.com>"
 
 # crytic-compile does not seem to work inside a container
