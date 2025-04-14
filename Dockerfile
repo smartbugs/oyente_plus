@@ -21,7 +21,7 @@ RUN apt-get install -y ethereum
 # install dependencies
 RUN pip install requests
 RUN pip install six
-RUN pip install z3-solver==4.5.1
+RUN pip install z3-solver==4.14.1.0
 RUN pip install crytic-compile==0.3.8
 RUN pip install solc-select
 

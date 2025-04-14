@@ -10,7 +10,7 @@ pip install wheel
 # install the packages needed by Oyente
 pip install requests
 pip install six
-pip install z3-solver==4.5.1
+pip install z3-solver==4.14.1.0
 pip install crytic_compile==0.3.8
 pip install solc-select
 pip install web3
