@@ -266,6 +266,8 @@ class InputHelper:
                         instr_name = "CREATE2"
                     elif instr.name == "SSIZE":
                         instr_name = "STATICCALL"
+                    elif instr_name == "DIFFICULTY":
+                        instr_name = "PREVRANDAO"
                     elif instr.name == "SUICIDE":
                         instr_name = "SELFDESTRUCT"
                     elif instr.name == "UNKNOWN_0x46":
@@ -280,7 +282,6 @@ class InputHelper:
                         instr_name = "TSTORE"
                     elif instr.name == "UNKNOWN_0x5f":
                         instr_name = "PUSH0"
-                        logging.info("We found PUSH0!")
                     elif instr.name == "UNKNOWN_0xfa":
                         instr_name = "STATICCALL"
                     elif instr.name == "UNKNOWN_0xfd":

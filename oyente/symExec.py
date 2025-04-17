@@ -241,7 +241,7 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
             idx += 1
         else:
             instr_name = current_line_content.split(" ")[0]
-            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SELFDESTRUCT":
+            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SUICIDE" or name == "DIFFICULTY":
                 g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                 idx += 1
                 break;
@@ -1606,7 +1606,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "NUMBER":  # information from block header
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["currentNumber"])
-    elif opcode == "DIFFICULTY":  # information from block header
+    elif opcode == "PREVRANDAO":  # information from block header
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["currentDifficulty"])
     elif opcode == "GASLIMIT":  # information from block header
@@ -1879,6 +1879,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
             stored_address = stack.pop(0)
+            logging.info("Analyzed opcode TLOAD with values: stored_address=%s", stored_address)
             if isReal(stored_address) and stored_address in global_state["It"]:
                 value_to_store = global_state["It"].get(stored_address, 0)
             else:
@@ -1896,6 +1897,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             global_state["pc"] = global_state["pc"] + 1
             stored_address = stack.pop(0)
             stored_value = stack.pop(0)
+            logging.info("Analyzed opcode TSTORE with values: stored_address=%s, stored_value=%s", stored_address, stored_value)
             if isReal(stored_address):
                 global_state["It"][stored_address] = stored_value
             else:
@@ -1908,12 +1910,14 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             dst = stack.pop(0)
             src = stack.pop(0)
             length = stack.pop(0)
+            logging.info("Analyzed opcode MCOPY with values: dst=%s, src=%s, length=%s", dst, src, length)
             # Minimal approach: Do nothing. We do not simulate this further.
         else:
             raise ValueError('STACK underflow')
     elif opcode == "PUSH0":
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, BitVecVal(0, 256))
+        logging.info("Analyzed opcode PUSH0") 
 
     #
     #  60s & 70s: Push Operations
