@@ -1,6 +1,7 @@
 FROM ubuntu:jammy
 LABEL maintainer="Xiao Liang <https://github.com/yxliang01>, Luong Nguyen <luongnt.58@gmail.com>"
 
+ARG GO_VERSION=1.24.2
 # crytic-compile does not seem to work inside a container
 # so we need to set the solc version manually
 ARG SOLC_VERSION=0.8.29
@@ -38,16 +39,24 @@ RUN pip install --no-cache-dir --upgrade pip wheel && \
     solc-select \
     z3-solver==4.14.1.0
 
-# set solidity version & explicitly install common
-# solidity versions. solc needs a solidity version
-# to be set via solc-select, otherwise it will not
-# work.
-RUN solc-select install 0.4.26 \
-    && solc-select install 0.5.17 \
-    && solc-select install 0.6.12 \
-    && solc-select install 0.7.6 \
-    && solc-select install 0.8.29
+# set solidity version & explicitly install the specified
+# version of solidity. This is needed because solc needs
+# a solidity version to be set via solc-select, otherwise
+# it will not work.
+RUN solc-select install ${SOLC_VERSION}
 ENV SOLC_VERSION=${SOLC_VERSION}
+
+# Install Go
+RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
+    ln -s /usr/local/go/bin/go /usr/bin/go && \
+    ln -s /usr/local/go/bin/gofmt /usr/bin/gofmt
+
+# Install geas using module-aware mode
+RUN export PATH=$PATH:/usr/local/go/bin && \
+    export GOBIN=/usr/local/bin && \
+    export GO111MODULE=on && \
+    go install github.com/fjl/geas/cmd/geas@latest
 
 # Copy the Oyente code into the container
 COPY . /oyente/

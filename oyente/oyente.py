@@ -141,7 +141,7 @@ def main():
     parser.add_argument( "-v",   "--verbose",                help="Verbose output, print everything.", action="store_true")
     parser.add_argument( "-pl",  "--parallel",               help="Run Oyente in parallel. Note: The performance may depend on the contract", action="store_true")
     parser.add_argument( "-b",   "--bytecode",               help="read bytecode in source instead of solidity file.", action="store_true")
-    parser.add_argument( "-d",   "--disassembler",           help="Choose the disassembler to work with", choices=["pyevmasm", "evmdasm"], default='evmdasm')
+    parser.add_argument( "-d",   "--disassembler",           help="Choose the disassembler to work with", choices=["geas", "pyevmasm", "evmdasm"], default='evmdasm')
     parser.add_argument( "-a",   "--assertion",              help="Check assertion failures.", action="store_true")
     parser.add_argument( "-sj",  "--standard-json",          help="Support Standard JSON input", action="store_true")
     parser.add_argument( "-gb",  "--globalblockchain",       help="Integrate with the global ethereum blockchain", action="store_true")

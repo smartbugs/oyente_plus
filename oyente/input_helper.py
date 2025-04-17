@@ -4,6 +4,7 @@ import os
 import re
 import logging
 import json
+import sys
 import global_params
 import six
 from source_map import SourceMap
@@ -252,6 +253,7 @@ class InputHelper:
                         i += 1 + int(instr.split()[0][4:])
                     else:
                         i += 1
+                logging.debug("Disassembled pyevmasm instructions: %s", instructions)
 
             elif self.disassembler == "evmdasm":
                 instructions = EvmBytecode(bytecode).disassemble()               
@@ -295,14 +297,51 @@ class InputHelper:
                     if hasattr(instr, "operand") and instr_operand:
                         line += f" 0x{instr_operand}"
                     disasm_out += line + "\n"
+                logging.debug("Disassembled evmdasm instructions: %s", instructions)
+
+            elif self.disassembler == "geas":
+                try:
+                    result = subprocess.run(
+                        ["/usr/local/bin/geas", "-d", "-pc", "-uppercase", "-blocks=false", evm_file],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                except Exception as e:
+                    logging.critical("Disassembly with geas failed: %s", result.stderr)
+                print(result.stderr)
+                instr_address = int("0", 16)
+                for instr in result.stdout.splitlines():                
+                    # geas writes invalid opcodes as "<invalid $hex$>". This has to be monkeypatched
+                    # for oyente to work.
+                    if instr.startswith("<") and instr.endswith(">"):
+                        instr_address += int("1", 16)
+                        hexcode = instr.split(" ")[-1]
+                        disasm_out += f"{instr_address:05x}: INVALID\n"
+                        logging.warning(f"UNKNOWN_0x{hexcode} is an INVALID instruction.")
+                    else:
+                        # geas has bad error handling. if it reaches hex values which it cannot map
+                        # onto opcode hex values, it simply returns the value. We need to catch these
+                        # cases and handle them with INVALID instructions in the diassembled bytecode.
+                        try:
+                            instr_name = instr.split(": ")[1].split(" ")[0]
+                            instr_address = int(instr.split(": ")[0], 16)
+                            instr_operand = instr.split(": ")[1].split(" ")[1:]
+
+                            if instr_operand:
+                                instr_name += " " + " ".join(instr_operand)
+                            disasm_out += f"{instr_address:05x}: {instr_name}\n"
+                        except IndexError:
+                            logging.critical(f"INVALID instruction: {instr}. Adding INVALD to disasm_out.")
+                            disasm_out += f"{instr_address:05x}: INVALID\n"
+
+                logging.debug("Disassembled geas instructions: %s", result.stdout)
+
             else:
                 raise ValueError("Unknown disassembler: %s" % self.disassembler)
 
-            logging.debug("Raw instructions: %s", instructions)
-
         except Exception as e:
-            logging.critical("Disassembly failed: %s", e)
-            exit()
+            logging.critical("Disassembly failed: %s.", e)
 
         with open(disasm_file, 'w') as of:
             of.write(disasm_out)
