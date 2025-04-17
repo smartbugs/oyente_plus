@@ -15,4 +15,4 @@ pip install crytic_compile==0.3.8
 pip install solc-select
 pip install web3
 pip install evmdasm
-pip install pyevmdasm
+pip install pyevmasm
