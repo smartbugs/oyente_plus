@@ -316,7 +316,7 @@ class InputHelper:
                     # for oyente to work.
                     if instr.startswith("<") and instr.endswith(">"):
                         instr_address += int("1", 16)
-                        hexcode = instr.split(" ")[-1]
+                        hexcode = instr.split(" ")[-1][:-1]
                         disasm_out += f"{instr_address:05x}: INVALID\n"
                         logging.warning(f"UNKNOWN_0x{hexcode} is an INVALID instruction.")
                     else:

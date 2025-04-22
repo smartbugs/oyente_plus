@@ -207,15 +207,15 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
         if name.startswith("tag"):
             idx += 1
         else:
-            # Explicitly check for PUSH0, which pushes a 0 onto the stack, without any extra bytes
-            if name == "PUSH0":
-                g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
-                idx += 1
-                break
-            elif name.startswith("PUSH"):
+            if name.startswith("PUSH"):
                 if name == "PUSH":
                     value = positions[idx]['value']
-                    instr_value = current_line_content.split(" ")[1]
+                    
+                    # Handling PUSH0:
+                    # grab the hex‑immediate, default to "0" if there isn't one
+                    parts = current_line_content.strip().split(maxsplit=1)
+                    instr_value = parts[1] if len(parts) > 1 and parts[1] else "0"
+                    
                     if int(value, 16) == int(instr_value, 16):
                         g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                         idx += 1
@@ -241,7 +241,7 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
             idx += 1
         else:
             instr_name = current_line_content.split(" ")[0]
-            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SUICIDE" or name == "DIFFICULTY":
+            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SUICIDE" or name == "DIFFICULTY" or name == "MCOPY":
                 g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                 idx += 1
                 break;
@@ -1344,7 +1344,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 # simulate the hashing of sha3
                 data = [str(x) for x in memory[s0: s0 + s1]]
                 position = ''.join(data)
-                #position = re.sub('[\s+]', '', position)
                 position = re.sub(r'\s+', '', position)
                 position = zlib.compress(six.b(position), 9)
                 position = base64.b64encode(position)
@@ -1917,7 +1916,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "PUSH0":
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, BitVecVal(0, 256))
-        logging.info("Analyzed opcode PUSH0") 
 
     #
     #  60s & 70s: Push Operations
