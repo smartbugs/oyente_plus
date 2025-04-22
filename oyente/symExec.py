@@ -219,13 +219,13 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
                     if int(value, 16) == int(instr_value, 16):
                         g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                         idx += 1
-                        break;
+                        break
                     else:
                         raise Exception("Source map error")
                 else:
                     g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                     idx += 1
-                    break;
+                    break
             else:
                 raise Exception("Source map error")
     return idx
@@ -241,10 +241,13 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
             idx += 1
         else:
             instr_name = current_line_content.split(" ")[0]
-            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SUICIDE" or name == "DIFFICULTY" or name == "MCOPY":
+            if name == instr_name \
+                or (name == "INVALID" and instr_name == "ASSERTFAIL") \
+                or (name == "KECCAK256" and instr_name == "SHA3") \
+                or name == "SUICIDE" or name == "DIFFICULTY" or name == "MCOPY":
                 g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
                 idx += 1
-                break;
+                break
             else:
                 raise RuntimeError(F"Source map error, unknown name({name}) or instr_name({instr_name})")
     return idx
