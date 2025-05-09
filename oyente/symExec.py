@@ -209,25 +209,18 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
         else:
             if name.startswith("PUSH"):
                 if name == "PUSH":
-                    value = positions[idx]['value']
-                    
-                    # Handling PUSH0:
-                    # grab the hex‑immediate, default to "0" if there isn't one
-                    parts = current_line_content.strip().split(maxsplit=1)
-                    instr_value = parts[1] if len(parts) > 1 and parts[1] else "0"
-                    
-                    if int(value, 16) == int(instr_value, 16):
-                        g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
-                        idx += 1
-                        break
-                    else:
-                        raise Exception("Source map error")
-                else:
-                    g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
-                    idx += 1
-                    break
+                    # only here do we still verify the (zero-byte) immediate numerically
+                    parts   = current_line_content.strip().split(maxsplit=1)
+                    imm_text= parts[1] if len(parts) > 1 else "0"
+                    map_val = positions[idx].get("value", "0")
+                    if int(map_val, 16) != int(imm_text, 16):
+                        raise Exception(f"Source map PUSH mismatch: {imm_text} != {map_val}")
+                # for all the numbered pushes (PUSH0, PUSH1…PUSH32), accept the mapping
+                g_src_map.instr_positions[current_ins_address] = positions[idx]
+                idx += 1
+                break
             else:
-                raise Exception("Source map error")
+                raise Exception("Source map error. Non-push instruction found in push instruction mapping.")
     return idx
 
 def mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length):
@@ -240,16 +233,49 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
         if name.startswith("tag"):
             idx += 1
         else:
-            instr_name = current_line_content.split(" ")[0]
-            if name == instr_name \
-                or (name == "INVALID" and instr_name == "ASSERTFAIL") \
-                or (name == "KECCAK256" and instr_name == "SHA3") \
-                or name == "SUICIDE" or name == "DIFFICULTY" or name == "MCOPY":
-                g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
+            raw_line = current_line_content.strip()
+            if not raw_line:
+                # return, because we are dealing with an empty line or non‐instruction.
+                return idx
+            instr_name = raw_line.split()[0]
+
+            # New EVM versions introduced new names for existing opcodes
+            # We create an alias mapping of known aliases and use this mapping
+            # to check if the instruction name matches the source map name
+            alias = {
+                "BREAKPOINT":     "CREATE2",        # evmdasm’s BREAKPOINT → CREATE2
+                "CREATE2":        "CREATE2",
+                "ASSERTFAIL":     "INVALID",        # both share opcode 0xFE
+                "INVALID":        "INVALID",
+                "SHA3":           "KECCAK256",      # compiler’s SHA3 → KECCAK256
+                "KECCAK256":      "KECCAK256",
+                "DIFFICULTY":     "PREVRANDAO",     # pre-Merge DIFFICULTY → PREVRANDAO
+                "RANDOM":         "PREVRANDAO",     # evmdasm’s RANDOM → PREVRANDAO
+                "PREVRANDAO":     "PREVRANDAO",
+                "CALLSTATIC":     "REVERT",         # legacy CALLSTATIC → REVERT
+                "REVERT":         "REVERT",
+                "SUICIDE":        "SELFDESTRUCT",   # old SUICIDE → SELFDESTRUCT
+                "SENDALL":        "SELFDESTRUCT",
+                "SELFDESTRUCT":   "SELFDESTRUCT",
+                "SLOADBYTESEXT":  "SLOADBYTES",     # old SLOADBYTESEXT (0xf8) → SLOADBYTES
+                "SSTOREBYTESEXT": "SSTOREBYTES",    # old SSTOREBYTESEXT (0xf9) → SSTOREBYTES
+                "SSIZE":          "STATICCALL",     # evmdasm’s SSIZE → STATICCALL
+                "STATICCALL":     "STATICCALL",
+                "SLOADEXT":       "TLOAD",          # old SLOADEXT (0x5c) → TLOAD
+                "SSTOREEXT":      "TSTORE",         # old SSTOREEXT (0x5d) → TSTORE
+            }
+
+            name_alias = alias.get(name, name)
+            instr_name_alias = alias.get(instr_name, instr_name)
+            
+            if name_alias == instr_name_alias \
+               or (name_alias.startswith("DUP")  and instr_name_alias.startswith("DUP")) \
+               or (name_alias.startswith("SWAP") and instr_name_alias.startswith("SWAP")):
+                g_src_map.instr_positions[current_ins_address] = positions[idx]
                 idx += 1
                 break
             else:
-                raise RuntimeError(F"Source map error, unknown name({name}) or instr_name({instr_name})")
+                raise RuntimeError(f"Source map error, unknown name({name}) or instr_name({instr_name}).")
     return idx
 
 # 1. Parse the disassembled file
@@ -2464,7 +2490,6 @@ def vulnerability_found():
     global reentrancy
     global assertion_failure
     global parity_multisig_bug_2
-
     vulnerabilities = [callstack, money_concurrency, time_dependency, reentrancy]
 
     if g_src_map and global_params.CHECK_ASSERTIONS:
