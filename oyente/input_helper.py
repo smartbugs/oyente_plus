@@ -4,7 +4,6 @@ import os
 import re
 import logging
 import json
-import sys
 import global_params
 import six
 from source_map import SourceMap
@@ -158,7 +157,6 @@ class InputHelper:
                     six.print_({"error": err})
             exit(1)
 
-
     def _compile_standard_json(self):
         FNULL = open(os.devnull, 'w')
         cmd = "cat %s" % self.source
@@ -184,8 +182,11 @@ class InputHelper:
                 contracts.append((cname, evm))
         return contracts
 
-    def _removeSwarmHash(self, evm):
+    def _remove_swarm_hash(self, evm):
+        before = len(evm)
         evm_without_hash = re.sub(r"a165627a7a72305820\S{64}0029$", "", evm)
+        if len(evm_without_hash) != before:
+            logging.info("Stripped Swarm hash envelope; new length %d bytes", len(evm_without_hash) // 2)
         return evm_without_hash
 
     def _link_libraries(self, filename, libs):
@@ -215,10 +216,13 @@ class InputHelper:
         }
 
     def _write_evm_file(self, target, bytecode):
-        evm_file = self._get_temporary_files(target)["evm"]
-        with open(evm_file, 'w') as of:
-            of.write(self._removeSwarmHash(bytecode))
-
+        logging.debug("Cleaning bytecode from whitespace and metadata.")
+        code = bytecode.strip()
+        clean = self._remove_swarm_hash(code)
+        logging.debug("Cleaned bytecode from whitespace and metadata.")
+        with open(f"{target}.evm", "w") as f:
+            f.write(clean)
+        logging.debug("Wrote %s.evm (len=%d bytes)", target, len(clean) // 2)
 
     def _write_disasm_file(self, target):
         tmp_files = self._get_temporary_files(target)
@@ -308,31 +312,34 @@ class InputHelper:
                         text=True,
                     )
                 except Exception as e:
-                    logging.critical("Disassembly with geas failed: %s", result.stderr)
-                print(result.stderr)
-                instr_address = int("0", 16)
-                for instr in result.stdout.splitlines():                
-                    # geas writes invalid opcodes as "<invalid $hex$>". This has to be monkeypatched
+                    logging.critical("Disassembly with geas failed: %s", e)
+                    raise
+
+                if result.stderr:
+                    logging.warning("geas stderr: %s", result.stderr.strip())
+
+                for instr in result.stdout.splitlines():
+                    instr_address = int(instr.split(": ")[0], 16)
+                    
+                    # geas writes invalid opcodes as "#bytes 0x$hex_value$". This has to be monkeypatched
                     # for oyente to work.
-                    if instr.startswith("<") and instr.endswith(">"):
-                        instr_address += int("1", 16)
+                    if instr.startswith("#"):
                         hexcode = instr.split(" ")[-1][:-1]
                         disasm_out += f"{instr_address:05x}: INVALID\n"
-                        logging.warning(f"UNKNOWN_0x{hexcode} is an INVALID instruction.")
+                        logging.warning(f"UNKNOWN_{hexcode} is an INVALID instruction.")
                     else:
                         # geas has bad error handling. if it reaches hex values which it cannot map
                         # onto opcode hex values, it simply returns the value. We need to catch these
                         # cases and handle them with INVALID instructions in the diassembled bytecode.
                         try:
                             instr_name = instr.split(": ")[1].split(" ")[0]
-                            instr_address = int(instr.split(": ")[0], 16)
                             instr_operand = instr.split(": ")[1].split(" ")[1:]
 
                             if instr_operand:
                                 instr_name += " " + " ".join(instr_operand)
                             disasm_out += f"{instr_address:05x}: {instr_name}\n"
                         except IndexError:
-                            logging.critical(f"INVALID instruction: {instr}. Adding INVALD to disasm_out.")
+                            logging.critical(f"INVALID instruction: {instr}. Adding INVALID to disasm_out.")
                             disasm_out += f"{instr_address:05x}: INVALID\n"
 
                 logging.debug("Disassembled geas instructions: %s", result.stdout)

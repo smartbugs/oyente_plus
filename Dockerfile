@@ -56,7 +56,7 @@ RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
 RUN export PATH=$PATH:/usr/local/go/bin && \
     export GOBIN=/usr/local/bin && \
     export GO111MODULE=on && \
-    go install github.com/fjl/geas/cmd/geas@latest
+    go install github.com/fjl/geas/cmd/geas@90dd9310fef66708b9343aba8e48510d13a5e093
 
 # Copy the Oyente code into the container
 COPY . /oyente/

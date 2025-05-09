@@ -245,6 +245,7 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
             alias = {
                 "BREAKPOINT":     "CREATE2",        # evmdasm’s BREAKPOINT → CREATE2
                 "CREATE2":        "CREATE2",
+                "#bytes":         "INVALID",        # geas specific INVALID instruction
                 "ASSERTFAIL":     "INVALID",        # both share opcode 0xFE
                 "INVALID":        "INVALID",
                 "SHA3":           "KECCAK256",      # compiler’s SHA3 → KECCAK256
