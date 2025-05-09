@@ -6,6 +6,7 @@ import logging
 import json
 import global_params
 import six
+import cbor2
 from source_map import SourceMap
 from utils import run_command, run_command_with_err
 from crytic_compile import CryticCompile, InvalidCompilation
@@ -62,6 +63,50 @@ class InputHelper:
                 raise Exception("'%s' attribute can't be None" % attr)
             else:
                 setattr(self, attr, val)
+
+    @staticmethod
+    def _strip_cbor_metadata(hexcode: str) -> str:
+        """
+        Remove the final CBOR metadata block (any keys) + its two-byte length.
+        """
+        
+        if hexcode.startswith("0x"):
+            code = hexcode[2:]
+            logging.debug("Stripping CBOR metadata from 0x-prefixed bytecode")
+        else:
+            code = hexcode
+            logging.debug("Bytecode without 0x prefix")
+
+        # The code must have at least 2 bytes for the length field
+        # and at least 2 bytes for the metadata itself.
+        # If the code is too short, return it as-is.
+        if len(code) < 4:
+            logging.debug("Bytecode too short for CBOR length strip")
+            return code
+
+        # Parse last 2 bytes as big-endian length
+        byte_arr = bytes.fromhex(code)
+        meta_len = int.from_bytes(byte_arr[-2:], byteorder='big')
+
+        # Compute slice indices
+        start = len(byte_arr) - 2 - meta_len
+        if start < 0 or meta_len < 0 or start > len(byte_arr):
+            if global_params.UNIT_TEST < 2:
+                logging.warning("CBOR length %d invalid for code length %d", meta_len, len(byte_arr))
+            return code
+
+        # Extract and decode CBOR (to verify integrity)
+        try:
+            metadata = cbor2.loads(byte_arr[start:start+meta_len])
+            logging.debug("Decoded metadata keys: %s", list(metadata.keys()))
+        except Exception as e:
+            logging.warning("CBOR decode failed: %s", e)
+            return code
+
+        # Remove metadata + length field
+        clean = byte_arr[:start].hex()
+        logging.debug("Stripped CBOR metadata (%d bytes), new length %d", meta_len+2, len(clean)//2)
+        return clean
 
     def get_inputs(self, targetContracts=None):
         inputs = []
@@ -218,7 +263,8 @@ class InputHelper:
     def _write_evm_file(self, target, bytecode):
         logging.debug("Cleaning bytecode from whitespace and metadata.")
         code = bytecode.strip()
-        clean = self._remove_swarm_hash(code)
+        clean = self._strip_cbor_metadata(code)
+        clean = self._remove_swarm_hash(clean)
         logging.debug("Cleaned bytecode from whitespace and metadata.")
         with open(f"{target}.evm", "w") as f:
             f.write(clean)

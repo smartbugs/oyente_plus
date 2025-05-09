@@ -31,6 +31,7 @@ RUN add-apt-repository -y ppa:ethereum/ethereum && \
 # Upgrade pip, install Python wheels and required Python libraries
 RUN pip install --no-cache-dir --upgrade pip wheel && \
     pip install --no-cache-dir \
+    cbor2 \
     crytic-compile==0.3.8 \
     evmdasm \
     pyevmasm \

@@ -13,6 +13,7 @@ pip install six
 pip install z3-solver==4.14.1.0
 pip install crytic_compile==0.3.8
 pip install solc-select
+pip install cbor2
 pip install web3
 pip install evmdasm
 pip install pyevmasm
