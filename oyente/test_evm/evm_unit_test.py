@@ -17,8 +17,15 @@ class EvmUnitTest(object):
         return self.data['exec']['code'][2:]
 
     def storage(self):
-        storage = self.data['post'].values()[0]['storage']
-        return storage if storage != None else {"0": "0"}
+        try:
+            first_post: Any = next(iter(self.data.get('post', {}).values()))
+            storage: Any = first_post.get('storage')
+        except (StopIteration, AttributeError):
+            return {"0": "0"}
+
+        if isinstance(storage, dict):
+            return storage
+        return {"0": "0"}
 
     def gas_info(self):
         gas_limit = int(self.data['exec']['gas'], 0)
@@ -78,16 +85,15 @@ class EvmUnitTest(object):
             
             # Check if the output contains the error message of intended exceptions and set the exit code accordingly
             if  ("Exception: UNKNOWN INSTRUCTION" in output_str):
-                exit_code = 3
+                exit_code = UNKNOWN_INSTRUCTION
             elif ("ValueError: STACK underflow" in output_str):
-                exit_code = 4
+                exit_code = EXCEPTION
 
         except Exception as e:
             logging.error("UNKNOWN ERROR: %s", e)
-            exit_code = 4
+            exit_code = EXCEPTION
 
-        # Adjust exit_code by + 100 to reach exit codes defined in global_test_params.py
-        return exit_code + 100
+        return exit_code
 
     def _create_bytecode_file(self, bytecode):
         with open('bytecode', 'w') as code_file:
