@@ -127,6 +127,8 @@ It could include more fields in the future. Therefore we had to patch the byteco
 
 A new static function inside the InputHelper class, `_strip_cbor_metadata`, was created. It reads the last two bytes of the deployed bytecode to get the CBOR-encoded block length and slice it from the bytecode. It then uses a CBOR library (`cbor2`) to parse the entire blob. It then discards the CBOR part (length field and CBOR data) from the bytecode, so Oyente has clean bytecode for further analysis.
 
+In addition to the function mentioned above, we also added the [ethutils](https://github.com/gsalzer/ethutils) Repository to zero all metadata still left in the contract, after stripping it with `_strip_cbor_metadata` and `_remove_swarm_hash`.
+
 ## Dockerfile
 
 The Dockerfile for Oyente was reworked completly. All Dockerfile linter warnings were fixed and a cleanup of the dependencies and statements was done. The base image is now `ubuntu:jammy`. Since `solc-select` does not work inside the container, the solidity version which is to be used, has to be set in the Dockerfile via `ARG SOLC_VERSION=x.x.x`. The version then gets installed automatically and the respective environment variable, which is used by solc, is set.
