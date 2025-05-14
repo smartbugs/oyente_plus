@@ -13,6 +13,7 @@ RUN apt-get update && \
     apt-get -y upgrade && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
+    git \
     gnupg \
     python-is-python3 \
     python3 \
@@ -38,7 +39,8 @@ RUN pip install --no-cache-dir --upgrade pip wheel && \
     requests \
     six \
     solc-select \
-    z3-solver==4.14.1.0
+    z3-solver==4.14.1.0 && \
+    pip install --no-cache-dir git+https://github.com/ZarIliv/ethutils.git@main#egg=ethutils
 
 # set solidity version & explicitly install the specified
 # version of solidity. This is needed because solc needs

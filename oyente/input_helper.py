@@ -12,6 +12,7 @@ from utils import run_command, run_command_with_err
 from crytic_compile import CryticCompile, InvalidCompilation
 from evmdasm import EvmBytecode
 from pyevmasm import disassemble_hex
+from ethutils.metadata import zeroMetadata
 
 class InputHelper:
     BYTECODE = 0
@@ -262,9 +263,18 @@ class InputHelper:
 
     def _write_evm_file(self, target, bytecode):
         logging.debug("Cleaning bytecode from whitespace and metadata.")
-        code = bytecode.strip()
-        clean = self._strip_cbor_metadata(code)
+        hex_code = bytecode.strip()
+
+        if hex_code.startswith("0x"):
+            hex_code = hex_code[2:]
+            logging.debug("Cleaned bytecode from leading 0x.")
+
+        clean = self._strip_cbor_metadata(hex_code)
         clean = self._remove_swarm_hash(clean)
+
+        clean_bytes, _ = zeroMetadata(bytes.fromhex(clean))
+        clean = clean_bytes.hex()
+
         logging.debug("Cleaned bytecode from whitespace and metadata.")
         with open(f"{target}.evm", "w") as f:
             f.write(clean)
