@@ -65,50 +65,6 @@ class InputHelper:
             else:
                 setattr(self, attr, val)
 
-    @staticmethod
-    def _strip_cbor_metadata(hexcode: str) -> str:
-        """
-        Remove the final CBOR metadata block (any keys) + its two-byte length.
-        """
-        
-        if hexcode.startswith("0x"):
-            code = hexcode[2:]
-            logging.debug("Stripping CBOR metadata from 0x-prefixed bytecode")
-        else:
-            code = hexcode
-            logging.debug("Bytecode without 0x prefix")
-
-        # The code must have at least 2 bytes for the length field
-        # and at least 2 bytes for the metadata itself.
-        # If the code is too short, return it as-is.
-        if len(code) < 4:
-            logging.debug("Bytecode too short for CBOR length strip")
-            return code
-
-        # Parse last 2 bytes as big-endian length
-        byte_arr = bytes.fromhex(code)
-        meta_len = int.from_bytes(byte_arr[-2:], byteorder='big')
-
-        # Compute slice indices
-        start = len(byte_arr) - 2 - meta_len
-        if start < 0 or meta_len < 0 or start > len(byte_arr):
-            if global_params.UNIT_TEST < 2:
-                logging.warning("CBOR length %d invalid for code length %d", meta_len, len(byte_arr))
-            return code
-
-        # Extract and decode CBOR (to verify integrity)
-        try:
-            metadata = cbor2.loads(byte_arr[start:start+meta_len])
-            logging.debug("Decoded metadata keys: %s", list(metadata.keys()))
-        except Exception as e:
-            logging.warning("CBOR decode failed: %s", e)
-            return code
-
-        # Remove metadata + length field
-        clean = byte_arr[:start].hex()
-        logging.debug("Stripped CBOR metadata (%d bytes), new length %d", meta_len+2, len(clean)//2)
-        return clean
-
     def get_inputs(self, targetContracts=None):
         inputs = []
         if self.input_type == InputHelper.BYTECODE:
@@ -228,13 +184,6 @@ class InputHelper:
                 contracts.append((cname, evm))
         return contracts
 
-    def _remove_swarm_hash(self, evm):
-        before = len(evm)
-        evm_without_hash = re.sub(r"a165627a7a72305820\S{64}0029$", "", evm)
-        if len(evm_without_hash) != before:
-            logging.info("Stripped Swarm hash envelope; new length %d bytes", len(evm_without_hash) // 2)
-        return evm_without_hash
-
     def _link_libraries(self, filename, libs):
         options = []
         for idx, lib in enumerate(libs):
@@ -269,10 +218,7 @@ class InputHelper:
             hex_code = hex_code[2:]
             logging.debug("Cleaned bytecode from leading 0x.")
 
-        clean = self._strip_cbor_metadata(hex_code)
-        clean = self._remove_swarm_hash(clean)
-
-        clean_bytes, _ = zeroMetadata(bytes.fromhex(clean))
+        clean_bytes, _ = zeroMetadata(bytes.fromhex(hex_code))
         clean = clean_bytes.hex()
 
         logging.debug("Cleaned bytecode from whitespace and metadata.")
