@@ -310,6 +310,8 @@ def collect_vertices(lines):
             instruction = "SHA3"
         elif instruction.endswith("not defined"):
             instruction = "INVALID " + instruction.split()[1]
+        elif instruction.startswith("#bytes"):   # geas specific INVALID instruction
+            instruction = "INVALID " + instruction.split()[1]
         current_line_content = instruction + ' ' # for some reason, the original Oyente adds a space
         instructions[current_ins_address] = current_line_content
         logging.debug("Current line content: %s", current_line_content)
