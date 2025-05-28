@@ -1,6 +1,9 @@
+import logging
 from utils import run_command
 from ast_walker import AstWalker
 import json
+import copy
+from typing import Any, Dict, List
 
 class AstHelper:
     def __init__(self, filename, input_type, remap, allow_paths=""):
@@ -28,7 +31,27 @@ class AstHelper:
             cmd = "solc --combined-json ast %s %s" % (self.remap, filename)
         out = run_command(cmd)
         out = json.loads(out)
-        return out["sources"]
+
+        # TODO:   This following code & called function are a temporary workaround until
+        #         the symexecution code is updated to use the new format. Delete this
+        #         code and the called function, when the refactoring is done.
+        #
+        # The solc v4 AST format is currently required by the symexecution code in Oyente,
+        # because the symexecution code does not yet understand the new v5+ AST format. 
+        # The v5+ AST format is a tree of nodes, where each node has a "nodeType" and a 
+        # "nodes" array. The v4 AST format is a flat list of nodes, where each node has a
+        # "name" and "attributes" field.
+        if any(
+            isinstance(e.get("AST"), dict) and "nodeType" in e["AST"]
+            for e in out.get("sources", {}).values()
+        ):
+            out = self._semi_convert_new_to_old_ast_format(out)
+
+        normalized = {
+            path: {"AST": entry["AST"]}
+            for path, entry in out["sources"].items()
+        }
+        return normalized
 
     def extract_contract_definitions(self, sourcesList):
         ret = {
@@ -174,3 +197,115 @@ class AstHelper:
             if contract == cname:
                 return path
         return ""
+
+
+    def _semi_convert_new_to_old_ast_format(self, ast_tree: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Semi-convert solc v5+ AST (nodeType/nodes) to solc v4 AST structure,
+        with keys ordered as Oyente expects ist.
+        """
+
+        # The helper functions are inside this function to keep AST struction
+        # conversion in one place. This is a temporary workaround until the
+        # symexecution code is updated to use the new format.
+        tree = copy.deepcopy(ast_tree)
+        
+        # Normally this would be a fully defined function, but it is only used
+        # here, so using a lamda object is fine.
+        is_node = lambda obj: (isinstance(obj, dict) and "nodeType" in obj)
+
+        def leaf_attrs(node: Dict[str, Any]) -> Dict[str, Any]:
+            out: Dict[str, Any] = {}
+            skip = {"nodeType", "nodes", "id", "src", "parameters", "returnParameters", "body"}
+
+            for k, v in node.items():
+                if k in skip:
+                    continue
+                if is_node(v) or (isinstance(v, list) and all(is_node(i) for i in v)):
+                    continue
+                out[k] = v
+            
+            logging.debug(f"Converted leaf attributes: {out}")
+            return out
+
+        def collect_children(node: Dict[str, Any]) -> List[Dict[str, Any]]:
+            ntype = node["nodeType"]
+            kids: List[Dict[str, Any]] = []
+
+            if ntype == "FunctionDefinition":
+                for key in ("parameters", "returnParameters", "body"):
+                    if is_node(node.get(key)):
+                        kids.append(convert(node[key]))
+                return kids
+
+            for child in node.get("nodes", []):
+                kids.append(convert(child))
+
+            for v in node.values():
+                if is_node(v):
+                    kids.append(convert(v))
+                elif isinstance(v, list):
+                    kids.extend(convert(i) for i in v if is_node(i))
+
+            logging.debug(f"Converted children: {kids}")
+            return kids
+
+        def convert(node: Dict[str, Any]) -> Dict[str, Any]:
+            ntype = node["nodeType"]
+            children = collect_children(node)
+            attrs = leaf_attrs(node)
+
+            if ntype == "ContractDefinition":
+                attrs.update(
+                    baseContracts=node.get("baseContracts") or [None],
+                    contractDependencies=node.get("contractDependencies") or [None],
+                    contractKind=node.get("contractKind"),
+                    fullyImplemented=node.get("fullyImplemented"),
+                    linearizedBaseContracts=node.get("linearizedBaseContracts", []),
+                    name=node.get("name"),
+                    scope=node.get("scope"),
+                    documentation=None,
+                )
+
+            if ntype in {"ElementaryTypeName", "UserDefinedTypeName",
+                        "ArrayTypeName", "Mapping"}:
+                td = attrs.pop("typeDescriptions", None)
+                if isinstance(td, dict) and "typeString" in td:
+                    attrs["type"] = td["typeString"]
+                attrs.pop("stateMutability", None)
+
+            if ntype == "ParameterList" and not children:
+                attrs["parameters"] = [None]
+
+            if ntype == "VariableDeclaration":
+                attrs.pop("mutability", None)
+                attrs.pop("nameLocation", None)
+                td = attrs.pop("typeDescriptions", {})
+                if isinstance(td, dict) and "typeString" in td:
+                    attrs["type"] = td["typeString"]
+                attrs.setdefault("value", None)
+
+            new_node: Dict[str, Any] = {
+                "name": ntype,
+                "attributes": attrs,
+            }
+            if children:
+                new_node["children"] = children
+            if "id" in node:
+                new_node["id"] = node["id"]
+            if "src" in node:
+                new_node["src"] = node["src"]
+
+            logging.debug(f"Converted node: {new_node}")
+            return new_node
+
+        # Run over every source that is identified as a v5+ AST
+        # and semi-convert it to the v4 AST format
+        for entry in tree.get("sources", {}).values():
+            ast_root = entry.get("AST")
+            if is_node(ast_root):
+                logging.debug(f"v5+ AST format detected. Semi-converting {ast_root} to AST v4.")
+                entry["AST"] = convert(ast_root)
+
+        logging.debug(f"Final converted AST: {tree}")
+        return tree

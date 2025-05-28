@@ -15,8 +15,10 @@ tmp/
 
 current_test.pickle
 
-bytecode
-bytecode.1
+bytecode*
 
 !oyente/tests/contracts/*/*
 web/vendor/
+
+venv
+__pycache__

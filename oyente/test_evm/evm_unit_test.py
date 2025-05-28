@@ -1,11 +1,11 @@
-import os
+import logging
+import subprocess
+import sys
 
 from z3 import *
-
 from global_params import *
 from utils import to_unsigned
-
-from global_test_params import *
+from test_evm.global_test_params import *
 
 
 class EvmUnitTest(object):
@@ -17,12 +17,19 @@ class EvmUnitTest(object):
         return self.data['exec']['code'][2:]
 
     def storage(self):
-        storage = self.data['post'].values()[0]['storage']
-        return storage if storage != None else {"0": "0"}
+        try:
+            first_post: Any = next(iter(self.data.get('post', {}).values()))
+            storage: Any = first_post.get('storage')
+        except (StopIteration, AttributeError):
+            return {"0": "0"}
+
+        if isinstance(storage, dict):
+            return storage
+        return {"0": "0"}
 
     def gas_info(self):
-        gas_limit = long(self.data['exec']['gas'], 0)
-        gas_remaining = long(self.data['gas'], 0)
+        gas_limit = int(self.data['exec']['gas'], 0)
+        gas_remaining = int(self.data['gas'], 0)
         return (gas_limit, gas_remaining)
 
     def run_test(self):
@@ -41,7 +48,7 @@ class EvmUnitTest(object):
 
     def compare_symbolic(self, global_state):
         for key, value in self.storage().items():
-            key, value = long(key, 0), long(value, 0)
+            key, value = int(key, 0), int(value, 0)
             try:
                 symExec_result = global_state['Ia'][str(key)]
             except:
@@ -63,8 +70,29 @@ class EvmUnitTest(object):
 
     def _execute_vm(self, bytecode):
         self._create_bytecode_file(bytecode)
-        cmd = os.system('python oyente.py -b -s bytecode')
-        exit_code = os.WEXITSTATUS(cmd)
+        try:
+            result = subprocess.run(
+                [sys.executable, "oyente.py", "-b", "-s", "bytecode"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            print(result.stdout)
+            print(result.stderr)
+            
+            exit_code = result.returncode
+            output_str = result.stderr
+            
+            # Check if the output contains the error message of intended exceptions and set the exit code accordingly
+            if  ("Exception: UNKNOWN INSTRUCTION" in output_str):
+                exit_code = UNKNOWN_INSTRUCTION
+            elif ("ValueError: STACK underflow" in output_str):
+                exit_code = EXCEPTION
+
+        except Exception as e:
+            logging.error("UNKNOWN ERROR: %s", e)
+            exit_code = EXCEPTION
+
         return exit_code
 
     def _create_bytecode_file(self, bytecode):
@@ -75,10 +103,10 @@ class EvmUnitTest(object):
 
     def _compare_storage_value(self, global_state):
         for key, value in self.storage().items():
-            key, value = long(key, 0), long(value, 0)
+            key, value = int(key, 0), int(value, 0)
 
             try:
-                storage = to_unsigned(long(global_state['Ia'][key]))
+                storage = to_unsigned(int(global_state['Ia'][key]))
             except:
                 return EMPTY_RESULT
 
