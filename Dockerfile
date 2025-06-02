@@ -40,7 +40,7 @@ RUN pip install --no-cache-dir --upgrade pip wheel && \
     six \
     solc-select \
     z3-solver==4.14.1.0 && \
-    pip install --no-cache-dir git+https://github.com/ZarIliv/ethutils.git@main#egg=ethutils
+    pip install --no-cache-dir git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils
 
 # set solidity version & explicitly install the specified
 # version of solidity. This is needed because solc needs

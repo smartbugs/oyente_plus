@@ -2315,8 +2315,10 @@ def check_callstack_attack(disasm):
         instruction = disasm[i]
         if instruction[1] in problematic_instructions:
             try:
-                pc = int(instruction[0])
-                if not disasm[i+1][1] == 'SWAP':
+                # Since our change of the disassembler, this is a hex, not
+                # a decimal integer.
+                pc = int(instruction[0], 16)
+                if disasm[i+1][1] != 'SWAP':
                     continue
                 swap_num = int(disasm[i+1][2])
                 if not all(disasm[i+j+2][1] == 'POP' for j in range(swap_num)):
@@ -2347,7 +2349,10 @@ def detect_callstack_attack():
     global callstack
 
     disasm_data = open(g_disasm_file).read()
-    instr_pattern = r"([\d]+) ([A-Z]+)([\d]+)?(?: => 0x)?(\S+)?"
+    # We changed the disassembler and now the disasm file has a different
+    # format. The pattern below is used to extract the instruction and its
+    # parameters from the disasm file.
+    instr_pattern = r"([0-9A-Fa-f]+):? ([A-Z]+)([\d]+)?(?: => 0x)?(\S+)?"
     instr = re.findall(instr_pattern, disasm_data)
     pcs = check_callstack_attack(instr)
 
