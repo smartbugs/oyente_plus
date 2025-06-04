@@ -2422,6 +2422,22 @@ def detect_vulnerabilities():
     global global_problematic_pcs
     global begin
 
+    # Initialize all relevant globals to harmless defaults
+    global callstack, money_concurrency, time_dependency, reentrancy
+    global assertion_failure, parity_multisig_bug_2
+
+    # CallStack, MoneyConcurrency, TimeDependency, Reentrancy are of the subclass Vulnerability,
+    # so passing an empty list (and None for the source_map) makes is_vulnerable() == False.
+    callstack         = CallStack(None, [], {})
+    money_concurrency = MoneyConcurrency(None, [])
+    time_dependency   = TimeDependency(None, [])
+    reentrancy        = Reentrancy(None, [])
+    
+    # We set these to None initially — if g_src_map is not None and CHECK_ASSERTIONS is true,
+    # detect_assertion_failure() or detect_parity_multisig_bug_2() will overwrite them.
+    assertion_failure   = None
+    parity_multisig_bug_2 = None
+
     if instructions:
         evm_code_coverage = float(len(visited_pcs)) / len(instructions.keys()) * 100
         log.info("\t  EVM Code Coverage: \t\t\t %s%%", round(evm_code_coverage, 1))
