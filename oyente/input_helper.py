@@ -6,9 +6,13 @@ import logging
 import json
 import global_params
 import six
+import cbor2
 from source_map import SourceMap
 from utils import run_command, run_command_with_err
 from crytic_compile import CryticCompile, InvalidCompilation
+from evmdasm import EvmBytecode
+from pyevmasm import disassemble_hex
+from ethutils.metadata import zeroMetadata
 
 class InputHelper:
     BYTECODE = 0
@@ -23,6 +27,7 @@ class InputHelper:
             attr_defaults = {
                 'source': None,
                 'evm': False,
+                'disassembler': kwargs.get('disasm'),
             }
         elif input_type == InputHelper.SOLIDITY:
             attr_defaults = {
@@ -32,7 +37,8 @@ class InputHelper:
                 'compiled_contracts': [],
                 'compilation_err': False,
                 'remap': "",
-                'allow_paths': ""
+                'allow_paths': "",
+                'disassembler': kwargs.get('disasm'),
             }
         elif input_type == InputHelper.STANDARD_JSON:
             attr_defaults = {
@@ -40,7 +46,8 @@ class InputHelper:
                 'evm': False,
                 'root_path': "",
                 'allow_paths': None,
-                'compiled_contracts': []
+                'compiled_contracts': [],
+                'disassembler': kwargs.get('disasm'),
             }
         elif input_type == InputHelper.STANDARD_JSON_OUTPUT:
             attr_defaults = {
@@ -48,6 +55,7 @@ class InputHelper:
                 'evm': False,
                 'root_path': "",
                 'compiled_contracts': [],
+                'disassembler': kwargs.get('disasm'),
             }
 
         for (attr, default) in six.iteritems(attr_defaults):
@@ -109,25 +117,32 @@ class InputHelper:
         return self.compiled_contracts
 
     def _extract_bin_obj(self, com: CryticCompile):
-        output = []
-        for file in com.compilation_units:
-            output.extend([(com.compilation_units[file].contracts_filenames[name].absolute + ':' + name, com.compilation_units[file].bytecode_runtime(name)) for name in com.compilation_units[file].contracts_names if com.compilation_units[file].bytecode_runtime(name)])
-        return output
+        bin_objs = []
+        for compilation_unit in com.compilation_units.values():
+            logging.debug(compilation_unit.compiler_version.compiler)
+            logging.debug(compilation_unit.compiler_version.version)
+            logging.debug(compilation_unit.compiler_version.optimized)
+            for filename,source_unit in compilation_unit.source_units.items():
+                for name in source_unit.contracts_names:
+                    bytecode_runtime = source_unit.bytecode_runtime(name)
+                    if bytecode_runtime:
+                        bin_objs.append((filename.used+':'+name, bytecode_runtime))
+        return bin_objs
 
     def _compile_solidity(self):
         try:
-            options = []
+            options = None
             if self.allow_paths:
-                options.append(F"--allow-paths {self.allow_paths}")
-            com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=' '.join(options))
+                options = [F"--allow-paths {self.allow_paths}"]
+
+            com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=(' '.join(options) if options else None))
             contracts = self._extract_bin_obj(com)
 
             libs = set()
-            for file in com.compilation_units:
-                tmp_lib = com.compilation_units[file].contracts_names.difference(com.compilation_units[file].contracts_names_without_libraries)
-                if tmp_lib:
-                    libs = libs.union(tmp_lib)
-            if len(libs) > 0:
+            for compilation_unit in com.compilation_units.values():
+                for source_unit in compilation_unit.source_units.values():
+                    libs.update(set(source_unit.contracts_names).difference(set(source_unit.contracts_names_without_libraries)))
+            if libs:
                 return self._link_libraries(self.source, libs)
             
             return contracts
@@ -143,7 +158,6 @@ class InputHelper:
                 if global_params.WEB:
                     six.print_({"error": err})
             exit(1)
-
 
     def _compile_standard_json(self):
         FNULL = open(os.devnull, 'w')
@@ -169,10 +183,6 @@ class InputHelper:
                 evm = j['contracts'][source][contract]['evm']['deployedBytecode']['object']
                 contracts.append((cname, evm))
         return contracts
-
-    def _removeSwarmHash(self, evm):
-        evm_without_hash = re.sub(r"a165627a7a72305820\S{64}0029$", "", evm)
-        return evm_without_hash
 
     def _link_libraries(self, filename, libs):
         options = []
@@ -201,22 +211,146 @@ class InputHelper:
         }
 
     def _write_evm_file(self, target, bytecode):
-        evm_file = self._get_temporary_files(target)["evm"]
-        with open(evm_file, 'w') as of:
-            of.write(self._removeSwarmHash(bytecode))
+        logging.debug("Cleaning bytecode from whitespace and metadata.")
+        hex_code = bytecode.strip()
+
+        if hex_code.startswith("0x"):
+            hex_code = hex_code[2:]
+            logging.debug("Cleaned bytecode from leading 0x.")
+
+        clean_bytes, _ = zeroMetadata(bytes.fromhex(hex_code))
+        clean = clean_bytes.hex()
+
+        logging.debug("Cleaned bytecode from whitespace and metadata.")
+        with open(f"{target}.evm", "w") as f:
+            f.write(clean)
+        logging.debug("Wrote %s.evm (len=%d bytes)", target, len(clean) // 2)
 
     def _write_disasm_file(self, target):
         tmp_files = self._get_temporary_files(target)
         evm_file = tmp_files["evm"]
         disasm_file = tmp_files["disasm"]
         disasm_out = ""
+
         try:
-            disasm_p = subprocess.Popen(
-                ["evm", "disasm", evm_file], stdout=subprocess.PIPE)
-            disasm_out = disasm_p.communicate()[0].decode('utf-8', 'strict')
-        except:
-            logging.critical("Disassembly failed.")
-            exit()
+            with open(evm_file, 'r') as f:
+                bytecode = f.read().strip()
+
+            # Remove the 0x prefix, because evm disasm expects only the bytecode.
+            if bytecode.startswith("0x"):
+                bytecode = bytecode[2:]
+
+            # First we check for the disassembler we want to use, then we parse the output to 
+            # match the output of the evm disasm command, because it was previously used.
+            # "evm disasm" prints the address in 5 hex digits, followed by the instruction name.
+            # If the instruction has push data, it is printed after the instruction name.
+            # We want to keep that format, while using pyevmasm's or evmdasm's disassembly functions.
+            if self.disassembler == "pyevmasm":         
+                instructions = disassemble_hex(bytecode)
+                i = 0
+                for instr in instructions.splitlines():
+                    disasm_out += f"{i:05x}: {instr}\n"
+                    
+                    # With pyevmasm, we need to construct the index, because the disassembler doesn't
+                    # do it for us.
+                    # If the instruction is a PUSH, we need to add the length of the data to the index.
+                    # otherwise, we just add 1 to the index.
+                    if instr.startswith("PUSH"):
+                        i += 1 + int(instr.split()[0][4:])
+                    else:
+                        i += 1
+                logging.debug("Disassembled pyevmasm instructions: %s", instructions)
+
+            elif self.disassembler == "evmdasm":
+                instructions = EvmBytecode(bytecode).disassemble()               
+                for instr in instructions:
+                    instr_address = instr.address
+                    instr_name = instr.name
+                    instr_operand = instr.operand
+
+                    # evmdasm is to old to understand some newer opcodes, so we need to replace the UNKNOWN
+                    # or old opcodes with current or known ones.
+                    if instr.name == "BREAKPOINT":
+                        instr_name = "CREATE2"
+                    elif instr.name == "SSIZE":
+                        instr_name = "STATICCALL"
+                    elif instr_name == "DIFFICULTY":
+                        instr_name = "PREVRANDAO"
+                    elif instr.name == "SUICIDE":
+                        instr_name = "SELFDESTRUCT"
+                    elif instr.name == "UNKNOWN_0x46":
+                        instr_name = "CHAINID"
+                    elif instr.name == "UNKNOWN_0x49":
+                        instr_name = "BLOBHASH"
+                    elif instr.name == "UNKNOWN_0x4a":
+                        instr_name = "BLOBBASEFEE"
+                    elif instr.name == "UNKNOWN_0x5c":
+                        instr_name = "TLOAD"
+                    elif instr.name == "UNKNOWN_0x5d":
+                        instr_name = "TSTORE"
+                    elif instr.name == "UNKNOWN_0x5f":
+                        instr_name = "PUSH0"
+                    elif instr.name == "UNKNOWN_0xfa":
+                        instr_name = "STATICCALL"
+                    elif instr.name == "UNKNOWN_0xfd":
+                        instr_name = "REVERT"
+                    # This includes UNKNOWN_0xfe, which is INVALID by design
+                    elif instr.name.startswith("UNKNOWN_0x"):
+                        logging.warning(f"{instr_address:05x}: {instr_name} is an INVALID instruction.")
+                        instr_name = "INVALID"
+                    
+                    line = f"{instr_address:05x}: {instr_name}"
+                    if hasattr(instr, "operand") and instr_operand:
+                        line += f" 0x{instr_operand}"
+                    disasm_out += line + "\n"
+                logging.debug("Disassembled evmdasm instructions: %s", instructions)
+
+            elif self.disassembler == "geas":
+                try:
+                    result = subprocess.run(
+                        ["/usr/local/bin/geas", "-d", "-pc", "-uppercase", "-blocks=false", evm_file],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                except Exception as e:
+                    logging.critical("Disassembly with geas failed: %s", e)
+                    raise
+
+                if result.stderr:
+                    logging.warning("geas stderr: %s", result.stderr.strip())
+
+                for instr in result.stdout.splitlines():
+                    instr_address = int(instr.split(": ")[0], 16)
+                    
+                    # geas writes invalid opcodes as "#bytes 0x$hex_value$". This has to be monkeypatched
+                    # for oyente to work.
+                    if instr.startswith("#"):
+                        hexcode = instr.split(" ")[-1][:-1]
+                        disasm_out += f"{instr_address:05x}: INVALID\n"
+                        logging.warning(f"UNKNOWN_{hexcode} is an INVALID instruction.")
+                    else:
+                        # geas has bad error handling. if it reaches hex values which it cannot map
+                        # onto opcode hex values, it simply returns the value. We need to catch these
+                        # cases and handle them with INVALID instructions in the diassembled bytecode.
+                        try:
+                            instr_name = instr.split(": ")[1].split(" ")[0]
+                            instr_operand = instr.split(": ")[1].split(" ")[1:]
+
+                            if instr_operand:
+                                instr_name += " " + " ".join(instr_operand)
+                            disasm_out += f"{instr_address:05x}: {instr_name}\n"
+                        except IndexError:
+                            logging.critical(f"INVALID instruction: {instr}. Adding INVALID to disasm_out.")
+                            disasm_out += f"{instr_address:05x}: INVALID\n"
+
+                logging.debug("Disassembled geas instructions: %s", result.stdout)
+
+            else:
+                raise ValueError("Unknown disassembler: %s" % self.disassembler)
+
+        except Exception as e:
+            logging.critical("Disassembly failed: %s.", e)
 
         with open(disasm_file, 'w') as of:
             of.write(disasm_out)

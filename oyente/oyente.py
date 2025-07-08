@@ -32,7 +32,7 @@ def has_dependencies_installed():
         import z3
         import z3.z3util
         z3_version =  z3.get_version_string()
-        tested_z3_version = '4.5.1'
+        tested_z3_version = '4.14.1.0'
         if compare_versions(z3_version, tested_z3_version) > 0:
             logging.warning("You are using an untested version of z3. %s is the officially tested version" % tested_z3_version)
     except e:
@@ -47,27 +47,20 @@ def has_dependencies_installed():
         cmd = "evm --version"
         out = run_command(cmd).strip()
         evm_version = re.findall(r"evm version (\d*.\d*.\d*)", out)[0]
-        tested_evm_version = '1.7.3'
+        tested_evm_version = '1.15.11'
         if compare_versions(evm_version, tested_evm_version) > 0:
             logging.warning("You are using evm version %s. The supported version is %s" % (evm_version, tested_evm_version))
 
     if not cmd_exists("solc"):
         logging.critical("solc is missing. Please install the solidity compiler and make sure solc is in the path.")
         return False
-    else:
-        cmd = "solc --version"
-        out = run_command(cmd).strip()
-        solc_version = re.findall(r"Version: (\d*.\d*.\d*)", out)[0]
-        tested_solc_version = '0.4.19'
-        if compare_versions(solc_version, tested_solc_version) > 0:
-            logging.warning("You are using solc version %s, The latest supported version is %s" % (solc_version, tested_solc_version))
 
     return True
 
 def analyze_bytecode():
     global args
 
-    helper = InputHelper(InputHelper.BYTECODE, source=args.source,evm=args.evm)
+    helper = InputHelper(InputHelper.BYTECODE, source=args.source, evm=args.evm, disasm=args.disassembler)
     inp = helper.get_inputs()[0]
 
     result, exit_code = symExec.run(disasm_file=inp['disasm_file'])
@@ -101,11 +94,11 @@ def analyze_solidity(input_type='solidity'):
     global args
 
     if input_type == 'solidity':
-        helper = InputHelper(InputHelper.SOLIDITY, source=args.source, evm=args.evm, compilation_err=args.compilation_error, root_path=args.root_path, remap=args.remap, allow_paths=args.allow_paths)
+        helper = InputHelper(InputHelper.SOLIDITY, source=args.source, evm=args.evm, compilation_err=args.compilation_error, root_path=args.root_path, remap=args.remap, allow_paths=args.allow_paths, disasm=args.disassembler)
     elif input_type == 'standard_json':
-        helper = InputHelper(InputHelper.STANDARD_JSON, source=args.source, evm=args.evm, allow_paths=args.allow_paths)
+        helper = InputHelper(InputHelper.STANDARD_JSON, source=args.source, evm=args.evm, allow_paths=args.allow_paths, disasm=args.disassembler)
     elif input_type == 'standard_json_output':
-        helper = InputHelper(InputHelper.STANDARD_JSON_OUTPUT, source=args.source, evm=args.evm)
+        helper = InputHelper(InputHelper.STANDARD_JSON_OUTPUT, source=args.source, evm=args.evm, disasm=args.disassembler)
     inputs = helper.get_inputs(global_params.TARGET_CONTRACTS)
     results, exit_code = run_solidity_analysis(inputs)
     helper.rm_tmp_files()
@@ -132,7 +125,7 @@ def main():
     parser.add_argument("-rmp", "--remap",          help="Remap directory paths", action="store", type=str)
     parser.add_argument("-t",   "--timeout",        help="Timeout for Z3 in ms.", action="store", type=int)
     parser.add_argument("-gl",  "--gaslimit",       help="Limit Gas", action="store", dest="gas_limit", type=int)
-    parser.add_argument("-rp",   "--root-path",     help="Root directory path used for the online version", action="store", dest="root_path", type=str)
+    parser.add_argument("-rp",  "--root-path",      help="Root directory path used for the online version", action="store", dest="root_path", type=str)
     parser.add_argument("-ll",  "--looplimit",      help="Limit number of loops", action="store", dest="loop_limit", type=int)
     parser.add_argument("-dl",  "--depthlimit",     help="Limit DFS depth", action="store", dest="depth_limit", type=int)
     parser.add_argument("-ap",  "--allow-paths",    help="Allow a given path for imports", action="store", dest="allow_paths", type=str)
@@ -148,6 +141,7 @@ def main():
     parser.add_argument( "-v",   "--verbose",                help="Verbose output, print everything.", action="store_true")
     parser.add_argument( "-pl",  "--parallel",               help="Run Oyente in parallel. Note: The performance may depend on the contract", action="store_true")
     parser.add_argument( "-b",   "--bytecode",               help="read bytecode in source instead of solidity file.", action="store_true")
+    parser.add_argument( "-d",   "--disassembler",           help="Choose the disassembler to work with", choices=["geas", "pyevmasm", "evmdasm"], default='evmdasm')
     parser.add_argument( "-a",   "--assertion",              help="Check assertion failures.", action="store_true")
     parser.add_argument( "-sj",  "--standard-json",          help="Support Standard JSON input", action="store_true")
     parser.add_argument( "-gb",  "--globalblockchain",       help="Integrate with the global ethereum blockchain", action="store_true")

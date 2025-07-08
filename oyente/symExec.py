@@ -1,6 +1,4 @@
-import tokenize
 import zlib, base64
-from tokenize import NUMBER, NAME, NEWLINE
 import re
 import math
 import sys
@@ -184,48 +182,13 @@ def compare_storage_and_gas_unit_test(global_state, analysis):
     test_status = unit_test.compare_with_symExec_result(global_state, analysis)
     exit(test_status)
 
-def change_format():
-    with open(g_disasm_file) as disasm_file:
-        file_contents = disasm_file.readlines()
-        i = 0
-        firstLine = file_contents[0].strip('\n')
-        for line in file_contents:
-            line = line.replace('SELFDESTRUCT', 'SUICIDE')
-            line = line.replace('Missing opcode 0xfd', 'REVERT')
-            line = line.replace('Missing opcode 0xfe', 'ASSERTFAIL')
-            line = line.replace('Missing opcode', 'INVALID')
-            line = line.replace(':', '')
-            lineParts = line.split(' ')
-            try: # removing initial zeroes
-                lineParts[0] = str(int(lineParts[0]))
-
-            except:
-                lineParts[0] = lineParts[0]
-            lineParts[-1] = lineParts[-1].strip('\n')
-            try: # adding arrow if last is a number
-                lastInt = lineParts[-1]
-                if(int(lastInt, 16) or int(lastInt, 16) == 0) and len(lineParts) > 2:
-                    lineParts[-1] = "=>"
-                    lineParts.append(lastInt)
-            except Exception:
-                pass
-            file_contents[i] = ' '.join(lineParts)
-            i = i + 1
-        file_contents[0] = firstLine
-        file_contents[-1] += '\n'
-
-    with open(g_disasm_file, 'w') as disasm_file:
-        disasm_file.write("\n".join(file_contents))
-
 def build_cfg_and_analyze():
-    change_format()
     with open(g_disasm_file, 'r') as disasm_file:
-        disasm_file.readline()  # Remove first line
-        tokens = tokenize.generate_tokens(disasm_file.readline)
-        collect_vertices(tokens)
-        construct_bb()
-        construct_static_edges()
-        full_sym_exec()  # jump targets are constructed on the fly
+        lines = disasm_file.read().splitlines()
+    collect_vertices(lines)
+    construct_bb()
+    construct_static_edges()
+    full_sym_exec()  # jump targets are constructed on the fly
 
 
 def print_cfg():
@@ -246,20 +209,18 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
         else:
             if name.startswith("PUSH"):
                 if name == "PUSH":
-                    value = positions[idx]['value']
-                    instr_value = current_line_content.split(" ")[1]
-                    if int(value, 16) == int(instr_value, 16):
-                        g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
-                        idx += 1
-                        break;
-                    else:
-                        raise Exception("Source map error")
-                else:
-                    g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
-                    idx += 1
-                    break;
+                    # only here do we still verify the (zero-byte) immediate numerically
+                    parts   = current_line_content.strip().split(maxsplit=1)
+                    imm_text= parts[1] if len(parts) > 1 else "0"
+                    map_val = positions[idx].get("value", "0")
+                    if int(map_val, 16) != int(imm_text, 16):
+                        raise Exception(f"Source map PUSH mismatch: {imm_text} != {map_val}")
+                # for all the numbered pushes (PUSH0, PUSH1…PUSH32), accept the mapping
+                g_src_map.instr_positions[current_ins_address] = positions[idx]
+                idx += 1
+                break
             else:
-                raise Exception("Source map error")
+                raise Exception("Source map error. Non-push instruction found in push instruction mapping.")
     return idx
 
 def mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length):
@@ -272,19 +233,56 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
         if name.startswith("tag"):
             idx += 1
         else:
-            instr_name = current_line_content.split(" ")[0]
-            if name == instr_name or name == "INVALID" and instr_name == "ASSERTFAIL" or name == "KECCAK256" and instr_name == "SHA3" or name == "SELFDESTRUCT" and instr_name == "SUICIDE":
-                g_src_map.instr_positions[current_ins_address] = g_src_map.positions[idx]
+            raw_line = current_line_content.strip()
+            if not raw_line:
+                # return, because we are dealing with an empty line or non‐instruction.
+                return idx
+            instr_name = raw_line.split()[0]
+
+            # New EVM versions introduced new names for existing opcodes
+            # We create an alias mapping of known aliases and use this mapping
+            # to check if the instruction name matches the source map name
+            alias = {
+                "BREAKPOINT":     "CREATE2",        # evmdasm’s BREAKPOINT → CREATE2
+                "CREATE2":        "CREATE2",
+                "#bytes":         "INVALID",        # geas specific INVALID instruction
+                "ASSERTFAIL":     "INVALID",        # both share opcode 0xFE
+                "INVALID":        "INVALID",
+                "SHA3":           "KECCAK256",      # compiler’s SHA3 → KECCAK256
+                "KECCAK256":      "KECCAK256",
+                "DIFFICULTY":     "PREVRANDAO",     # pre-Merge DIFFICULTY → PREVRANDAO
+                "RANDOM":         "PREVRANDAO",     # evmdasm’s RANDOM → PREVRANDAO
+                "PREVRANDAO":     "PREVRANDAO",
+                "CALLSTATIC":     "REVERT",         # legacy CALLSTATIC → REVERT
+                "REVERT":         "REVERT",
+                "SUICIDE":        "SELFDESTRUCT",   # old SUICIDE → SELFDESTRUCT
+                "SENDALL":        "SELFDESTRUCT",
+                "SELFDESTRUCT":   "SELFDESTRUCT",
+                "SLOADBYTESEXT":  "SLOADBYTES",     # old SLOADBYTESEXT (0xf8) → SLOADBYTES
+                "SSTOREBYTESEXT": "SSTOREBYTES",    # old SSTOREBYTESEXT (0xf9) → SSTOREBYTES
+                "SSIZE":          "STATICCALL",     # evmdasm’s SSIZE → STATICCALL
+                "STATICCALL":     "STATICCALL",
+                "SLOADEXT":       "TLOAD",          # old SLOADEXT (0x5c) → TLOAD
+                "SSTOREEXT":      "TSTORE",         # old SSTOREEXT (0x5d) → TSTORE
+            }
+
+            name_alias = alias.get(name, name)
+            instr_name_alias = alias.get(instr_name, instr_name)
+            
+            if name_alias == instr_name_alias \
+               or (name_alias.startswith("DUP")  and instr_name_alias.startswith("DUP")) \
+               or (name_alias.startswith("SWAP") and instr_name_alias.startswith("SWAP")):
+                g_src_map.instr_positions[current_ins_address] = positions[idx]
                 idx += 1
-                break;
+                break
             else:
-                raise RuntimeError(F"Source map error, unknown name({name}) or instr_name({instr_name})")
+                raise RuntimeError(f"Source map error, unknown name({name}) or instr_name({instr_name}).")
     return idx
 
 # 1. Parse the disassembled file
 # 2. Then identify each basic block (i.e. one-in, one-out)
 # 3. Store them in vertices
-def collect_vertices(tokens):
+def collect_vertices(lines):
     global g_src_map
     if g_src_map:
         idx = 0
@@ -295,87 +293,71 @@ def collect_vertices(tokens):
     global jump_type
 
     current_ins_address = 0
-    last_ins_address = 0
-    is_new_line = True
     current_block = 0
-    current_line_content = ""
-    wait_for_push = False
     is_new_block = False
-
-    for tok_type, tok_string, (srow, scol), _, line_number in tokens:
-        if wait_for_push is True:
-            push_val = ""
-            for ptok_type, ptok_string, _, _, _ in tokens:
-                if ptok_type == NEWLINE:
-                    is_new_line = True
-                    current_line_content += push_val + ' '
-                    instructions[current_ins_address] = current_line_content
-                    idx = mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
-                    log.debug(current_line_content)
-                    current_line_content = ""
-                    wait_for_push = False
-                    break
-                try:
-                    int(ptok_string, 16)
-                    push_val += ptok_string
-                except ValueError:
-                    pass
-
-            continue
-        elif is_new_line is True and tok_type == NUMBER:  # looking for a line number
-            last_ins_address = current_ins_address
-            try:
-                current_ins_address = int(tok_string)
-            except ValueError:
-                log.critical("ERROR when parsing row %d col %d", srow, scol)
-                quit()
-            is_new_line = False
-            if is_new_block:
-                current_block = current_ins_address
-                is_new_block = False
-            continue
-        elif tok_type == NEWLINE:
-            is_new_line = True
-            log.debug(current_line_content)
-            instructions[current_ins_address] = current_line_content
+    for line in lines:
+        logging.debug("Processing line: %s", line)
+        logging.debug("Before processing: current_block=%05x, current_ins_address=%05x, is_new_block=%s", 
+                      current_block, current_ins_address, is_new_block)
+        assert line[5:7] == ": "
+        last_ins_address = current_ins_address
+        current_ins_address = int(line[0:5], 16)
+        instruction = line[7:]
+        logging.debug("Parsed instruction at %05x: %s", current_ins_address, instruction)
+        if instruction == "INVALID":
+            instruction = "ASSERTFAIL"
+        elif instruction == "KECCAK256":
+            instruction = "SHA3"
+        elif instruction.endswith("not defined"):
+            instruction = "INVALID " + instruction.split()[1]
+        elif instruction.startswith("#bytes"):   # geas specific INVALID instruction
+            instruction = "INVALID " + instruction.split()[1]
+        current_line_content = instruction + ' ' # for some reason, the original Oyente adds a space
+        instructions[current_ins_address] = current_line_content
+        logging.debug("Current line content: %s", current_line_content)
+        if is_new_block:
+            current_block = current_ins_address
+            logging.debug("New block started at address: %05x", current_block)
+            is_new_block = False
+        if instruction == "JUMPDEST":
+            if last_ins_address not in end_ins_dict:
+                end_ins_dict[current_block] = last_ins_address
+                logging.debug("Set end_ins_dict[%05x] = %05x", current_block, last_ins_address)
+            current_block = current_ins_address
+            logging.debug("JUMPDEST: updating current_block to %05x", current_block)
+            is_new_block = False
+        elif instruction in ("STOP", "RETURN", "SELFDESTRUCT", "REVERT", "ASSERTFAIL"):
+            jump_type[current_block] = "terminal"
+            end_ins_dict[current_block] = current_ins_address
+            logging.debug("Terminal instruction: block %05x ends at %05x", current_block, current_ins_address)
+        elif instruction == "JUMP":
+            jump_type[current_block] = "unconditional"
+            end_ins_dict[current_block] = current_ins_address
+            logging.debug("JUMP: block %05x ends at %05x", current_block, current_ins_address)
+            is_new_block = True
+        elif instruction == "JUMPI":
+            jump_type[current_block] = "conditional"
+            end_ins_dict[current_block] = current_ins_address
+            logging.debug("JUMPI: block %05x ends at %05x", current_block, current_ins_address)
+            is_new_block = True
+        if instruction.startswith('PUSH'):
+            idx = mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
+        else:
             idx = mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length) if g_src_map else None
-            current_line_content = ""
-            continue
-        elif tok_type == NAME:
-            if tok_string == "JUMPDEST":
-                if last_ins_address not in end_ins_dict:
-                    end_ins_dict[current_block] = last_ins_address
-                current_block = current_ins_address
-                is_new_block = False
-            elif tok_string == "STOP" or tok_string == "RETURN" or tok_string == "SUICIDE" or tok_string == "REVERT" or tok_string == "ASSERTFAIL":
-                jump_type[current_block] = "terminal"
-                end_ins_dict[current_block] = current_ins_address
-            elif tok_string == "JUMP":
-                jump_type[current_block] = "unconditional"
-                end_ins_dict[current_block] = current_ins_address
-                is_new_block = True
-            elif tok_string == "JUMPI":
-                jump_type[current_block] = "conditional"
-                end_ins_dict[current_block] = current_ins_address
-                is_new_block = True
-            elif tok_string.startswith('PUSH', 0):
-                wait_for_push = True
-            is_new_line = False
-        if tok_string != "=" and tok_string != ">":
-            current_line_content += tok_string + " "
+        logging.debug("After processing line: current_block=%05x, current_ins_address=%05x", current_block, current_ins_address)
 
     if current_block not in end_ins_dict:
-        log.debug("current block: %d", current_block)
-        log.debug("last line: %d", current_ins_address)
+        logging.debug("Final block %05x did not have an end; setting end_ins_dict[%05x] = %05x", current_block, current_block, current_ins_address)
         end_ins_dict[current_block] = current_ins_address
 
     if current_block not in jump_type:
         jump_type[current_block] = "terminal"
+        logging.debug("Final block %05x did not have a jump type; setting to terminal", current_block)
 
     for key in end_ins_dict:
         if key not in jump_type:
             jump_type[key] = "falls_to"
-
+            logging.debug("Setting jump type for block %05x to falls_to", key)
 
 def construct_bb():
     global vertices
@@ -396,6 +378,9 @@ def construct_bb():
         vertices[key] = block
         edges[key] = []
 
+    logging.debug("Vertices created: %s", sorted(vertices.keys()))
+    logging.debug("Edges keys: %s", sorted(edges.keys()))
+    logging.debug("Jump types: %s", sorted(jump_type.keys()))
 
 def construct_static_edges():
     add_falls_to()  # these edges are static
@@ -414,8 +399,8 @@ def add_falls_to():
 
 
 def get_init_global_state(path_conditions_and_vars):
-    global_state = {"balance" : {}, "pc": 0}
-    init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = callData = None
+    global_state = {"balance" : {}, "pc": 0, "It": {}}
+    init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = chainId = baseFee = blobHash = blobBaseFee = callData = It = None
 
     if global_params.INPUT_STATE:
         with open('state.json') as f:
@@ -442,6 +427,14 @@ def get_init_global_state(path_conditions_and_vars):
                 currentDifficulty = int(state["env"]["currentDifficulty"], 16)
             if state["env"]["currentGasLimit"]:
                 currentGasLimit = int(state["env"]["currentGasLimit"], 16)
+            if state["env"]["chainID"]:
+                chainId = int(state["env"]["chainID"], 16)
+            if state["env"]["baseFee"]:
+                baseFee = int(state["env"]["baseFee"], 16)
+            if state["env"]["blobHash"]:
+                blobHash = int(state["env"]["blobHash"], 16)
+            if state["env"]["blobBaseFee"]:
+                blobBaseFee = int(state["env"]["blobBaseFee"], 16)
 
     # for some weird reason these 3 vars are stored in path_conditions insteaad of global_state
     else:
@@ -496,14 +489,36 @@ def get_init_global_state(path_conditions_and_vars):
         new_var_name = "IH_l"
         currentGasLimit = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = currentGasLimit
+    
+    if not chainId:
+        new_var_name = "IH_id"
+        chainId = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = chainId
+    
+    if not baseFee:
+        new_var_name = "IH_bf"
+        baseFee = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = baseFee
+    
+    if not blobHash:
+        new_var_name = "IH_bh"
+        blobHash = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = blobHash
+    
+    if not blobBaseFee:
+        new_var_name = "IH_bbf"
+        blobBaseFee = BitVec(new_var_name, 256)
+        path_conditions_and_vars[new_var_name] = blobBaseFee
 
     new_var_name = "IH_s"
     currentTimestamp = BitVec(new_var_name, 256)
     path_conditions_and_vars[new_var_name] = currentTimestamp
 
-    # the state of the current current contract
+    # the state of the current contract
     if "Ia" not in global_state:
         global_state["Ia"] = {}
+    if "It" not in global_state:
+        global_state["It"] = {}
     global_state["miu_i"] = 0
     global_state["value"] = deposited_value
     global_state["sender_address"] = sender_address
@@ -515,6 +530,10 @@ def get_init_global_state(path_conditions_and_vars):
     global_state["currentNumber"] = currentNumber
     global_state["currentDifficulty"] = currentDifficulty
     global_state["currentGasLimit"] = currentGasLimit
+    global_state["chainID"] = chainId
+    global_state["baseFee"] = baseFee
+    global_state["blobHash"] = blobHash
+    global_state["blobBaseFee"] = blobBaseFee
 
     return global_state
 
@@ -874,7 +893,9 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         if len(stack) > 1:
             global_state["pc"] = global_state["pc"] + 1
             first = stack.pop(0)
+            #print(first)
             second = stack.pop(0)
+            #print(second)
             if isAllReal(first, second):
                 if second == 0:
                     computed = 0
@@ -1284,7 +1305,9 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 if first >= 32 or first < 0:
                     computed = 0
                 else:
-                    computed = second & (255 << (8 * byte_index))
+                    # We have to convert the shift_amount to integer, because
+                    # otherwise we run into a TypeError
+                    computed = second & (255 << int(8 * byte_index))
                     computed = computed >> (8 * byte_index)
             else:
                 first = to_symbolic(first)
@@ -1294,9 +1317,49 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 if check_sat(solver) == unsat:
                     computed = 0
                 else:
-                    computed = second & (255 << (8 * byte_index))
+                    # We have to convert the shift_amount to integer, because
+                    # otherwise we run into a TypeError
+                    computed = second & (255 << int(8 * byte_index))
                     computed = computed >> (8 * byte_index)
                 solver.pop()
+            computed = simplify(computed) if is_expr(computed) else computed
+            stack.insert(0, computed)
+        else:
+            raise ValueError('STACK underflow')
+    # see https://github.com/enzymefinance/oyente/commit/50bf2dbeda79835c3c57a26c64800cd386660016
+    elif opcode == "SHL":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            first = stack.pop(0)
+            second = stack.pop(0)
+
+            computed = second << first
+            computed = simplify(computed) if is_expr(computed) else computed
+            stack.insert(0, computed)
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "SHR":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            first = stack.pop(0)
+            second = stack.pop(0)
+            # 256 bit logical shift right
+            # see https://github.com/enzymefinance/oyente/commit/f8b2c6cad5066167df3b800819777708a0440018
+            if isAllReal(first, second):
+                computed = (second % (1 << 256)) >> first
+            else:
+                computed = LShR(second, first)
+            computed = simplify(computed) if is_expr(computed) else computed
+            stack.insert(0, computed)
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "SAR":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            first = stack.pop(0)
+            second = stack.pop(0)
+
+            computed = second >> first
             computed = simplify(computed) if is_expr(computed) else computed
             stack.insert(0, computed)
         else:
@@ -1313,7 +1376,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 # simulate the hashing of sha3
                 data = [str(x) for x in memory[s0: s0 + s1]]
                 position = ''.join(data)
-                position = re.sub('[\s+]', '', position)
+                position = re.sub(r'\s+', '', position)
                 position = zlib.compress(six.b(position), 9)
                 position = base64.b64encode(position)
                 position = position.decode('utf-8', 'strict')
@@ -1574,12 +1637,28 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "NUMBER":  # information from block header
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["currentNumber"])
-    elif opcode == "DIFFICULTY":  # information from block header
+    elif opcode == "PREVRANDAO":  # information from block header
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["currentDifficulty"])
     elif opcode == "GASLIMIT":  # information from block header
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["currentGasLimit"])
+    elif opcode == "CHAINID":  # information from block header
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["chainID"])
+    elif opcode == "SELFBALANCE":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["balance"]["Is"])
+    elif opcode == "BASEFEE":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["baseFee"])
+    elif opcode == "BLOBHASH":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["blobHash"])
+    elif opcode == "BLOBBASEFEE":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, global_state["blobBaseFee"])
+
     #
     #  50s: Stack, Memory, Storage, and Flow Information
     #
@@ -1626,6 +1705,20 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 else:
                     mem[str(address)] = new_var
             global_state["miu_i"] = current_miu_i
+        else:
+            raise ValueError('STACK underflow')
+    # see https://github.com/enzymefinance/oyente/commit/26cf59c926889b3e56e6e7ed0fd50dcc71aebfb3
+    elif opcode == "EXTCODEHASH":
+        if len(stack) > 0:
+            global_state["pc"] = global_state["pc"] + 1
+            stack.pop(0)
+            new_var_name = "IH_codehash"
+            if new_var_name in path_conditions_and_vars:
+                new_var = path_conditions_and_vars[new_var_name]
+            else:
+                new_var = BitVec(new_var_name, 256)
+                path_conditions_and_vars[new_var_name] = new_var
+            stack.insert(0, new_var)
         else:
             raise ValueError('STACK underflow')
     elif opcode == "MSTORE":
@@ -1760,6 +1853,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "JUMP":
         if len(stack) > 0:
             target_address = stack.pop(0)
+            #print(target_address)
             if isSymbolic(target_address):
                 try:
                     target_address = int(str(simplify(target_address)))
@@ -1812,6 +1906,49 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "JUMPDEST":
         # Literally do nothing
         global_state["pc"] = global_state["pc"] + 1
+    elif opcode == "TLOAD":
+        if len(stack) > 0:
+            global_state["pc"] = global_state["pc"] + 1
+            stored_address = stack.pop(0)
+            logging.info("Analyzed opcode TLOAD with values: stored_address=%s", stored_address)
+            if isReal(stored_address) and stored_address in global_state["It"]:
+                value_to_store = global_state["It"].get(stored_address, 0)
+            else:
+                new_var_name = gen.gen_gas_var()
+                if str(stored_address) in global_state["It"]:
+                    value_to_store = global_state["It"].get(str(stored_address), 0)
+                else:
+                    value_to_store = BitVec(new_var_name, 256)
+                    global_state["It"][str(stored_address)] = value_to_store
+            stack.insert(0, value_to_store)
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "TSTORE":
+        if len(stack) > 1:
+            global_state["pc"] = global_state["pc"] + 1
+            stored_address = stack.pop(0)
+            stored_value = stack.pop(0)
+            logging.info("Analyzed opcode TSTORE with values: stored_address=%s, stored_value=%s", stored_address, stored_value)
+            if isReal(stored_address):
+                global_state["It"][stored_address] = stored_value
+            else:
+                global_state["It"][str(stored_address)] = stored_value
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "MCOPY":
+        if len(stack) > 2:
+            global_state["pc"] = global_state["pc"] + 1
+            dst = stack.pop(0)
+            src = stack.pop(0)
+            length = stack.pop(0)
+            logging.info("Analyzed opcode MCOPY with values: dst=%s, src=%s, length=%s", dst, src, length)
+            # Minimal approach: Do nothing. We do not simulate this further.
+        else:
+            raise ValueError('STACK underflow')
+    elif opcode == "PUSH0":
+        global_state["pc"] = global_state["pc"] + 1
+        stack.insert(0, BitVecVal(0, 256))
+
     #
     #  60s & 70s: Push Operations
     #
@@ -1992,6 +2129,19 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 analysis["time_dependency_bug"][last_idx] = global_state["pc"] - 1
         else:
             raise ValueError('STACK underflow')
+    # https://github.com/enzymefinance/oyente/commit/26cf59c926889b3e56e6e7ed0fd50dcc71aebfb3
+    elif opcode == "CREATE2":
+        if len(stack) > 3:
+            global_state["pc"] += 1
+            stack.pop(0)
+            stack.pop(0)
+            stack.pop(0)
+            stack.pop(0)
+            new_var_name = gen.gen_arbitrary_var()
+            new_var = BitVec(new_var_name, 256)
+            stack.insert(0, new_var)
+        else:
+            raise ValueError('STACK underflow')
     elif opcode in ("DELEGATECALL", "STATICCALL"):
         if len(stack) > 5:
             global_state["pc"] += 1
@@ -2027,7 +2177,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             pass
         else:
             raise ValueError('STACK underflow')
-    elif opcode == "SUICIDE":
+    elif opcode == "SELFDESTRUCT":
         global_state["pc"] = global_state["pc"] + 1
         recipient = stack.pop(0)
         transfer_amount = global_state["balance"]["Ia"]
@@ -2165,8 +2315,10 @@ def check_callstack_attack(disasm):
         instruction = disasm[i]
         if instruction[1] in problematic_instructions:
             try:
-                pc = int(instruction[0])
-                if not disasm[i+1][1] == 'SWAP':
+                # Since our change of the disassembler, this is a hex, not
+                # a decimal integer.
+                pc = int(instruction[0], 16)
+                if disasm[i+1][1] != 'SWAP':
                     continue
                 swap_num = int(disasm[i+1][2])
                 if not all(disasm[i+j+2][1] == 'POP' for j in range(swap_num)):
@@ -2197,7 +2349,10 @@ def detect_callstack_attack():
     global callstack
 
     disasm_data = open(g_disasm_file).read()
-    instr_pattern = r"([\d]+) ([A-Z]+)([\d]+)?(?: => 0x)?(\S+)?"
+    # We changed the disassembler and now the disasm file has a different
+    # format. The pattern below is used to extract the instruction and its
+    # parameters from the disasm file.
+    instr_pattern = r"([0-9A-Fa-f]+):? ([A-Z]+)([\d]+)?(?: => 0x)?(\S+)?"
     instr = re.findall(instr_pattern, disasm_data)
     pcs = check_callstack_attack(instr)
 
@@ -2266,6 +2421,22 @@ def detect_vulnerabilities():
     global visited_pcs
     global global_problematic_pcs
     global begin
+
+    # Initialize all relevant globals to harmless defaults
+    global callstack, money_concurrency, time_dependency, reentrancy
+    global assertion_failure, parity_multisig_bug_2
+
+    # CallStack, MoneyConcurrency, TimeDependency, Reentrancy are of the subclass Vulnerability,
+    # so passing an empty list (and None for the source_map) makes is_vulnerable() == False.
+    callstack         = CallStack(None, [], {})
+    money_concurrency = MoneyConcurrency(None, [])
+    time_dependency   = TimeDependency(None, [])
+    reentrancy        = Reentrancy(None, [])
+    
+    # We set these to None initially — if g_src_map is not None and CHECK_ASSERTIONS is true,
+    # detect_assertion_failure() or detect_parity_multisig_bug_2() will overwrite them.
+    assertion_failure   = None
+    parity_multisig_bug_2 = None
 
     if instructions:
         evm_code_coverage = float(len(visited_pcs)) / len(instructions.keys()) * 100
@@ -2343,7 +2514,6 @@ def vulnerability_found():
     global reentrancy
     global assertion_failure
     global parity_multisig_bug_2
-
     vulnerabilities = [callstack, money_concurrency, time_dependency, reentrancy]
 
     if g_src_map and global_params.CHECK_ASSERTIONS:

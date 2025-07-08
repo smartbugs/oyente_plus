@@ -77,6 +77,10 @@ class SourceMap:
         except:
             return ""
         location = self.get_location(pc)
+        # Guard against 'begin' or 'line' being None.
+        # This is possible since the new AST format introduced in Solidity 0.5.x
+        if not location or location.get('line') is None:
+            return ""    # no location, so no buggy line
         begin = self.source.line_break_positions[location['begin']['line'] - 1] + 1
         end = pos['end']
         return self.source.content[begin:end]

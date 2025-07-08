@@ -150,8 +150,11 @@ def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
             if check_sat(solver) == unsat:
                 gas_increment += GCOST["Gcallvalue"]
             solver.pop()
+    # see https://github.com/enzymefinance/oyente/commit/5c3aca6477f2e0c9ad94cb68141495b106a89267
     elif opcode == "SHA3" and isReal(stack[1]):
-        pass # Not handle
+        gas_increment += GCOST["Gsha3word"] * math.ceil(stack[1] / 32)
+    elif opcode == "CREATE2" and isReal(stack[2]):
+        gas_increment += GCOST["Gsha3word"] * math.ceil(stack[2] / 32)
 
 
     #Calculate gas memory, add it to total gas used
