@@ -217,6 +217,10 @@ class InputHelper:
         if hex_code.startswith("0x"):
             hex_code = hex_code[2:]
             logging.debug("Cleaned bytecode from leading 0x.")
+        
+        # Remove any newlines, carriage returns, and non-hex characters
+        hex_code = hex_code.replace("\n", "").replace("\r", "").replace("\t", "")
+        hex_code = re.sub(r'[^0-9a-fA-F]', '', hex_code)
 
         clean_bytes, _ = zeroMetadata(bytes.fromhex(hex_code))
         clean = clean_bytes.hex()
