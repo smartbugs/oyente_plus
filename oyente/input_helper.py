@@ -14,6 +14,7 @@ from evmdasm import EvmBytecode
 from pyevmasm import disassemble_hex
 from ethutils.metadata import zeroMetadata
 
+
 class InputHelper:
     BYTECODE = 0
     SOLIDITY = 1
@@ -25,40 +26,40 @@ class InputHelper:
 
         if input_type == InputHelper.BYTECODE:
             attr_defaults = {
-                'source': None,
-                'evm': False,
-                'disassembler': kwargs.get('disasm'),
+                "source": None,
+                "evm": False,
+                "disassembler": kwargs.get("disasm"),
             }
         elif input_type == InputHelper.SOLIDITY:
             attr_defaults = {
-                'source': None,
-                'evm': False,
-                'root_path': "",
-                'compiled_contracts': [],
-                'compilation_err': False,
-                'remap': "",
-                'allow_paths': "",
-                'disassembler': kwargs.get('disasm'),
+                "source": None,
+                "evm": False,
+                "root_path": "",
+                "compiled_contracts": [],
+                "compilation_err": False,
+                "remap": "",
+                "allow_paths": "",
+                "disassembler": kwargs.get("disasm"),
             }
         elif input_type == InputHelper.STANDARD_JSON:
             attr_defaults = {
-                'source': None,
-                'evm': False,
-                'root_path': "",
-                'allow_paths': None,
-                'compiled_contracts': [],
-                'disassembler': kwargs.get('disasm'),
+                "source": None,
+                "evm": False,
+                "root_path": "",
+                "allow_paths": None,
+                "compiled_contracts": [],
+                "disassembler": kwargs.get("disasm"),
             }
         elif input_type == InputHelper.STANDARD_JSON_OUTPUT:
             attr_defaults = {
-                'source': None,
-                'evm': False,
-                'root_path': "",
-                'compiled_contracts': [],
-                'disassembler': kwargs.get('disasm'),
+                "source": None,
+                "evm": False,
+                "root_path": "",
+                "compiled_contracts": [],
+                "disassembler": kwargs.get("disasm"),
             }
 
-        for (attr, default) in six.iteritems(attr_defaults):
+        for attr, default in six.iteritems(attr_defaults):
             val = kwargs.get(attr, default)
             if val == None:
                 raise Exception("'%s' attribute can't be None" % attr)
@@ -68,33 +69,44 @@ class InputHelper:
     def get_inputs(self, targetContracts=None):
         inputs = []
         if self.input_type == InputHelper.BYTECODE:
-            with open(self.source, 'r') as f:
+            with open(self.source, "r") as f:
                 bytecode = f.read()
             self._prepare_disasm_file(self.source, bytecode)
 
-            disasm_file = self._get_temporary_files(self.source)['disasm']
-            inputs.append({'disasm_file': disasm_file})
+            disasm_file = self._get_temporary_files(self.source)["disasm"]
+            inputs.append({"disasm_file": disasm_file})
         else:
             contracts = self._get_compiled_contracts()
             self._prepare_disasm_files_for_analysis(contracts)
             for contract, _ in contracts:
-                c_source, cname = contract.split(':')
+                c_source, cname = contract.split(":")
                 if targetContracts is not None and cname not in targetContracts:
                     continue
                 c_source = re.sub(self.root_path, "", c_source)
                 if self.input_type == InputHelper.SOLIDITY:
-                    source_map = SourceMap(contract, self.source, 'solidity', self.root_path, self.remap, self.allow_paths)
+                    source_map = SourceMap(
+                        contract,
+                        self.source,
+                        "solidity",
+                        self.root_path,
+                        self.remap,
+                        self.allow_paths,
+                    )
                 else:
-                    source_map = SourceMap(contract, self.source, 'standard json', self.root_path)
-                disasm_file = self._get_temporary_files(contract)['disasm']
-                inputs.append({
-                    'contract': contract,
-                    'source_map': source_map,
-                    'source': self.source,
-                    'c_source': c_source,
-                    'c_name': cname,
-                    'disasm_file': disasm_file
-                })
+                    source_map = SourceMap(
+                        contract, self.source, "standard json", self.root_path
+                    )
+                disasm_file = self._get_temporary_files(contract)["disasm"]
+                inputs.append(
+                    {
+                        "contract": contract,
+                        "source_map": source_map,
+                        "source": self.source,
+                        "c_source": c_source,
+                        "c_name": cname,
+                        "disasm_file": disasm_file,
+                    }
+                )
         if targetContracts is not None and not inputs:
             raise ValueError("Targeted contracts weren't found in the source code!")
         return inputs
@@ -112,7 +124,9 @@ class InputHelper:
             elif self.input_type == InputHelper.STANDARD_JSON:
                 self.compiled_contracts = self._compile_standard_json()
             elif self.input_type == InputHelper.STANDARD_JSON_OUTPUT:
-                self.compiled_contracts = self._compile_standard_json_output(self.source)
+                self.compiled_contracts = self._compile_standard_json_output(
+                    self.source
+                )
 
         return self.compiled_contracts
 
@@ -122,33 +136,43 @@ class InputHelper:
             logging.debug(compilation_unit.compiler_version.compiler)
             logging.debug(compilation_unit.compiler_version.version)
             logging.debug(compilation_unit.compiler_version.optimized)
-            for filename,source_unit in compilation_unit.source_units.items():
+            for filename, source_unit in compilation_unit.source_units.items():
                 for name in source_unit.contracts_names:
                     bytecode_runtime = source_unit.bytecode_runtime(name)
                     if bytecode_runtime:
-                        bin_objs.append((filename.used+':'+name, bytecode_runtime))
+                        bin_objs.append((filename.used + ":" + name, bytecode_runtime))
         return bin_objs
 
     def _compile_solidity(self):
         try:
             options = None
             if self.allow_paths:
-                options = [F"--allow-paths {self.allow_paths}"]
+                options = [f"--allow-paths {self.allow_paths}"]
 
-            com = CryticCompile(self.source, solc_remaps=self.remap, solc_args=(' '.join(options) if options else None))
+            com = CryticCompile(
+                self.source,
+                solc_remaps=self.remap,
+                solc_args=(" ".join(options) if options else None),
+            )
             contracts = self._extract_bin_obj(com)
 
             libs = set()
             for compilation_unit in com.compilation_units.values():
                 for source_unit in compilation_unit.source_units.values():
-                    libs.update(set(source_unit.contracts_names).difference(set(source_unit.contracts_names_without_libraries)))
+                    libs.update(
+                        set(source_unit.contracts_names).difference(
+                            set(source_unit.contracts_names_without_libraries)
+                        )
+                    )
             if libs:
                 return self._link_libraries(self.source, libs)
-            
+
             return contracts
         except InvalidCompilation as err:
             if not self.compilation_err:
-                logging.critical("Solidity compilation failed. Please use -ce flag to see the detail.")
+                logging.critical(
+                    "Solidity compilation failed. Please use -ce flag to see the detail."
+                )
                 if global_params.WEB:
                     six.print_({"error": "Solidity compilation failed."})
             else:
@@ -160,38 +184,44 @@ class InputHelper:
             exit(1)
 
     def _compile_standard_json(self):
-        FNULL = open(os.devnull, 'w')
+        FNULL = open(os.devnull, "w")
         cmd = "cat %s" % self.source
         p1 = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=FNULL)
         cmd = "solc --allow-paths %s --standard-json" % self.allow_paths
-        p2 = subprocess.Popen(shlex.split(cmd), stdin=p1.stdout, stdout=subprocess.PIPE, stderr=FNULL)
+        p2 = subprocess.Popen(
+            shlex.split(cmd), stdin=p1.stdout, stdout=subprocess.PIPE, stderr=FNULL
+        )
         p1.stdout.close()
         out = p2.communicate()[0]
-        with open('standard_json_output', 'w') as of:
+        with open("standard_json_output", "w") as of:
             of.write(out)
 
-        return self._compile_standard_json_output('standard_json_output')
+        return self._compile_standard_json_output("standard_json_output")
 
     def _compile_standard_json_output(self, json_output_file):
-        with open(json_output_file, 'r') as f:
+        with open(json_output_file, "r") as f:
             out = f.read()
         j = json.loads(out)
         contracts = []
-        for source in j['sources']:
-            for contract in j['contracts'][source]:
+        for source in j["sources"]:
+            for contract in j["contracts"][source]:
                 cname = source + ":" + contract
-                evm = j['contracts'][source][contract]['evm']['deployedBytecode']['object']
+                evm = j["contracts"][source][contract]["evm"]["deployedBytecode"][
+                    "object"
+                ]
                 contracts.append((cname, evm))
         return contracts
 
     def _link_libraries(self, filename, libs):
         options = []
         for idx, lib in enumerate(libs):
-            lib_address = "0x" + hex(idx+1)[2:].zfill(40)
+            lib_address = "0x" + hex(idx + 1)[2:].zfill(40)
             options.append("--libraries %s:%s" % (lib, lib_address))
         if self.allow_paths:
-            options.append(F"--allow-paths {self.allow_paths}")
-        com = CryticCompile(target=self.source, solc_args=' '.join(options), solc_remaps=self.remap)
+            options.append(f"--allow-paths {self.allow_paths}")
+        com = CryticCompile(
+            target=self.source, solc_args=" ".join(options), solc_remaps=self.remap
+        )
 
         return self._extract_bin_obj(com)
 
@@ -207,7 +237,7 @@ class InputHelper:
         return {
             "evm": target + ".evm",
             "disasm": target + ".evm.disasm",
-            "log": target + ".evm.disasm.log"
+            "log": target + ".evm.disasm.log",
         }
 
     def _write_evm_file(self, target, bytecode):
@@ -218,7 +248,36 @@ class InputHelper:
             hex_code = hex_code[2:]
             logging.debug("Cleaned bytecode from leading 0x.")
 
-        clean_bytes, _ = zeroMetadata(bytes.fromhex(hex_code))
+        # Remove any newlines, carriage returns, and non-hex characters
+        hex_code = hex_code.replace("\n", "").replace("\r", "").replace("\t", "")
+        hex_code = re.sub(r"[^0-9a-fA-F]", "", hex_code)
+
+        # If after our cleanup, the hex code is uneven, we remove the final nibble
+        # and log what was there.
+        if len(hex_code) % 2:
+            logging.warning(
+                "Odd‐length hex string (%d). Dropping final nibble %r",
+                len(hex_code),
+                hex_code[-1],
+            )
+            hex_code = hex_code[:-1]
+
+        # If there are still non-hex characters in the bytecode, we guard
+        # against an exception in the from_hex function
+        try:
+            clean_bytes, _ = zeroMetadata(bytes.fromhex(hex_code))
+        except ValueError as e:
+            m = re.search(r"position (\d+)", str(e))
+            if not m:
+                logging.error("Unexpected fromhex() error: %s", e)
+                raise
+            pos = int(m.group(1))
+            if pos < len(hex_code):
+                bad = hex_code[pos]
+                logging.error(
+                    "Invalid hex character %r at position %d; removing it", bad, pos
+                )
+
         clean = clean_bytes.hex()
 
         logging.debug("Cleaned bytecode from whitespace and metadata.")
@@ -233,24 +292,24 @@ class InputHelper:
         disasm_out = ""
 
         try:
-            with open(evm_file, 'r') as f:
+            with open(evm_file, "r") as f:
                 bytecode = f.read().strip()
 
             # Remove the 0x prefix, because evm disasm expects only the bytecode.
             if bytecode.startswith("0x"):
                 bytecode = bytecode[2:]
 
-            # First we check for the disassembler we want to use, then we parse the output to 
+            # First we check for the disassembler we want to use, then we parse the output to
             # match the output of the evm disasm command, because it was previously used.
             # "evm disasm" prints the address in 5 hex digits, followed by the instruction name.
             # If the instruction has push data, it is printed after the instruction name.
             # We want to keep that format, while using pyevmasm's or evmdasm's disassembly functions.
-            if self.disassembler == "pyevmasm":         
+            if self.disassembler == "pyevmasm":
                 instructions = disassemble_hex(bytecode)
                 i = 0
                 for instr in instructions.splitlines():
                     disasm_out += f"{i:05x}: {instr}\n"
-                    
+
                     # With pyevmasm, we need to construct the index, because the disassembler doesn't
                     # do it for us.
                     # If the instruction is a PUSH, we need to add the length of the data to the index.
@@ -262,7 +321,7 @@ class InputHelper:
                 logging.debug("Disassembled pyevmasm instructions: %s", instructions)
 
             elif self.disassembler == "evmdasm":
-                instructions = EvmBytecode(bytecode).disassemble()               
+                instructions = EvmBytecode(bytecode).disassemble()
                 for instr in instructions:
                     instr_address = instr.address
                     instr_name = instr.name
@@ -296,9 +355,11 @@ class InputHelper:
                         instr_name = "REVERT"
                     # This includes UNKNOWN_0xfe, which is INVALID by design
                     elif instr.name.startswith("UNKNOWN_0x"):
-                        logging.warning(f"{instr_address:05x}: {instr_name} is an INVALID instruction.")
+                        logging.warning(
+                            f"{instr_address:05x}: {instr_name} is an INVALID instruction."
+                        )
                         instr_name = "INVALID"
-                    
+
                     line = f"{instr_address:05x}: {instr_name}"
                     if hasattr(instr, "operand") and instr_operand:
                         line += f" 0x{instr_operand}"
@@ -308,7 +369,14 @@ class InputHelper:
             elif self.disassembler == "geas":
                 try:
                     result = subprocess.run(
-                        ["/usr/local/bin/geas", "-d", "-pc", "-uppercase", "-blocks=false", evm_file],
+                        [
+                            "/usr/local/bin/geas",
+                            "-d",
+                            "-pc",
+                            "-uppercase",
+                            "-blocks=false",
+                            evm_file,
+                        ],
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         text=True,
@@ -322,7 +390,7 @@ class InputHelper:
 
                 for instr in result.stdout.splitlines():
                     instr_address = int(instr.split(": ")[0], 16)
-                    
+
                     # geas writes invalid opcodes as "#bytes 0x$hex_value$". This has to be monkeypatched
                     # for oyente to work.
                     if instr.startswith("#"):
@@ -341,7 +409,9 @@ class InputHelper:
                                 instr_name += " " + " ".join(instr_operand)
                             disasm_out += f"{instr_address:05x}: {instr_name}\n"
                         except IndexError:
-                            logging.critical(f"INVALID instruction: {instr}. Adding INVALID to disasm_out.")
+                            logging.critical(
+                                f"INVALID instruction: {instr}. Adding INVALID to disasm_out."
+                            )
                             disasm_out += f"{instr_address:05x}: INVALID\n"
 
                 logging.debug("Disassembled geas instructions: %s", result.stdout)
@@ -352,12 +422,12 @@ class InputHelper:
         except Exception as e:
             logging.critical("Disassembly failed: %s.", e)
 
-        with open(disasm_file, 'w') as of:
+        with open(disasm_file, "w") as of:
             of.write(disasm_out)
 
     def _rm_tmp_files_of_multiple_contracts(self, contracts):
-        if self.input_type in ['standard_json', 'standard_json_output']:
-            self._rm_file('standard_json_output')
+        if self.input_type in ["standard_json", "standard_json_output"]:
+            self._rm_file("standard_json_output")
         for contract, _ in contracts:
             self._rm_tmp_files(contract)
 
