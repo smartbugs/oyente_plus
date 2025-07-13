@@ -63,7 +63,7 @@ def has_dependencies_installed():
         cmd = "evm --version"
         out = run_command(cmd).strip()
         evm_version = re.findall(r"evm version (\d*.\d*.\d*)", out)[0]
-        tested_evm_version = "1.15.11"
+        tested_evm_version = "1.16.1"
         if compare_versions(evm_version, tested_evm_version) > 0:
             logging.warning(
                 "You are using evm version %s. The supported version is %s"
@@ -174,7 +174,6 @@ def main():
         help="Get contract from remote URL. Solidity by default. Use -b to process evm instead.",
         dest="remote_URL",
     )
-
     parser.add_argument(
         "-cnames",
         "--target-contracts",
@@ -182,66 +181,9 @@ def main():
         nargs="+",
         help="The name of targeted contracts. If specified, only the specified contracts in the source code will be processed. By default, all contracts in Solidity code are processed.",
     )
-
     parser.add_argument(
         "--version", action="version", version="oyente version 0.2.7 - Commonwealth"
     )
-
-    parser.add_argument(
-        "-rmp", "--remap", help="Remap directory paths", action="store", type=str
-    )
-    parser.add_argument(
-        "-t", "--timeout", help="Timeout for Z3 in ms.", action="store", type=int
-    )
-    parser.add_argument(
-        "-gl",
-        "--gaslimit",
-        help="Limit Gas",
-        action="store",
-        dest="gas_limit",
-        type=int,
-    )
-    parser.add_argument(
-        "-rp",
-        "--root-path",
-        help="Root directory path used for the online version",
-        action="store",
-        dest="root_path",
-        type=str,
-    )
-    parser.add_argument(
-        "-ll",
-        "--looplimit",
-        help="Limit number of loops",
-        action="store",
-        dest="loop_limit",
-        type=int,
-    )
-    parser.add_argument(
-        "-dl",
-        "--depthlimit",
-        help="Limit DFS depth",
-        action="store",
-        dest="depth_limit",
-        type=int,
-    )
-    parser.add_argument(
-        "-ap",
-        "--allow-paths",
-        help="Allow a given path for imports",
-        action="store",
-        dest="allow_paths",
-        type=str,
-    )
-    parser.add_argument(
-        "-glt",
-        "--global-timeout",
-        help="Timeout for symbolic execution",
-        action="store",
-        dest="global_timeout",
-        type=int,
-    )
-
     parser.add_argument(
         "-rmp", "--remap", help="Remap directory paths", action="store", type=str
     )
