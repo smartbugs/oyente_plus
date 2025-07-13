@@ -34,8 +34,6 @@ RUN pip install --no-cache-dir --upgrade pip wheel && \
     pip install --no-cache-dir \
     cbor2 \
     crytic-compile==0.3.8 \
-    evmdasm \
-    pyevmasm \
     requests \
     six \
     solc-select \
@@ -48,18 +46,6 @@ RUN pip install --no-cache-dir --upgrade pip wheel && \
 # it will not work.
 RUN solc-select install ${SOLC_VERSION}
 ENV SOLC_VERSION=${SOLC_VERSION}
-
-# Install Go
-RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
-    ln -s /usr/local/go/bin/go /usr/bin/go && \
-    ln -s /usr/local/go/bin/gofmt /usr/bin/gofmt
-
-# Install geas using module-aware mode
-RUN export PATH=$PATH:/usr/local/go/bin && \
-    export GOBIN=/usr/local/bin && \
-    export GO111MODULE=on && \
-    go install github.com/fjl/geas/cmd/geas@90dd9310fef66708b9343aba8e48510d13a5e093
 
 # Copy the Oyente code into the container
 COPY . /oyente/
