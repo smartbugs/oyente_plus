@@ -225,7 +225,7 @@ class InputHelper:
             self._prepare_disasm_file(contract, bytecode)
 
     def _prepare_disasm_file(self, target, bytecode):
-        self._write_disasm_file(target)
+        self._write_disasm_file(target, bytecode)
 
     def _get_temporary_files(self, target):
         return {"disasm": target + ".evm.disasm", "log": target + ".evm.disasm.log"}
@@ -239,22 +239,17 @@ class InputHelper:
             op = bin_code[pc]
             arg_len = op - 0x5F if 0x60 <= op <= 0x7F else 0
             arg = f" 0x{bin_code[pc + 1 : pc + 1 + arg_len].hex()}" if arg_len else ""
-            asm.append(f"{pc:05x} {INSTRUCTIONS[op]}{arg}\n")
+            asm.append(f"{pc:05x}: {INSTRUCTIONS[op]}{arg}\n")
             pc += 1 + arg_len
         return "".join(asm)
 
-    def _write_disasm_file(self, target):
+    def _write_disasm_file(self, target, bytecode):
         tmp_files = self._get_temporary_files(target)
-        evm_file = tmp_files["evm"]
         disasm_file = tmp_files["disasm"]
         disasm_out = ""
 
         try:
-            with open(evm_file, "r") as f:
-                bytecode = f.read().strip()
-
-            disasm_out = self._hex2asm(self, bytecode)
-
+            disasm_out = self._hex2asm(bytecode)
         except Exception as e:
             logging.critical("Disassembly failed: %s.", e)
 
