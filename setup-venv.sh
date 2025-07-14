@@ -15,6 +15,4 @@ pip install crytic_compile==0.3.8
 pip install solc-select
 pip install cbor2
 pip install web3
-pip install evmdasm
-pip install pyevmasm
 pip install git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils

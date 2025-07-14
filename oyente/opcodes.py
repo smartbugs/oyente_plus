@@ -11,8 +11,8 @@ opcodes = {
     "SMOD": [0x07, 2, 1],
     "ADDMOD": [0x08, 3, 1],
     "MULMOD": [0x09, 3, 1],
-    "EXP": [0x0a, 2, 1],
-    "SIGNEXTEND": [0x0b, 2, 1],
+    "EXP": [0x0A, 2, 1],
+    "SIGNEXTEND": [0x0B, 2, 1],
     "LT": [0x10, 2, 1],
     "GT": [0x11, 2, 1],
     "SLT": [0x12, 2, 1],
@@ -23,10 +23,10 @@ opcodes = {
     "OR": [0x17, 2, 1],
     "XOR": [0x18, 2, 1],
     "NOT": [0x19, 1, 1],
-    "BYTE": [0x1a, 2, 1],
-    "SHL": [0x1b, 2, 1],
-    "SHR": [0x1c, 2, 1],
-    "SAR": [0x1d, 2, 1],
+    "BYTE": [0x1A, 2, 1],
+    "SHL": [0x1B, 2, 1],
+    "SHR": [0x1C, 2, 1],
+    "SAR": [0x1D, 2, 1],
     "SHA3": [0x20, 2, 1],
     "ADDRESS": [0x30, 0, 1],
     "BALANCE": [0x31, 1, 1],
@@ -38,12 +38,12 @@ opcodes = {
     "CALLDATACOPY": [0x37, 3, 0],
     "CODESIZE": [0x38, 0, 1],
     "CODECOPY": [0x39, 3, 0],
-    "GASPRICE": [0x3a, 0, 1],
-    "EXTCODESIZE": [0x3b, 1, 1],
-    "EXTCODECOPY": [0x3c, 4, 0],
-    "RETURNDATASIZE": [0x3d, 0, 1],
-    "RETURNDATACOPY": [0x3e, 3, 0],
-    "EXTCODEHASH": [0x3f, 1, 1],
+    "GASPRICE": [0x3A, 0, 1],
+    "EXTCODESIZE": [0x3B, 1, 1],
+    "EXTCODECOPY": [0x3C, 4, 0],
+    "RETURNDATASIZE": [0x3D, 0, 1],
+    "RETURNDATACOPY": [0x3E, 3, 0],
+    "EXTCODEHASH": [0x3F, 1, 1],
     "BLOCKHASH": [0x40, 1, 1],
     "COINBASE": [0x41, 0, 1],
     "TIMESTAMP": [0x42, 0, 1],
@@ -54,7 +54,7 @@ opcodes = {
     "SELFBALANCE": [0x47, 0, 1],
     "BASEFEE": [0x48, 0, 1],
     "BLOBHASH": [0x49, 1, 1],
-    "BLOBBASEFEE": [0x4a, 0, 1],
+    "BLOBBASEFEE": [0x4A, 0, 1],
     "POP": [0x50, 1, 0],
     "MLOAD": [0x51, 1, 1],
     "MSTORE": [0x52, 2, 0],
@@ -65,35 +65,35 @@ opcodes = {
     "JUMPI": [0x57, 2, 0],
     "PC": [0x58, 0, 1],
     "MSIZE": [0x59, 0, 1],
-    "GAS": [0x5a, 0, 1],
-    "JUMPDEST": [0x5b, 0, 0],
-    "TLOAD": [0x5c, 1, 1],
-    "TSTORE": [0x5d, 2, 0],
-    "MCOPY": [0x5e, 3, 0],
-    "PUSH0": [0x5f, 0, 1],
-    "LOG0": [0xa0, 2, 0],
-    "LOG1": [0xa1, 3, 0],
-    "LOG2": [0xa2, 4, 0],
-    "LOG3": [0xa3, 5, 0],
-    "LOG4": [0xa4, 6, 0],
-    "CREATE": [0xf0, 3, 1],
-    "CALL": [0xf1, 7, 1],
-    "CALLCODE": [0xf2, 7, 1],
-    "RETURN": [0xf3, 2, 0],
-    "DELEGATECALL": [0xf4, 6, 1],
-    "CREATE2": [0xf5, 4, 1],
-    "RNGSEED": [0xf6, 1, 1],
-    "SSIZEEXT": [0xf7, 2, 1],
-    "SLOADBYTES": [0xf8, 3, 0],
-    "SSTOREBYTES": [0xf9, 3, 0],
-    "STATICCALL": [0xfa, 6, 1],
-    "STATEROOT": [0xfb, 1, 1],
-    "TXEXECGAS": [0xfc, 0, 1],
-    "REVERT": [0xfd, 2, 0],
-    "INVALID": [0xfe, 0, 0],  # Not an opcode use to cause an exception
-    "ASSERTFAIL": [0xfe, 0, 0],
-    "SELFDESTRUCT": [0xff, 1, 0],
-    "---END---": [0x00, 0, 0]
+    "GAS": [0x5A, 0, 1],
+    "JUMPDEST": [0x5B, 0, 0],
+    "TLOAD": [0x5C, 1, 1],
+    "TSTORE": [0x5D, 2, 0],
+    "MCOPY": [0x5E, 3, 0],
+    "PUSH0": [0x5F, 0, 1],
+    "LOG0": [0xA0, 2, 0],
+    "LOG1": [0xA1, 3, 0],
+    "LOG2": [0xA2, 4, 0],
+    "LOG3": [0xA3, 5, 0],
+    "LOG4": [0xA4, 6, 0],
+    "CREATE": [0xF0, 3, 1],
+    "CALL": [0xF1, 7, 1],
+    "CALLCODE": [0xF2, 7, 1],
+    "RETURN": [0xF3, 2, 0],
+    "DELEGATECALL": [0xF4, 6, 1],
+    "CREATE2": [0xF5, 4, 1],
+    "RNGSEED": [0xF6, 1, 1],
+    "SSIZEEXT": [0xF7, 2, 1],
+    "SLOADBYTES": [0xF8, 3, 0],
+    "SSTOREBYTES": [0xF9, 3, 0],
+    "STATICCALL": [0xFA, 6, 1],
+    "STATEROOT": [0xFB, 1, 1],
+    "TXEXECGAS": [0xFC, 0, 1],
+    "REVERT": [0xFD, 2, 0],
+    "INVALID": [0xFE, 0, 0],  # Not an opcode use to cause an exception
+    "ASSERTFAIL": [0xFE, 0, 0],
+    "SELFDESTRUCT": [0xFF, 1, 0],
+    "---END---": [0x00, 0, 0],
 }
 
 # TO BE UPDATED IF ETHEREUM VM CHANGES their fee structure
@@ -135,48 +135,347 @@ GCOST = {
     "Gsha3word": 6,
     "Gcopy": 3,
     "Gblockhash": 20,
-    "GTransientStorage": 100
+    "GTransientStorage": 100,
 }
+
+INSTRUCTIONS = [
+    "STOP",
+    "ADD",
+    "MUL",
+    "SUB",
+    "DIV",
+    "SDIV",
+    "MOD",
+    "SMOD",  # 0x00-0x07
+    "ADDMOD",
+    "MULMOD",
+    "EXP",
+    "SIGNEXTEND",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0x08-0x0F
+    "LT",
+    "GT",
+    "SLT",
+    "SGT",
+    "EQ",
+    "ISZERO",
+    "AND",
+    "OR",  # 0x10-0x17
+    "XOR",
+    "NOT",
+    "BYTE",
+    "SHL",
+    "SHR",
+    "SAR",
+    "INVALID",
+    "INVALID",  # 0x18-0x1F
+    "KECCAK256",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0x20-0x27
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0x28-0x2f
+    "ADDRESS",
+    "BALANCE",
+    "ORIGIN",
+    "CALLER",
+    "CALLVALUE",
+    "CALLDATALOAD",
+    "CALLDATASIZE",
+    "CALLDATACOPY",  # 0x30-0x37
+    "CODESIZE",
+    "CODECOPY",
+    "GASPRICE",
+    "EXTCODESIZE",
+    "EXTCODECOPY",
+    "RETURNDATASIZE",
+    "RETURNDATACOPY",
+    "EXTCODEHASH",  # 0x38-0x3F
+    "BLOCKHASH",
+    "COINBASE",
+    "TIMESTAMP",
+    "NUMBER",
+    "PREVRANDAO",
+    "GASLIMIT",
+    "CHAINID",
+    "SELFBALANCE",  # 0x40-0x47
+    "BASEFEE",
+    "BLOBHASH",
+    "BLOBBASEFEE",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0x48-0x4F
+    "POP",
+    "MLOAD",
+    "MSTORE",
+    "MSTORE8",
+    "SLOAD",
+    "SSTORE",
+    "JUMP",
+    "JUMPI",  # 0x50-0x57
+    "PC",
+    "MSIZE",
+    "GAS",
+    "JUMPDEST",
+    "TLOAD",
+    "TSTORE",
+    "MCOPY",
+    "PUSH0",  # 0x58-0x5F
+    "PUSH1",
+    "PUSH2",
+    "PUSH3",
+    "PUSH4",
+    "PUSH5",
+    "PUSH6",
+    "PUSH7",
+    "PUSH8",  # 0x60-0x67
+    "PUSH9",
+    "PUSH10",
+    "PUSH11",
+    "PUSH12",
+    "PUSH13",
+    "PUSH14",
+    "PUSH15",
+    "PUSH16",  # 0x68-0x6F
+    "PUSH17",
+    "PUSH18",
+    "PUSH19",
+    "PUSH20",
+    "PUSH21",
+    "PUSH22",
+    "PUSH23",
+    "PUSH24",  # 0x70-0x77
+    "PUSH25",
+    "PUSH26",
+    "PUSH27",
+    "PUSH28",
+    "PUSH29",
+    "PUSH30",
+    "PUSH31",
+    "PUSH32",  # 0x78-0x7F
+    "DUP1",
+    "DUP2",
+    "DUP3",
+    "DUP4",
+    "DUP5",
+    "DUP6",
+    "DUP7",
+    "DUP8",  # 0x80-0x87
+    "DUP9",
+    "DUP10",
+    "DUP11",
+    "DUP12",
+    "DUP13",
+    "DUP14",
+    "DUP15",
+    "DUP16",  # 0x88-0x8F
+    "SWAP1",
+    "SWAP2",
+    "SWAP3",
+    "SWAP4",
+    "SWAP5",
+    "SWAP6",
+    "SWAP7",
+    "SWAP8",  # 0x90-0x97
+    "SWAP9",
+    "SWAP10",
+    "SWAP11",
+    "SWAP12",
+    "SWAP13",
+    "SWAP14",
+    "SWAP15",
+    "SWAP16",  # 0x98-0x9F
+    "LOG0",
+    "LOG1",
+    "LOG2",
+    "LOG3",
+    "LOG4",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xA0-0xA7
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xA8-0xAF
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xB0-0xB7
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xB8-0xBF
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xC0-0xC7
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xC8-0xCF
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xD0-0xD7
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xD8-0xDF
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xE0-0xE7
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",
+    "INVALID",  # 0xE8-0xEF
+    "CREATE",
+    "CALL",
+    "CALLCODE",
+    "RETURN",
+    "DELEGATECALL",
+    "CREATE2",
+    "INVALID",
+    "INVALID",  # 0xF0-0xF7
+    "INVALID",
+    "INVALID",
+    "STATICCALL",
+    "INVALID",
+    "INVALID",
+    "REVERT",
+    "INVALID",
+    "SELFDESTRUCT",  # 0xF8-0xFF
+]
 
 Wzero = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
 
-Wbase = ("ADDRESS", "ORIGIN", "CALLER", "CALLVALUE", "CALLDATASIZE",
-         "CODESIZE", "GASPRICE", "COINBASE", "TIMESTAMP", "NUMBER",
-         "PREVRANDAO", "GASLIMIT", "POP", "PC", "MSIZE", "GAS", "BLOBHASH",
-         "PUSH0")
+Wbase = (
+    "ADDRESS",
+    "ORIGIN",
+    "CALLER",
+    "CALLVALUE",
+    "CALLDATASIZE",
+    "CODESIZE",
+    "GASPRICE",
+    "COINBASE",
+    "TIMESTAMP",
+    "NUMBER",
+    "PREVRANDAO",
+    "GASLIMIT",
+    "POP",
+    "PC",
+    "MSIZE",
+    "GAS",
+    "BLOBHASH",
+    "PUSH0",
+)
 
-Wverylow = ("ADD", "SUB", "NOT", "LT", "GT", "SLT", "SHL", "SHR", "SAR",
-            "SGT", "EQ", "ISZERO", "AND", "OR", "XOR", "BYTE", "CALLDATALOAD",
-            "MLOAD", "MSTORE", "MSTORE8", "PUSH", "DUP", "SWAP", "BLOBBASEFEE")
+Wverylow = (
+    "ADD",
+    "SUB",
+    "NOT",
+    "LT",
+    "GT",
+    "SLT",
+    "SHL",
+    "SHR",
+    "SAR",
+    "SGT",
+    "EQ",
+    "ISZERO",
+    "AND",
+    "OR",
+    "XOR",
+    "BYTE",
+    "CALLDATALOAD",
+    "MLOAD",
+    "MSTORE",
+    "MSTORE8",
+    "PUSH",
+    "DUP",
+    "SWAP",
+    "BLOBBASEFEE",
+)
 
 Wlow = ("MUL", "DIV", "SDIV", "MOD", "SMOD", "SIGNEXTEND")
 
 Wmid = ("ADDMOD", "MULMOD", "JUMP")
 
-Whigh = ("JUMPI")
+Whigh = "JUMPI"
 
-Wext = ("EXTCODESIZE")
+Wext = "EXTCODESIZE"
 
 Wtransientstorage = ("TLOAD", "TSTORE")
+
 
 def get_opcode(opcode):
     if opcode in opcodes:
         return opcodes[opcode]
     # check PUSHi
     for i in range(32):
-        if opcode == 'PUSH' + str(i + 1):
+        if opcode == "PUSH" + str(i + 1):
             return [hex(0x60 + i), 0, 1]
 
     # check DUPi
     for i in range(16):
-        if opcode == 'DUP' + str(i + 1):
+        if opcode == "DUP" + str(i + 1):
             return [hex(0x80 + i), i + 1, i + 2]
 
     # check SWAPi
     for i in range(16):
-        if opcode == 'SWAP' + str(i + 1):
+        if opcode == "SWAP" + str(i + 1):
             return [hex(0x90 + i), i + 2, i + 2]
-    raise ValueError('Bad Opcode' + opcode)
+    raise ValueError("Bad Opcode" + opcode)
 
 
 def get_ins_cost(opcode):
@@ -184,7 +483,12 @@ def get_ins_cost(opcode):
         return GCOST["Gzero"]
     elif opcode in Wbase:
         return GCOST["Gbase"]
-    elif opcode in Wverylow or opcode.startswith("PUSH") or opcode.startswith("DUP") or opcode.startswith("SWAP"):
+    elif (
+        opcode in Wverylow
+        or opcode.startswith("PUSH")
+        or opcode.startswith("DUP")
+        or opcode.startswith("SWAP")
+    ):
         return GCOST["Gverylow"]
     elif opcode in Wlow:
         return GCOST["Glow"]
