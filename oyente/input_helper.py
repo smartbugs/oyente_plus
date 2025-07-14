@@ -6,7 +6,6 @@ import logging
 import json
 import global_params
 import six
-import cbor2
 from opcodes import INSTRUCTIONS
 from source_map import SourceMap
 from utils import run_command, run_command_with_err
