@@ -1,116 +1,70 @@
-Oyente
-======
+Oyente+
+=======
 
 An Analysis Tool for Smart Contracts
 
-[![Gitter][gitter-badge]][gitter-url]
 [![License: GPL v3][license-badge]][license-badge-url]
-[![Build Status](https://travis-ci.org/melonproject/oyente.svg?branch=master)](https://travis-ci.org/melonproject/oyente)
 
-*This repository is currently maintained by Xiao Liang Yu ([@yxliang01](https://github.com/yxliang01)). If you encounter any bugs or usage issues, please feel free to create an issue on [our issue tracker](https://github.com/melonproject/oyente/issues).*
+*This repository is currently maintained by Thomas Fenninger ([@zariliv](https://github.com/zariliv)). If you encounter any bugs or usage issues, please feel free to create an issue on [our issue tracker](https://github.com/smartbugs/oyente_plus/issues).*
 
 ## Quick Start
 
-A container with required dependencies configured can be found [here](https://hub.docker.com/r/luongnguyen/oyente/). The image is however outdated. We are working on pushing the latest image to dockerhub for your convenience. If you experience any issue with this image, please try to build a new docker image by pulling this codebase before open an issue.
+A container with required dependencies configured can be found [here](https://hub.docker.com/r/smartbugs/oyente_plus/).
 
 To open the container, install docker and run:
 
-```
-docker pull luongnguyen/oyente && docker run -i -t luongnguyen/oyente
+```shell
+docker pull smartbugs/oyente_plus && docker run -i -t smartbugs/oyente_plus
 ```
 
 To evaluate the greeter contract inside the container, run:
 
-```
+```shell
 cd /oyente/oyente && python oyente.py -s greeter.sol
 ```
 
 and you are done!
 
-Note - If need the [version of Oyente](https://github.com/melonproject/oyente/tree/290f1ae1bbb295b8e61cbf0eed93dbde6f287e69) referred to in the paper, run the container from [here](https://hub.docker.com/r/hrishioa/oyente/)
-
-To run the web interface, execute
-`docker run -w /oyente/web -p 3000:3000 oyente:latest ./bin/rails server`
-
 ## Custom Docker image build
 
+```shell
+docker build -t oyente_plus .
+docker run -it -e "OYENTE=/oyente/oyente" oyente_plus:latest
 ```
-docker build -t oyente .
-docker run -it -p 3000:3000 -e "OYENTE=/oyente/oyente" oyente:latest
-```
-
-Open a web browser to `http://localhost:3000` for the graphical interface.
 
 ## Installation
 
-Execute a python virtualenv
+Run the setup-venv.sh shell script to create a new python virtualenv and install all dependencies.
 
+```shell
+./setup-venv.sh
 ```
-python -m virtualenv env
-source env/bin/activate
-```
-
-Install Oyente via pip:
-
-```
-$ pip2 install oyente
-```
-Dependencies:
-
-The following require a Linux system to fufill. macOS instructions forthcoming.
-
-[solc](https://github.com/melonproject/oyente#solc)
-[evm](https://github.com/melonproject/oyente#evm-from-go-ethereum)
-
-## Full installation
 
 ### Install the following dependencies
+
 #### solc
-```
-$ sudo add-apt-repository ppa:ethereum/ethereum
-$ sudo apt-get update
-$ sudo apt-get install solc
+
+```shell
+sudo add-apt-repository ppa:ethereum/ethereum
+sudo apt-get update
+sudo apt-get install solc
 ```
 
 #### evm from [go-ethereum](https://github.com/ethereum/go-ethereum)
 
 1. https://geth.ethereum.org/downloads/ or
 2. By from PPA if your using Ubuntu
-```
-$ sudo apt-get install software-properties-common
-$ sudo add-apt-repository -y ppa:ethereum/ethereum
-$ sudo apt-get update
-$ sudo apt-get install ethereum
-```
 
-#### [z3](https://github.com/Z3Prover/z3/releases) Theorem Prover version 4.5.0.
-
-Download the [source code of version z3-4.5.0](https://github.com/Z3Prover/z3/releases/tag/z3-4.5.0)
-
-Install z3 using Python bindings
-
-```
-$ python scripts/mk_make.py --python
-$ cd build
-$ make
-$ sudo make install
-```
-
-#### [Requests](https://github.com/kennethreitz/requests/) library
-
-```
-pip install requests
-```
-
-#### [web3](https://github.com/pipermerriam/web3.py) library
-
-```
-pip install web3
+```shell
+sudo apt-get install software-properties-common
+sudo add-apt-repository -y ppa:ethereum/ethereum
+sudo apt-get update
+sudo apt-get install ethereum
 ```
 
 ### Evaluating Ethereum Contracts
 
-```
+```shell
 #evaluate a local solidity contract
 python oyente.py -s <contract filename>
 
@@ -152,10 +106,14 @@ Some analytics regarding the number of contracts tested, number of contracts ana
 
 ## Contributing
 
-Checkout out our [contribution guide](https://github.com/melonproject/oyente/blob/master/CONTRIBUTING.md) and the code structure [here](https://github.com/melonproject/oyente/blob/master/code.md).
+Find a bug, a way to improve the documentation or have a feature request? Open an [issue](https://github.com/smartbugs/oyente_plus/issues/new).
 
+Or even better, send us a PR :)
 
-[gitter-badge]: https://img.shields.io/gitter/room/melonproject/oyente.js.svg?style=flat-square
-[gitter-url]: https://gitter.im/melonproject/oyente?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+### Before you send PRs
+- Follow the [instructions](https://github.com/smartbugs/oyente_plus#full-install) to get a locally working version of oyente+
+- Make your awesome change
+- Write a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
+
 [license-badge]: https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=flat-square
 [license-badge-url]: ./LICENSE
