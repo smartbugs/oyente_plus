@@ -4,10 +4,8 @@ Oyente was one of the first tools for detecting vulnerabilities in Ethereum smar
 
 The version of Oyente here, Oyente+, has been updated to support the newest EVM and Solidity versions. The major changes are the following ones.
 
+- [Update EVM \& Solidity support](#update-evm--solidity-support)
   - [Disassembler](#disassembler)
-    - [pyevmasm](#pyevmasm)
-    - [evmdasm](#evmdasm)
-    - [geas](#geas)
   - [Opcodes](#opcodes)
   - [Solidity](#solidity)
     - [New Abstract Syntax Tree (AST) format](#new-abstract-syntax-tree-ast-format)
@@ -20,28 +18,15 @@ The version of Oyente here, Oyente+, has been updated to support the newest EVM 
 ## Disassembler
 
 Oyente disassembles bytecode to mnemonic instructions.
-The original version used `evmasm`, a disassambler shipped with EVM `1.7.3`, but not with recent versions like `1.15.11`. As a replacement, Oyente+ offers three alternatives, selected by the commandline option `-d` followed by one of the values `evmdasm` (default), `pyevmasm`, and `geas`.
+The original version used `evmasm`, a disassambler shipped with EVM `1.7.3`, but not with recent versions like `1.16.1`. As a replacement, Oyente+ uses a simple function `_hex2asm` to disassemble bytecode directly.
 
-The function `_write_disasm_file` in `input_helper.py` transforms the output of the selected disassembler to the format expected by Oyente, where each line consists of an address (5 hex digits), an opcode and stack values.
+The function `_write_disasm_file` in `input_helper.py` transforms the output of this function to the format expected by Oyente, where each line consists of an address (5 hex digits), an opcode and stack values.
 
 ```bytecode
 00001: TSTORE 0x0 0x1234
 00002: PUSH0
 ...
 ```
-
-### evmdasm
-
-`evmdasm` is the disassembler used by default. It is Python-based and installed automatically by `setup-venv.py`. It has not been updated for some years. As it represents new operations as `UNKNOWN_0x..`, `_write_disasm_file` can replace them by the appropriate mnemonics.
-
-### pyevmasm
-
-`pyevmasm` does not generate addresses, which therefore have to be added by `_write_disasm_file`. Unknown operations are represented just as `UNKNOWN` and cannot be reconstructed. In such a case, Oyente+ stops its program analysis, yielding reduced code coverage.
-
-
-### geas
-
-`geas` writes invalid opcodes as `#bytes 0x....`, which is mapped to a format suitable for Oyente. `geas` is the newest disassembler in the mix and supports all current opcodes. As it is based on GO, it is not set as default.
 
 ## Opcodes
 
@@ -119,11 +104,9 @@ It may include more fields in the future. We remove this metadata from the bytec
 
 The Dockerfile for Oyente has been completely reworked. All Dockerfile linter warnings were fixed and the dependencies and statements were cleaned. The base image is now `ubuntu:jammy`. Since `solc-select` does not work inside the container, the solidity version which is to be used, has to be set in the Dockerfile via `ARG SOLC_VERSION=x.x.x`. The version then gets installed automatically and the respective environment variable, which is used by solc, is set.
 
-To be able to use the disassembler `geas`, we had to install go as a dependency.
-
 ## Dependencies
 
-The dependencies were reviewed and we added the new disassemblers `evmdasm` and `pyevmasm` to the list. We also had some updates done:
+The dependencies were reviewed and we had some updates done:
 
 - `crytic-compile` was updated to version `0.3.8`, which solved some minor issues with `solc` and `solc-select`
 - `z3-solver` was updated to version `4.14.1.0`, which significantly improved performance of symbolic execution and fixed some minor issues as well
