@@ -1,11 +1,11 @@
 import mmap
+import ntpath
 import os
 import re
-from subprocess import call
 import sys
-import ntpath
-import re
+
 import lxml.html
+
 
 # Using GNU Parallel - O. Tange (2011): GNU Parallel - The Command-Line Power Tool,
 # ;login: The USENIX Magazine, February 2011:42-47.
@@ -238,6 +238,6 @@ def get_tx_from_file(fn):
 
 def run_re_file(re_str, fn):
     size = os.stat(fn).st_size
-    with open(fn, "r") as tf:
+    with open(fn) as tf:
         data = mmap.mmap(tf.fileno(), size, access=mmap.ACCESS_READ)
         return re.findall(re_str, data)

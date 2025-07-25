@@ -1,9 +1,10 @@
-from subprocess import *
 import json
-import re
 import os
-import sys
+import re
+from subprocess import *
+
 from tqdm import tqdm
+
 
 contracts = {}
 opcodes = {}

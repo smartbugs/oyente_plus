@@ -1,7 +1,8 @@
-import subprocess
-import re
-import os
 import json
+import os
+import re
+import subprocess
+
 from tqdm import tqdm
 
 

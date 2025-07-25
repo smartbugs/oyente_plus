@@ -1,7 +1,8 @@
-import re
-import os
-from tqdm import tqdm
 import json
+import os
+import re
+
+from tqdm import tqdm
 
 
 def get_transactions(fname):

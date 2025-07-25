@@ -1,9 +1,11 @@
-from tqdm import tqdm
-import json
-import re
-import numpy as np
-import os
 import glob
+import json
+import os
+import re
+
+import numpy as np
+from tqdm import tqdm
+
 
 # from fuzzywuzzy import fuzz, process
 
