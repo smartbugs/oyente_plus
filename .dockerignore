@@ -45,7 +45,7 @@ Dockerfile*
 docker-compose*
 
 # Oyente data
-bytecode*/
+bytecode*
 contract_data/
 current_test.pickle
 *.report
