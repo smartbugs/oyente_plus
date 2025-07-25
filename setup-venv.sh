@@ -1,18 +1,18 @@
 #!/bin/bash
-# tested for python 3.12
+# Setup virtual environment for Oyente+ development
+set -e
+
+echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
 
-# avoid spurious errors/warnings; the next two lines could be omitted
-pip install --upgrade pip
-pip install wheel
+echo "Upgrading pip and installing build tools..."
+pip install --upgrade pip wheel
 
-# install the packages needed by Oyente
-pip install requests
-pip install six
-pip install z3-solver==4.14.1.0
-pip install crytic_compile==0.3.8
-pip install solc-select
-pip install cbor2
-pip install web3
-pip install git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils
+echo "Installing Oyente+ and dependencies from pyproject.toml..."
+pip install -e .
+
+echo "Installing development dependencies..."
+pip install -e .[dev]
+
+echo "Setup complete! Activate the environment with: source venv/bin/activate"

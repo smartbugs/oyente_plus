@@ -34,13 +34,17 @@ docker run -it -e "OYENTE=/oyente/oyente" oyente_plus:latest
 
 ## Installation
 
-Run the setup-venv.sh shell script to create a new python virtualenv and install all dependencies.
+### Quick Setup
+
+Run the setup-venv.sh shell script to create a new python virtualenv and install all dependencies from pyproject.toml:
 
 ```shell
 ./setup-venv.sh
 ```
 
-### Install the following dependencies
+### Manual Installation
+
+Alternatively, install dependencies manually:
 
 #### solc
 
