@@ -1,24 +1,62 @@
+# Development files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Python cache and build
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+wheels/
+
+# Virtual environments
+venv/
+.venv/
+
+# Testing and coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Environment variables and secrets
+.env
+.env.*
+secrets.yml
+secrets.json
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Oyente-specific files
 *.disasm
 *.evm
 *.log
-*.pyc
 *.report
 *.sol
-
-.DS_Store
-
-.idea/dist/
-
-contract_data
-dist/
-tmp/
-
 current_test.pickle
+contract_data/
+bytecode*/
 
-bytecode*
-
+# Keep test contracts
 !oyente/tests/contracts/*/*
-web/vendor/
 
-venv
-__pycache__
+# Ruby/Rails (web interface)
+web/vendor/
+web/log/
+web/tmp/
+web/node_modules/
+web/.bundle/
+
+# Temporary files
+tmp/
+*.bak
