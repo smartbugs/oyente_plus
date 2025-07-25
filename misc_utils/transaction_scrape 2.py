@@ -3,7 +3,6 @@ import os
 import re
 from subprocess import call
 import sys
-import string
 import ntpath
 import re
 import lxml.html
@@ -95,7 +94,7 @@ def get_contracts_info(contracts, clean):
 
 
 def process_value(inp):
-    inp = string.join(string.split(strip_html(inp), ","), "")
+    inp = "".join(strip_html(inp).split(","))
     units = ["wei", "Kwei", "Mwei", "Gwei", "szabo", "finney", "ether", "Kether", "Mether", "Gether", "Tether"]
     conv_ratio = [
         1.0 / 1000000000000000000.0,
@@ -214,12 +213,12 @@ def save_csv(data, headers, filen):
         final_header = []
         for header in headers:
             final_header += header
-            csvfile.write(string.join(final_header, ",") + "\n")
+            csvfile.write(",".join(final_header) + "\n")
         for i in range(0, len(data[0])):
             row = []
             for j in range(0, len(data)):
                 row += data[j][i]
-            csvfile.write(string.join(row, ",") + "\n")
+            csvfile.write(",".join(row) + "\n")
 
 
 def run(clean=False):
