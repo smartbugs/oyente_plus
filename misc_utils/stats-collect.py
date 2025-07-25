@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from subprocess import *
+from subprocess import Popen, PIPE
 
 from tqdm import tqdm
 
@@ -11,7 +11,8 @@ opcodes = {}
 callstack_error_contracts = []
 cterror_balances = []
 
-cbalancefile = json.load(open("../contracts/contract_data/contract_balance.json"))
+with open("../contracts/contract_data/contract_balance.json") as f:
+    cbalancefile = json.load(f)
 
 write_out = False
 
@@ -98,7 +99,8 @@ def update_stats_from_disasm(chash, ctx, inpinit, inpmain):
 
 def load_contract_file(path):
     try:
-        cfile = json.loads(open(path).read())
+        with open(path) as f:
+            cfile = json.loads(f.read())
         # Iterate through contracts
         for contract in tqdm(cfile):
             cinit = cfile[contract][0]
