@@ -1,5 +1,6 @@
 import six
 
+
 class BasicBlock:
     def __init__(self, start_address, end_address):
         self.start = start_address

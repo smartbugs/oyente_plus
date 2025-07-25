@@ -87,9 +87,7 @@ class InputHelper:
                         self.allow_paths,
                     )
                 else:
-                    source_map = SourceMap(
-                        contract, self.source, "standard json", self.root_path
-                    )
+                    source_map = SourceMap(contract, self.source, "standard json", self.root_path)
                 disasm_file = self._get_temporary_files(contract)["disasm"]
                 inputs.append(
                     {
@@ -118,9 +116,7 @@ class InputHelper:
             elif self.input_type == InputHelper.STANDARD_JSON:
                 self.compiled_contracts = self._compile_standard_json()
             elif self.input_type == InputHelper.STANDARD_JSON_OUTPUT:
-                self.compiled_contracts = self._compile_standard_json_output(
-                    self.source
-                )
+                self.compiled_contracts = self._compile_standard_json_output(self.source)
 
         return self.compiled_contracts
 
@@ -154,9 +150,7 @@ class InputHelper:
             for compilation_unit in com.compilation_units.values():
                 for source_unit in compilation_unit.source_units.values():
                     libs.update(
-                        set(source_unit.contracts_names).difference(
-                            set(source_unit.contracts_names_without_libraries)
-                        )
+                        set(source_unit.contracts_names).difference(set(source_unit.contracts_names_without_libraries))
                     )
             if libs:
                 return self._link_libraries(self.source, libs)
@@ -164,9 +158,7 @@ class InputHelper:
             return contracts
         except InvalidCompilation as err:
             if not self.compilation_err:
-                logging.critical(
-                    "Solidity compilation failed. Please use -ce flag to see the detail."
-                )
+                logging.critical("Solidity compilation failed. Please use -ce flag to see the detail.")
                 if global_params.WEB:
                     six.print_({"error": "Solidity compilation failed."})
             else:
@@ -182,9 +174,7 @@ class InputHelper:
         cmd = "cat %s" % self.source
         p1 = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=FNULL)
         cmd = "solc --allow-paths %s --standard-json" % self.allow_paths
-        p2 = subprocess.Popen(
-            shlex.split(cmd), stdin=p1.stdout, stdout=subprocess.PIPE, stderr=FNULL
-        )
+        p2 = subprocess.Popen(shlex.split(cmd), stdin=p1.stdout, stdout=subprocess.PIPE, stderr=FNULL)
         p1.stdout.close()
         out = p2.communicate()[0]
         with open("standard_json_output", "w") as of:
@@ -200,9 +190,7 @@ class InputHelper:
         for source in j["sources"]:
             for contract in j["contracts"][source]:
                 cname = source + ":" + contract
-                evm = j["contracts"][source][contract]["evm"]["deployedBytecode"][
-                    "object"
-                ]
+                evm = j["contracts"][source][contract]["evm"]["deployedBytecode"]["object"]
                 contracts.append((cname, evm))
         return contracts
 
@@ -213,9 +201,7 @@ class InputHelper:
             options.append("--libraries %s:%s" % (lib, lib_address))
         if self.allow_paths:
             options.append(f"--allow-paths {self.allow_paths}")
-        com = CryticCompile(
-            target=self.source, solc_args=" ".join(options), solc_remaps=self.remap
-        )
+        com = CryticCompile(target=self.source, solc_args=" ".join(options), solc_remaps=self.remap)
 
         return self._extract_bin_obj(com)
 

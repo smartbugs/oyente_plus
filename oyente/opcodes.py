@@ -483,12 +483,7 @@ def get_ins_cost(opcode):
         return GCOST["Gzero"]
     elif opcode in Wbase:
         return GCOST["Gbase"]
-    elif (
-        opcode in Wverylow
-        or opcode.startswith("PUSH")
-        or opcode.startswith("DUP")
-        or opcode.startswith("SWAP")
-    ):
+    elif opcode in Wverylow or opcode.startswith("PUSH") or opcode.startswith("DUP") or opcode.startswith("SWAP"):
         return GCOST["Gverylow"]
     elif opcode in Wlow:
         return GCOST["Glow"]
