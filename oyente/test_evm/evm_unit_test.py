@@ -14,12 +14,12 @@ class EvmUnitTest(object):
         self.data = data
 
     def bytecode(self):
-        return self.data['exec']['code'][2:]
+        return self.data["exec"]["code"][2:]
 
     def storage(self):
         try:
-            first_post: Any = next(iter(self.data.get('post', {}).values()))
-            storage: Any = first_post.get('storage')
+            first_post: Any = next(iter(self.data.get("post", {}).values()))
+            storage: Any = first_post.get("storage")
         except (StopIteration, AttributeError):
             return {"0": "0"}
 
@@ -28,42 +28,46 @@ class EvmUnitTest(object):
         return {"0": "0"}
 
     def gas_info(self):
-        gas_limit = int(self.data['exec']['gas'], 0)
-        gas_remaining = int(self.data['gas'], 0)
+        gas_limit = int(self.data["exec"]["gas"], 0)
+        gas_remaining = int(self.data["gas"], 0)
         return (gas_limit, gas_remaining)
 
     def run_test(self):
         return self._execute_vm(self.bytecode())
 
     def compare_with_symExec_result(self, global_state, analysis):
-        if UNIT_TEST == 2: return self.compare_real_value(global_state, analysis)
-        if UNIT_TEST == 3: return self.compare_symbolic(global_state)
+        if UNIT_TEST == 2:
+            return self.compare_real_value(global_state, analysis)
+        if UNIT_TEST == 3:
+            return self.compare_symbolic(global_state)
 
     def compare_real_value(self, global_state, analysis):
         storage_status = self._compare_storage_value(global_state)
         gas_status = self._compare_gas_value(analysis)
-        if storage_status != PASS: return storage_status
-        if gas_status != PASS: return gas_status
+        if storage_status != PASS:
+            return storage_status
+        if gas_status != PASS:
+            return gas_status
         return PASS
 
     def compare_symbolic(self, global_state):
         for key, value in self.storage().items():
             key, value = int(key, 0), int(value, 0)
             try:
-                symExec_result = global_state['Ia'][str(key)]
+                symExec_result = global_state["Ia"][str(key)]
             except:
                 return EMPTY_RESULT
 
             s = Solver()
             s.add(symExec_result == BitVecVal(value, 256))
-            if s.check() == unsat: # Unsatisfy
+            if s.check() == unsat:  # Unsatisfy
                 return FAIL
         return PASS
 
-    def is_exception_case(self): # no post, gas field in data
+    def is_exception_case(self):  # no post, gas field in data
         try:
-            post = self.data['post']
-            gas = self.data['gas']
+            post = self.data["post"]
+            gas = self.data["gas"]
             return False
         except:
             return True
@@ -79,14 +83,14 @@ class EvmUnitTest(object):
             )
             print(result.stdout)
             print(result.stderr)
-            
+
             exit_code = result.returncode
             output_str = result.stderr
-            
+
             # Check if the output contains the error message of intended exceptions and set the exit code accordingly
-            if  ("Exception: UNKNOWN INSTRUCTION" in output_str):
+            if "Exception: UNKNOWN INSTRUCTION" in output_str:
                 exit_code = UNKNOWN_INSTRUCTION
-            elif ("ValueError: STACK underflow" in output_str):
+            elif "ValueError: STACK underflow" in output_str:
                 exit_code = EXCEPTION
 
         except Exception as e:
@@ -96,9 +100,9 @@ class EvmUnitTest(object):
         return exit_code
 
     def _create_bytecode_file(self, bytecode):
-        with open('bytecode', 'w') as code_file:
+        with open("bytecode", "w") as code_file:
             code_file.write(bytecode)
-            code_file.write('\n')
+            code_file.write("\n")
             code_file.close()
 
     def _compare_storage_value(self, global_state):
@@ -106,7 +110,7 @@ class EvmUnitTest(object):
             key, value = int(key, 0), int(value, 0)
 
             try:
-                storage = to_unsigned(int(global_state['Ia'][key]))
+                storage = to_unsigned(int(global_state["Ia"][key]))
             except:
                 return EMPTY_RESULT
 
@@ -115,7 +119,7 @@ class EvmUnitTest(object):
         return PASS
 
     def _compare_gas_value(self, analysis):
-        gas_used = analysis['gas']
+        gas_used = analysis["gas"]
         gas_limit, gas_remaining = self.gas_info()
         if gas_used == gas_limit - gas_remaining:
             return PASS
