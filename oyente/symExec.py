@@ -1,4 +1,5 @@
 import base64
+import errno
 import json
 import logging
 import math
@@ -731,7 +732,6 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
         new_params.global_state["pc"] = successor
         sym_exec_block(new_params, successor, block, depth, func_call, current_func_name)
     elif jump_type[block] == "conditional":  # executing "JUMPI"
-
         # A choice point, we proceed with depth first search
 
         branch_expression = vertices[block].get_branch_expression()
@@ -1088,7 +1088,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                     # it is provable that second is indeed equal to zero
                     computed = 0
                 else:
-
                     solver.push()
                     solver.add(first < 0)  # check sign of first element
                     sign = BitVecVal(-1, 256) if check_sat(solver) == sat else BitVecVal(1, 256)
@@ -2418,13 +2417,9 @@ def check_callstack_attack(disasm):
                 opcode3 = disasm[i + swap_num + 4][1]
                 if (
                     opcode1 == "ISZERO"
-                    or (opcode1 == "DUP"
-                    and opcode2 == "ISZERO")
-                    or (opcode1 == "JUMPDEST"
-                    and opcode2 == "ISZERO")
-                    or (opcode1 == "JUMPDEST"
-                    and opcode2 == "DUP"
-                    and opcode3 == "ISZERO")
+                    or (opcode1 == "DUP" and opcode2 == "ISZERO")
+                    or (opcode1 == "JUMPDEST" and opcode2 == "ISZERO")
+                    or (opcode1 == "JUMPDEST" and opcode2 == "DUP" and opcode3 == "ISZERO")
                 ):
                     pass
                 else:
