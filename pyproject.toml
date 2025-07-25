@@ -135,7 +135,6 @@ lines-after-imports = 2
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
-skip-source-first-line = false
 line-ending = "auto"
 
 [tool.mypy]
