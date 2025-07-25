@@ -1,7 +1,8 @@
 # this the interface to create your own data source
 # this class pings a private / public blockchain to get the balance and code information
 
-from web3 import Web3, KeepAliveRPCProvider
+from web3 import KeepAliveRPCProvider
+from web3 import Web3
 
 
 class EthereumData:

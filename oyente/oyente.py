@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
-import os
-import re
-import six
-import json
-import symExec
-import logging
-import requests
 import argparse
+import json
+import logging
+import re
 import subprocess
+
 import global_params
-from utils import run_command
+import requests
+import six
+import symExec
 from input_helper import InputHelper
+from utils import run_command
 
 
 def cmd_exists(cmd):

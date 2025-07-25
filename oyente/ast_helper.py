@@ -1,9 +1,12 @@
-import logging
-from utils import run_command
-from ast_walker import AstWalker
-import json
 import copy
-from typing import Any, Dict, List
+import json
+import logging
+from typing import Any
+from typing import Dict
+from typing import List
+
+from ast_walker import AstWalker
+from utils import run_command
 
 
 class AstHelper:
@@ -20,7 +23,7 @@ class AstHelper:
         self.contracts = self.extract_contract_definitions(self.source_list)
 
     def get_source_list_standard_json(self, filename):
-        with open("standard_json_output", "r") as f:
+        with open("standard_json_output") as f:
             out = f.read()
         out = json.loads(out)
         return out["sources"]
@@ -135,7 +138,7 @@ class AstHelper:
 
         callee_src_pairs = []
         for node in nodes:
-            if "children" in node and node["children"]:
+            if node.get("children"):
                 type_of_first_child = node["children"][0]["attributes"]["type"]
                 if type_of_first_child.split(" ")[0] == "contract":
                     contract = type_of_first_child.split(" ")[1]

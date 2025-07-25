@@ -9,7 +9,7 @@ class AstWalker:
         if self._check_attributes(node, attributes):
             nodes.append(node)
         else:
-            if "children" in node and node["children"]:
+            if node.get("children"):
                 for child in node["children"]:
                     self._walk_with_attrs(child, attributes, nodes)
 
@@ -17,7 +17,7 @@ class AstWalker:
         if self._check_list_of_attributes(node, list_of_attributes):
             nodes.append(node)
         else:
-            if "children" in node and node["children"]:
+            if node.get("children"):
                 for child in node["children"]:
                     self._walk_with_list_of_attrs(child, list_of_attributes, nodes)
 

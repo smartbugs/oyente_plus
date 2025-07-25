@@ -1,16 +1,17 @@
-import shlex
-import subprocess
+import json
+import logging
 import os
 import re
-import logging
-import json
+import shlex
+import subprocess
+
 import global_params
 import six
+from crytic_compile import CryticCompile
+from crytic_compile import InvalidCompilation
+from ethutils.metadata import zeroMetadata
 from opcodes import INSTRUCTIONS
 from source_map import SourceMap
-from utils import run_command, run_command_with_err
-from crytic_compile import CryticCompile, InvalidCompilation
-from ethutils.metadata import zeroMetadata
 
 
 class InputHelper:
@@ -63,7 +64,7 @@ class InputHelper:
     def get_inputs(self, targetContracts=None):
         inputs = []
         if self.input_type == InputHelper.BYTECODE:
-            with open(self.source, "r") as f:
+            with open(self.source) as f:
                 bytecode = f.read()
             self._prepare_disasm_file(self.source, bytecode)
 
@@ -183,7 +184,7 @@ class InputHelper:
         return self._compile_standard_json_output("standard_json_output")
 
     def _compile_standard_json_output(self, json_output_file):
-        with open(json_output_file, "r") as f:
+        with open(json_output_file) as f:
             out = f.read()
         j = json.loads(out)
         contracts = []

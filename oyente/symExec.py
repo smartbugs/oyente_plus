@@ -1,33 +1,34 @@
-import zlib, base64
-import re
-import math
-import sys
-import pickle
+import base64
 import json
-import traceback
+import logging
+import math
+import pickle
+import re
 import signal
 import time
-import logging
-import six
+import traceback
+import zlib
 from collections import namedtuple
+
+import global_params
+import six
+from analysis import *
+from basicblock import BasicBlock
+from ethereum_data import *
+from test_evm.global_test_params import EXCEPTION
+from test_evm.global_test_params import PICKLE_PATH
+from test_evm.global_test_params import UNKNOWN_INSTRUCTION
+from vargenerator import *
+from vulnerability import AssertionFailure
+from vulnerability import CallStack
+from vulnerability import IntegerOverflow
+from vulnerability import IntegerUnderflow
+from vulnerability import MoneyConcurrency
+from vulnerability import ParityMultisigBug2
+from vulnerability import Reentrancy
+from vulnerability import TimeDependency
 from z3 import *
 
-from vargenerator import *
-from ethereum_data import *
-from basicblock import BasicBlock
-from analysis import *
-from test_evm.global_test_params import TIME_OUT, UNKNOWN_INSTRUCTION, EXCEPTION, PICKLE_PATH
-from vulnerability import (
-    CallStack,
-    TimeDependency,
-    MoneyConcurrency,
-    Reentrancy,
-    AssertionFailure,
-    ParityMultisigBug2,
-    IntegerUnderflow,
-    IntegerOverflow,
-)
-import global_params
 
 log = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ def initGlobalVars():
     revertible_overflow_pcs = set()
 
     global g_disasm_file
-    with open(g_disasm_file, "r") as f:
+    with open(g_disasm_file) as f:
         disasm = f.read()
     if "MSIZE" in disasm:
         MSIZE = True
@@ -203,7 +204,7 @@ def compare_storage_and_gas_unit_test(global_state, analysis):
 
 
 def build_cfg_and_analyze():
-    with open(g_disasm_file, "r") as disasm_file:
+    with open(g_disasm_file) as disasm_file:
         lines = disasm_file.read().splitlines()
     collect_vertices(lines)
     construct_bb()
@@ -336,9 +337,7 @@ def collect_vertices(lines):
             instruction = "ASSERTFAIL"
         elif instruction == "KECCAK256":
             instruction = "SHA3"
-        elif instruction.endswith("not defined"):
-            instruction = "INVALID " + instruction.split()[1]
-        elif instruction.startswith("#bytes"):  # geas specific INVALID instruction
+        elif instruction.endswith("not defined") or instruction.startswith("#bytes"):
             instruction = "INVALID " + instruction.split()[1]
         current_line_content = instruction + " "  # for some reason, the original Oyente adds a space
         instructions[current_ins_address] = current_line_content
@@ -709,7 +708,7 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
                 if os.stat(filename).st_size == 0:
                     os.remove(filename)
                     no_of_test_cases -= 1
-            except Exception as e:
+            except Exception:
                 pass
 
         log.debug("TERMINATING A PATH ...")
@@ -755,7 +754,7 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
                 sym_exec_block(new_params, left_branch, block, depth, func_call, current_func_name)
         except TimeoutError:
             raise
-        except Exception as e:
+        except Exception:
             if global_params.DEBUG_MODE:
                 traceback.print_exc()
 
@@ -783,7 +782,7 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
                 sym_exec_block(new_params, right_branch, block, depth, func_call, current_func_name)
         except TimeoutError:
             raise
-        except Exception as e:
+        except Exception:
             if global_params.DEBUG_MODE:
                 traceback.print_exc()
         solver.pop()  # POP SOLVER CONTEXT
@@ -1561,7 +1560,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             evm_file_name = g_disasm_file[:-7]
         else:
             evm_file_name = g_disasm_file
-        with open(evm_file_name, "r") as evm_file:
+        with open(evm_file_name) as evm_file:
             evm = evm_file.read()[:-1]
             code_size = len(evm) / 2
             stack.insert(0, code_size)
@@ -1586,7 +1585,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                     evm_file_name = g_disasm_file[:-7]
                 else:
                     evm_file_name = g_disasm_file
-                with open(evm_file_name, "r") as evm_file:
+                with open(evm_file_name) as evm_file:
                     evm = evm_file.read()[:-1]
                     start = code_from * 2
                     end = start + no_bytes * 2
@@ -2419,13 +2418,13 @@ def check_callstack_attack(disasm):
                 opcode3 = disasm[i + swap_num + 4][1]
                 if (
                     opcode1 == "ISZERO"
-                    or opcode1 == "DUP"
-                    and opcode2 == "ISZERO"
-                    or opcode1 == "JUMPDEST"
-                    and opcode2 == "ISZERO"
-                    or opcode1 == "JUMPDEST"
+                    or (opcode1 == "DUP"
+                    and opcode2 == "ISZERO")
+                    or (opcode1 == "JUMPDEST"
+                    and opcode2 == "ISZERO")
+                    or (opcode1 == "JUMPDEST"
                     and opcode2 == "DUP"
-                    and opcode3 == "ISZERO"
+                    and opcode3 == "ISZERO")
                 ):
                     pass
                 else:

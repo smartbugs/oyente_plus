@@ -1,12 +1,13 @@
 import logging
 import math
-import six
+
+import global_params
 from opcodes import *
+from utils import *
+from vargenerator import *
 from z3 import *
 from z3.z3util import *
-from vargenerator import *
-from utils import *
-import global_params
+
 
 log = logging.getLogger(__name__)
 
@@ -257,6 +258,6 @@ def is_diff(flow1, flow2):
 
             if solver.check() == sat:
                 return 1
-        except Exception as e:
+        except Exception:
             return 1
     return 0

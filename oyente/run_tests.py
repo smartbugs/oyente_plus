@@ -5,19 +5,18 @@ import json
 import os
 import pickle
 
+
 os.chdir(os.path.dirname(__file__))
 
-from test_evm.global_test_params import (
-    PASS,
-    FAIL,
-    TIME_OUT,
-    UNKNOWN_INSTRUCTION,
-    EXCEPTION,
-    EMPTY_RESULT,
-    INCORRECT_GAS,
-    PICKLE_PATH,
-)
 from test_evm.evm_unit_test import EvmUnitTest
+from test_evm.global_test_params import EMPTY_RESULT
+from test_evm.global_test_params import EXCEPTION
+from test_evm.global_test_params import FAIL
+from test_evm.global_test_params import INCORRECT_GAS
+from test_evm.global_test_params import PASS
+from test_evm.global_test_params import PICKLE_PATH
+from test_evm.global_test_params import TIME_OUT
+from test_evm.global_test_params import UNKNOWN_INSTRUCTION
 
 
 def remove_temporary_files():

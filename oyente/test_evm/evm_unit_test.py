@@ -2,13 +2,13 @@ import logging
 import subprocess
 import sys
 
-from z3 import *
 from global_params import *
-from utils import to_unsigned
 from test_evm.global_test_params import *
+from utils import to_unsigned
+from z3 import *
 
 
-class EvmUnitTest(object):
+class EvmUnitTest:
     def __init__(self, name, data):
         self.name = name
         self.data = data

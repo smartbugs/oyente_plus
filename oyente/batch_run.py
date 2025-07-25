@@ -1,9 +1,10 @@
-import json
 import glob
-from tqdm import tqdm
+import json
 import os
 import sys
-import urllib.request
+
+from tqdm import tqdm
+
 
 contract_dir = "contract_data"
 

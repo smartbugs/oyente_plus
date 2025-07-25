@@ -1,16 +1,15 @@
 # return true if the two paths have different flows of money
 # later on we may want to return more meaningful output: e.g. if the concurrency changes
 # the amount of money or the recipient.
-import shlex
-import subprocess
+import csv
+import difflib
 import json
 import mmap
 import os
-import errno
-import signal
-import csv
 import re
-import difflib
+import shlex
+import subprocess
+
 import six
 from z3 import *
 from z3.z3util import get_vars
@@ -207,7 +206,7 @@ def do_split_dicts():
 
 def run_re_file(re_str, fn):
     size = os.stat(fn).st_size
-    with open(fn, "r") as tf:
+    with open(fn) as tf:
         data = mmap.mmap(tf.fileno(), size, access=mmap.ACCESS_READ)
         return re.findall(re_str, data)
 
@@ -224,7 +223,7 @@ def get_contract_info(contract_addr):
     try:
         txs = run_re_file(re_txs_value, file_name1)
         value = run_re_file(re_str_value, file_name2)
-    except Exception as e:
+    except Exception:
         try:
             os.system("wget -O %s http://etherscan.io/txs?a=%s" % (file_name1, contract_addr))
             re_txs_value = r"<span>A total of (.+?) transactions found for address</span>"
@@ -234,7 +233,7 @@ def get_contract_info(contract_addr):
             re_str_value = r"<td>ETH Balance:\n<\/td>\n<td>\n(.+?)\n<\/td>"
             os.system("wget -O %s https://etherscan.io/address/%s" % (file_name2, contract_addr))
             value = run_re_file(re_str_value, file_name2)
-        except Exception as e:
+        except Exception:
             pass
     return txs, value
 
@@ -243,7 +242,7 @@ def get_contract_stats(list_of_contracts):
     with open("concurr.csv", "w") as stats_file:
         fp = csv.writer(stats_file, delimiter=",")
         fp.writerow(["Contract address", "No. of paths", "No. of concurrency pairs", "Balance", "No. of TXs", "Note"])
-        with open(list_of_contracts, "r") as f:
+        with open(list_of_contracts) as f:
             for contract in f.readlines():
                 contract_addr = contract.split()[0]
                 value, txs = get_contract_info(contract_addr)
@@ -254,7 +253,7 @@ def get_time_dependant_contracts(list_of_contracts):
     with open("time.csv", "w") as stats_file:
         fp = csv.writer(stats_file, delimiter=",")
         fp.writerow(["Contract address", "Balance", "No. of TXs", "Note"])
-        with open(list_of_contracts, "r") as f:
+        with open(list_of_contracts) as f:
             for contract in f.readlines():
                 if len(contract.strip()) == 0:
                     continue
@@ -287,7 +286,7 @@ def get_distinct_contracts(list_of_contracts="concurr.csv"):
                 if (npath_i == npath_j) and (npair_i == npair_j):
                     file_j = "stats/tmp_" + contract_j + ".evm"
 
-                    with open(file_i, "r") as f1, open(file_j, "r") as f2:
+                    with open(file_i) as f1, open(file_j) as f2:
                         code_i = f1.readlines()
                         code_j = f2.readlines()
                         if abs(len(code_i) - len(code_j)) >= 5:

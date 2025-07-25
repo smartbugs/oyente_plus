@@ -1,8 +1,10 @@
 # this the interface to create your own data source
 # this class pings etherscan to get the latest code and balance information
 
-import requests
 import logging
+
+import requests
+
 
 log = logging.getLogger(__name__)
 

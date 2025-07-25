@@ -1,12 +1,9 @@
-import re
-import six
 import ast
 import json
 
-import global_params
-
-from utils import run_command
+import six
 from ast_helper import AstHelper
+from utils import run_command
 
 
 class Source:
@@ -176,7 +173,7 @@ class SourceMap:
 
     @classmethod
     def _load_position_groups_standard_json(cls):
-        with open("standard_json_output", "r") as f:
+        with open("standard_json_output") as f:
             output = f.read()
         output = json.loads(output)
         return output["contracts"]
