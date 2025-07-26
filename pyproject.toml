@@ -138,7 +138,7 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 platform = "linux"
 warn_return_any = true
 warn_unused_configs = true
@@ -159,14 +159,14 @@ exclude = ["^venv/", "^build/", "^dist/", "^web/", "test_evm/test_data/"]
 
 # Gradual typing - start strict for new modules
 [[tool.mypy.overrides]]
-module = ["oyente.new_*", "oyente.utils.*"]
+module = ["oyente.new_module", "oyente.utils.*"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 strict = true
 
 # Relaxed rules for test files
 [[tool.mypy.overrides]]
-module = ["test_*", "tests.*", "oyente.test_evm.*"]
+module = ["tests.*", "oyente.test_evm.*"]
 disallow_untyped_defs = false
 ignore_errors = true
 
