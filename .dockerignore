@@ -1,1 +1,74 @@
+# Development files
 .idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Python cache and build
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+wheels/
+
+# Virtual environments
+venv/
+.venv/
+
+# Testing and coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Environment variables and secrets
+.env
+.env.*
+secrets.yml
+secrets.json
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Git and Docker
+.git/
+.gitignore
+.dockerignore
+Dockerfile*
+docker-compose*
+
+# Oyente data
+bytecode*/
+contract_data/
+current_test.pickle
+*.report
+*.log
+
+# Ruby/Rails
+web/vendor/
+web/log/
+web/tmp/
+web/node_modules/
+web/.bundle/
+
+# Documentation (reduce image size)
+*.md
+!README.md
+docs/
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Temporary files
+tmp/
+*.bak
