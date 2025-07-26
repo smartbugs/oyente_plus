@@ -1,3 +1,5 @@
+from typing import List, Sequence, Union
+
 # list of all opcodes except the SWAPi, PUSHi and DUPi
 # opcodes[name] has a list of [value (index), no. of items removed from stack, no. of items added to stack]
 opcodes = {
@@ -458,7 +460,7 @@ Wext = "EXTCODESIZE"
 Wtransientstorage = ("TLOAD", "TSTORE")
 
 
-def get_opcode(opcode):
+def get_opcode(opcode: str) -> Sequence[Union[str, int]]:
     if opcode in opcodes:
         return opcodes[opcode]
     # check PUSHi
@@ -478,7 +480,7 @@ def get_opcode(opcode):
     raise ValueError("Bad Opcode" + opcode)
 
 
-def get_ins_cost(opcode):
+def get_ins_cost(opcode: str) -> int:
     if opcode in Wzero:
         return GCOST["Gzero"]
     elif opcode in Wbase:
@@ -518,8 +520,8 @@ def get_ins_cost(opcode):
         return GCOST["Gbalance"]
     elif opcode == "BLOCKHASH":
         return GCOST["Gblockhash"]
-    elif opcode == ["TLOAD", "TSTORE"]:
+    elif opcode in Wtransientstorage:
         return GCOST["GTransientStorage"]
-    elif opcode == ["MCOPY"]:
+    elif opcode == "MCOPY":
         return GCOST["Gcopy"]
     return 0
