@@ -111,10 +111,13 @@ class EvmUnitTest:
 
             try:
                 storage = to_unsigned(int(global_state["Ia"][key]))
-            except:
+            except Exception as e:
+                print(f"DEBUG: Key {key} not found in storage or conversion error: {e}")
+                print(f"DEBUG: Available keys in storage: {list(global_state['Ia'].keys())}")
                 return EMPTY_RESULT
 
             if storage != value:
+                print(f"DEBUG: Storage mismatch at key {key}: expected {hex(value)}, got {hex(storage)}")
                 return FAIL
         return PASS
 
