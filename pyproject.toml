@@ -203,6 +203,7 @@ addopts = [
     "--tb=auto",
     "--maxfail=1",
     "--verbose",
+    "-m 'not integration'",  # Exclude integration tests by default
 ]
 testpaths = ["tests"]
 norecursedirs = [".*venv*", "build", "dist", ".git", ".pytest_cache", ".mypy_cache", ".ruff_cache"]

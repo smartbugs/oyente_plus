@@ -13,7 +13,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help format lint type-check test all clean install install-dev setup
+.PHONY: help format lint type-check test test-unit test-integration test-performance test-property test-legacy test-cov test-unit-cov test-integration-cov all clean install install-dev setup
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -58,6 +58,22 @@ else
 	@$(POETRY_RUN) pytest && echo "✅ Tests complete" || (echo "❌ Tests failed" && exit 1)
 endif
 
+test-unit: ## Run only unit tests
+	@echo "🧪 Running unit tests..."
+	@$(POETRY_RUN) pytest tests/unit/ -v && echo "✅ Unit tests complete" || (echo "❌ Unit tests failed" && exit 1)
+
+test-integration: ## Run only integration tests  
+	@echo "🧪 Running integration tests..."
+	@$(POETRY_RUN) pytest tests/integration/ -v && echo "✅ Integration tests complete" || (echo "❌ Integration tests failed" && exit 1)
+
+test-performance: ## Run only performance tests
+	@echo "🧪 Running performance tests..."
+	@$(POETRY_RUN) pytest tests/performance/ -v && echo "✅ Performance tests complete" || (echo "❌ Performance tests failed" && exit 1)
+
+test-property: ## Run only property-based tests
+	@echo "🧪 Running property-based tests..."
+	@$(POETRY_RUN) pytest tests/property/ -v && echo "✅ Property tests complete" || (echo "❌ Property tests failed" && exit 1)
+
 test-legacy: ## Run legacy EVM tests
 	@echo "🧪 Running legacy EVM tests..."
 	@$(POETRY_RUN) python oyente/run_tests.py && echo "✅ Legacy tests complete" || (echo "❌ Legacy tests failed" && exit 1)
@@ -70,6 +86,14 @@ else
 	@echo "🧪 Running tests with coverage..."
 	@$(POETRY_RUN) pytest --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml:coverage.xml && echo "✅ Tests with coverage complete" || (echo "❌ Tests with coverage failed" && exit 1)
 endif
+
+test-unit-cov: ## Run unit tests with coverage
+	@echo "🧪 Running unit tests with coverage..."
+	@$(POETRY_RUN) pytest tests/unit/ --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov/unit --cov-report=xml:coverage-unit.xml -v && echo "✅ Unit test coverage complete" || (echo "❌ Unit test coverage failed" && exit 1)
+
+test-integration-cov: ## Run integration tests with coverage
+	@echo "🧪 Running integration tests with coverage..."
+	@$(POETRY_RUN) pytest tests/integration/ --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov/integration --cov-report=xml:coverage-integration.xml -v && echo "✅ Integration test coverage complete" || (echo "❌ Integration test coverage failed" && exit 1)
 
 ##@ Comprehensive
 

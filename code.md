@@ -230,10 +230,10 @@ Oyente+ features a comprehensive testing framework with multiple test categories
 **Architecture**:
 ```
 tests/
-├── unit/           # Fast, isolated unit tests (27+ tests ✅)
-├── integration/    # Component interaction tests
-├── property/       # Hypothesis property-based tests
-├── performance/    # Benchmark tests with pytest-benchmark
+├── unit/           # Fast, isolated unit tests (make test-unit) - 27+ tests ✅
+├── integration/    # Component interaction tests (make test-integration)
+├── property/       # Hypothesis property-based tests (make test-property)
+├── performance/    # Benchmark tests (make test-performance) with pytest-benchmark
 ├── fixtures/       # Test data generators and utilities
 └── mocks/          # Mock objects (Z3, filesystem, subprocess)
 ```
@@ -256,13 +256,22 @@ tests/
 ```bash
 # Modern test suite (preferred)
 make test                               # All tests
+make test-unit                          # Unit tests only
+make test-integration                   # Integration tests only
+make test-performance                   # Performance tests only
+make test-property                      # Property-based tests only
 make test TEST=tests/unit/test_file.py  # Specific test file
-make test-cov                           # With coverage reporting
+make test-cov                           # All tests with coverage
+make test-unit-cov                      # Unit tests with coverage
+make test-integration-cov               # Integration tests with coverage
 make test-legacy                        # Legacy EVM tests
 
 # Direct pytest commands (alternative)
 python -m pytest tests/ -v             # All tests
 python -m pytest tests/unit/           # Unit tests only
+python -m pytest tests/integration/    # Integration tests only
+python -m pytest tests/performance/    # Performance tests only
+python -m pytest tests/property/       # Property-based tests only
 python -m pytest tests/ --cov=oyente --cov-report=html  # Coverage
 ```
 

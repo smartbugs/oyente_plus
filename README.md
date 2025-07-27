@@ -131,11 +131,19 @@ The project includes comprehensive testing infrastructure:
 # Run all tests using Makefile (preferred)
 make test
 
+# Run specific test types
+make test-unit           # Unit tests only (tests/unit/)
+make test-integration    # Integration tests only (tests/integration/)
+make test-performance    # Performance tests only (tests/performance/)
+make test-property       # Property-based tests only (tests/property/)
+
 # Run specific test file
 make test TEST=tests/unit/test_analysis.py
 
 # Run tests with coverage reporting
-make test-cov
+make test-cov                    # All tests with coverage
+make test-unit-cov               # Unit tests with coverage
+make test-integration-cov        # Integration tests with coverage
 
 # Run specific test file with coverage
 make test-cov TEST=tests/unit/test_analysis.py
@@ -146,18 +154,20 @@ make test-legacy
 # Direct pytest commands (alternative)
 python -m pytest tests/ -v           # All tests
 python -m pytest tests/unit/         # Unit tests only
+python -m pytest tests/integration/  # Integration tests only
 python -m pytest -m "not slow"       # Skip slow tests
-python -m pytest -m integration      # Integration tests only
+python -m pytest -m integration      # Integration tests by marker
+python -m pytest -m unit             # Unit tests by marker
 ```
 
 ### Test Structure
 
 ```
 tests/
-├── unit/           # Fast, isolated unit tests
-├── integration/    # Component interaction tests
-├── property/       # Hypothesis property-based tests
-├── performance/    # Benchmark tests
+├── unit/           # Fast, isolated unit tests (make test-unit)
+├── integration/    # Component interaction tests (make test-integration)
+├── property/       # Hypothesis property-based tests (make test-property)
+├── performance/    # Benchmark tests (make test-performance)
 ├── fixtures/       # Test data and utilities
 └── mocks/          # Mock objects for Z3, filesystem, etc.
 ```
