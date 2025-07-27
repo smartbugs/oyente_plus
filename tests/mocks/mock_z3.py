@@ -119,6 +119,8 @@ class MockZ3Solver:
         self.assertions_list: list[Any] = []
         self.push_count = 0
         self.solver_stack: list[list[Any]] = []
+        self.timeout_value: int | None = None
+        self.set_params: dict[str, Any] = {}
 
     def add(self, *constraints):
         """Add constraints to the solver."""
@@ -160,12 +162,14 @@ class MockZ3Solver:
         self.solver_stack.clear()
 
     def set_timeout(self, timeout: int):
-        """Set solver timeout (no-op in mock)."""
-        pass
+        """Set solver timeout."""
+        self.timeout_value = timeout
 
     def set(self, param: str, value: Any):
-        """Set solver parameter (no-op in mock)."""
-        pass
+        """Set solver parameter."""
+        self.set_params[param] = value
+        if param == "timeout":
+            self.timeout_value = value
 
 
 class MockZ3:

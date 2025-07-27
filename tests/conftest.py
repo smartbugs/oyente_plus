@@ -32,32 +32,57 @@ def temp_dir() -> Generator[Path, None, None]:
     shutil.rmtree(temp_path)
 
 
+@pytest.fixture(params=["sat", "unsat", "unknown"])
+def mock_z3_solver_parametrized(request):
+    """Parametrized mock Z3 solver for testing all solver states."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
+    with patch("z3.Solver") as mock_solver_class:
+        mock_instance = MockZ3Solver(result=request.param)
+        mock_solver_class.return_value = mock_instance
+        yield mock_instance
+
+
 @pytest.fixture
 def mock_z3_solver():
-    """Mock Z3 solver for fast unit tests."""
+    """Mock Z3 solver for fast unit tests (defaults to SAT)."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MagicMock()
-        mock_instance.check.return_value = "sat"  # Default to satisfiable
-        mock_instance.model.return_value = Mock()
-        mock_instance.push = Mock()
-        mock_instance.pop = Mock()
-        mock_instance.add = Mock()
-        mock_instance.set = Mock()  # For set("timeout", value)
-        # MagicMock allows setting any attribute without the assertions issue
-        mock_instance.assertions = Mock(return_value=[])
+        mock_instance = MockZ3Solver(result="sat")
+        mock_solver_class.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
+def mock_z3_sat_solver():
+    """Mock Z3 solver that always returns SAT."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
+    with patch("z3.Solver") as mock_solver_class:
+        mock_instance = MockZ3Solver(result="sat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
 
 
 @pytest.fixture
 def mock_z3_unsat_solver():
-    """Mock Z3 solver that always returns unsat."""
+    """Mock Z3 solver that always returns UNSAT."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = Mock()
-        # Return a mock unsat object that will not equal sat
-        mock_unsat = Mock()
-        mock_unsat.__ne__ = Mock(return_value=False)  # unsat != unsat returns False
-        mock_instance.check.return_value = mock_unsat
+        mock_instance = MockZ3Solver(result="unsat")
+        mock_solver_class.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
+def mock_z3_unknown_solver():
+    """Mock Z3 solver that always returns UNKNOWN."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
+    with patch("z3.Solver") as mock_solver_class:
+        mock_instance = MockZ3Solver(result="unknown")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
 

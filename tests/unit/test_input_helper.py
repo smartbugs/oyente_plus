@@ -23,16 +23,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from unittest.mock import Mock
-from unittest.mock import patch
 from unittest.mock import mock_open
+from unittest.mock import patch
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-
 # Import the mock classes first
-from tests.mocks.mock_crytic_compile import MockCryticCompile, MockInvalidCompilation
+from tests.mocks.mock_crytic_compile import MockCryticCompile
+from tests.mocks.mock_crytic_compile import MockInvalidCompilation
+
 
 # Use central mocking approach
 with patch.dict(
@@ -65,12 +66,13 @@ with patch.dict(
 ):
     from oyente.input_helper import InputHelper
 
+# Set up the central CryticCompile mock using the mocked modules
+import crytic_compile
+
 from tests.mocks.mock_crytic_compile import CommonBytecodes
 from tests.mocks.mock_crytic_compile import create_standard_json_output
 from tests.mocks.mock_subprocess import MockSubprocessContext
 
-# Set up the central CryticCompile mock using the mocked modules
-import crytic_compile
 
 # The module is now mocked from the patch.dict above
 crytic_compile.CryticCompile = Mock()
@@ -88,13 +90,13 @@ class TestInputHelperInitialization:
         assert helper.source == "test.bin"
         assert helper.evm is False
 
-    def test_init_solidity_type_success(self):
+    def test_init_solidity_type_success(self, temp_dir):
         """Test successful initialization with SOLIDITY type."""
         helper = InputHelper(
             InputHelper.SOLIDITY,
             source="test.sol",
             evm=False,
-            root_path="/tmp",
+            root_path=str(temp_dir),
             compiled_contracts=[],
             compilation_err=False,
             remap="",
@@ -103,16 +105,16 @@ class TestInputHelperInitialization:
 
         assert helper.input_type == InputHelper.SOLIDITY
         assert helper.source == "test.sol"
-        assert helper.root_path == "/tmp"
+        assert helper.root_path == str(temp_dir)
         assert helper.allow_paths == "/opt"
 
-    def test_init_standard_json_type_success(self):
+    def test_init_standard_json_type_success(self, temp_dir):
         """Test successful initialization with STANDARD_JSON type."""
         helper = InputHelper(
             InputHelper.STANDARD_JSON,
             source="input.json",
             evm=False,
-            root_path="/tmp",
+            root_path=str(temp_dir),
             allow_paths="/opt",
             compiled_contracts=[],
         )
@@ -121,10 +123,14 @@ class TestInputHelperInitialization:
         assert helper.source == "input.json"
         assert helper.allow_paths == "/opt"
 
-    def test_init_standard_json_output_type_success(self):
+    def test_init_standard_json_output_type_success(self, temp_dir):
         """Test successful initialization with STANDARD_JSON_OUTPUT type."""
         helper = InputHelper(
-            InputHelper.STANDARD_JSON_OUTPUT, source="output.json", evm=False, root_path="/tmp", compiled_contracts=[]
+            InputHelper.STANDARD_JSON_OUTPUT,
+            source="output.json",
+            evm=False,
+            root_path=str(temp_dir),
+            compiled_contracts=[],
         )
 
         assert helper.input_type == InputHelper.STANDARD_JSON_OUTPUT
@@ -162,6 +168,7 @@ class TestInputHelperBytecodeProcessing:
             assert len(inputs) == 1
             assert "disasm_file" in inputs[0]
             mock_disasm.assert_called_once_with(str(bytecode_file), bytecode_content)
+            mock_temp.assert_called_once_with(str(bytecode_file))
 
     def test_get_inputs_bytecode_file_not_found(self):
         """Test bytecode processing with non-existent file."""
@@ -465,6 +472,10 @@ class TestInputHelperStandardJson:
             assert result[0][0] == "SimpleToken.sol:SimpleToken"
             assert result[0][1] == CommonBytecodes.SIMPLE_STORAGE
 
+            # Verify file was read for output parsing (subprocess call may be mocked differently)
+            mock_file.assert_called()
+            # Note: subprocess.call_history may vary depending on implementation details
+
     def test_compile_standard_json_file_not_found(self):
         """Test Standard JSON compilation with non-existent file."""
         helper = InputHelper(
@@ -629,6 +640,8 @@ class TestInputHelperFileManagement:
         with patch.object(helper, "_rm_tmp_files") as mock_rm:
             helper.rm_tmp_files()
             mock_rm.assert_called_once_with("test.bin")
+            # Verify the mock was actually called
+            assert mock_rm.call_count == 1
 
     def test_rm_tmp_files_solidity_mode(self):
         """Test cleanup for Solidity mode."""
@@ -646,6 +659,11 @@ class TestInputHelperFileManagement:
         with patch.object(helper, "_rm_tmp_files_of_multiple_contracts") as mock_rm:
             helper.rm_tmp_files()
             mock_rm.assert_called_once_with([("contract1.sol:Token", "bytecode")])
+            # Verify the mock was called with expected arguments
+            assert mock_rm.call_count == 1
+            call_args = mock_rm.call_args[0][0]
+            assert len(call_args) == 1
+            assert call_args[0][0] == "contract1.sol:Token"
 
 
 class TestInputHelperLibraryLinking:
@@ -766,7 +784,7 @@ class TestInputHelperErrorHandling:
 
         def mock_open(*args, **kwargs):
             if "evm.disasm" in str(args[0]) and "w" in args[1:]:
-                raise IOError("Disk full")
+                raise OSError("Disk full")
             return original_open(*args, **kwargs)
 
         monkeypatch.setattr("builtins.open", mock_open)
@@ -787,12 +805,8 @@ class TestInputHelperErrorHandling:
         monkeypatch.setattr("os.path.isfile", lambda x: True)
 
         # Should handle permission error gracefully without crashing
-        try:
+        with pytest.raises(PermissionError):
             helper._rm_file("some_file.txt")
-            # If no exception, that's also acceptable (graceful handling)
-        except PermissionError:
-            # Expected behavior - let it propagate
-            pass
 
     @pytest.mark.skip(reason="Complex subprocess interaction with malformed JSON - requires detailed mock setup")
     def test_standard_json_malformed_input(self, temp_dir):
