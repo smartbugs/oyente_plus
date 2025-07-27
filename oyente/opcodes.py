@@ -1,4 +1,6 @@
-from typing import List, Sequence, Union
+from typing import Sequence
+from typing import Union
+
 
 # list of all opcodes except the SWAPi, PUSHi and DUPi
 # opcodes[name] has a list of [value (index), no. of items removed from stack, no. of items added to stack]
