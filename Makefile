@@ -49,17 +49,27 @@ type-check: ## Type check with mypy
 
 ##@ Testing
 
-test: ## Run pytest tests
-	@echo "🧪 Running pytest tests..."
+test: ## Run pytest tests (specify file with: make test TEST=path/to/test_file.py)
+ifdef TEST
+	@echo "🧪 Running specific test: $(TEST)..."
+	@$(POETRY_RUN) pytest $(TEST) -v && echo "✅ Test $(TEST) complete" || (echo "❌ Test $(TEST) failed" && exit 1)
+else
+	@echo "🧪 Running all pytest tests..."
 	@$(POETRY_RUN) pytest && echo "✅ Tests complete" || (echo "❌ Tests failed" && exit 1)
+endif
 
 test-legacy: ## Run legacy EVM tests
 	@echo "🧪 Running legacy EVM tests..."
 	@$(POETRY_RUN) python oyente/run_tests.py && echo "✅ Legacy tests complete" || (echo "❌ Legacy tests failed" && exit 1)
 
-test-cov: ## Run tests with coverage
+test-cov: ## Run tests with coverage (specify file with: make test-cov TEST=path/to/test_file.py)
+ifdef TEST
+	@echo "🧪 Running test coverage for: $(TEST)..."
+	@$(POETRY_RUN) pytest $(TEST) --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml:coverage.xml -v && echo "✅ Test coverage for $(TEST) complete" || (echo "❌ Test coverage for $(TEST) failed" && exit 1)
+else
 	@echo "🧪 Running tests with coverage..."
 	@$(POETRY_RUN) pytest --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml:coverage.xml && echo "✅ Tests with coverage complete" || (echo "❌ Tests with coverage failed" && exit 1)
+endif
 
 ##@ Comprehensive
 

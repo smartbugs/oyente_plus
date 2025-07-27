@@ -254,14 +254,16 @@ tests/
 
 **Test Execution**:
 ```bash
-# Modern test suite
-python -m pytest tests/ -v
+# Modern test suite (preferred)
+make test                               # All tests
+make test TEST=tests/unit/test_file.py  # Specific test file
+make test-cov                           # With coverage reporting
+make test-legacy                        # Legacy EVM tests
 
-# Legacy EVM tests  
-python oyente/run_tests.py
-
-# Coverage reporting
-python -m pytest tests/ --cov=oyente --cov-report=html
+# Direct pytest commands (alternative)
+python -m pytest tests/ -v             # All tests
+python -m pytest tests/unit/           # Unit tests only
+python -m pytest tests/ --cov=oyente --cov-report=html  # Coverage
 ```
 
 ### Legacy EVM Test Suite

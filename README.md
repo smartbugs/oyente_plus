@@ -119,7 +119,7 @@ make all
 make format      # Format with Black
 make lint        # Check with Ruff
 make type-check  # Verify with mypy
-make test        # Run pytest suite
+make test        # Run all tests
 make test-cov    # Run tests with coverage
 ```
 
@@ -128,19 +128,26 @@ make test-cov    # Run tests with coverage
 The project includes comprehensive testing infrastructure:
 
 ```bash
-# Run modern pytest suite (27+ tests)
-python -m pytest tests/ -v
+# Run all tests using Makefile (preferred)
+make test
 
-# Run with coverage reporting
-python -m pytest tests/ --cov=oyente --cov-report=html
+# Run specific test file
+make test TEST=tests/unit/test_analysis.py
 
-# Run specific test categories
-python -m pytest tests/unit/          # Unit tests
-python -m pytest -m "not slow"       # Skip slow tests
-python -m pytest -m integration       # Integration tests only
+# Run tests with coverage reporting
+make test-cov
+
+# Run specific test file with coverage
+make test-cov TEST=tests/unit/test_analysis.py
 
 # Run legacy EVM tests (JSON-based)
-python oyente/run_tests.py
+make test-legacy
+
+# Direct pytest commands (alternative)
+python -m pytest tests/ -v           # All tests
+python -m pytest tests/unit/         # Unit tests only
+python -m pytest -m "not slow"       # Skip slow tests
+python -m pytest -m integration      # Integration tests only
 ```
 
 ### Test Structure
