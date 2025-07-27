@@ -163,6 +163,10 @@ class MockZ3Solver:
         """Set solver timeout (no-op in mock)."""
         pass
 
+    def set(self, param: str, value: Any):
+        """Set solver parameter (no-op in mock)."""
+        pass
+
 
 class MockZ3:
     """Mock Z3 module for testing."""

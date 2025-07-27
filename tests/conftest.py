@@ -17,6 +17,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 from typing import Generator
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -35,13 +36,15 @@ def temp_dir() -> Generator[Path, None, None]:
 def mock_z3_solver():
     """Mock Z3 solver for fast unit tests."""
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = Mock()
+        mock_instance = MagicMock()
         mock_instance.check.return_value = "sat"  # Default to satisfiable
         mock_instance.model.return_value = Mock()
         mock_instance.push = Mock()
         mock_instance.pop = Mock()
         mock_instance.add = Mock()
-        mock_instance.assertions.return_value = []
+        mock_instance.set = Mock()  # For set("timeout", value)
+        # MagicMock allows setting any attribute without the assertions issue
+        mock_instance.assertions = Mock(return_value=[])
         mock_solver_class.return_value = mock_instance
         yield mock_instance
 
@@ -51,7 +54,10 @@ def mock_z3_unsat_solver():
     """Mock Z3 solver that always returns unsat."""
     with patch("z3.Solver") as mock_solver_class:
         mock_instance = Mock()
-        mock_instance.check.return_value = "unsat"
+        # Return a mock unsat object that will not equal sat
+        mock_unsat = Mock()
+        mock_unsat.__ne__ = Mock(return_value=False)  # unsat != unsat returns False
+        mock_instance.check.return_value = mock_unsat
         mock_solver_class.return_value = mock_instance
         yield mock_instance
 
