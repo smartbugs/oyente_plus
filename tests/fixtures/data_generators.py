@@ -400,6 +400,214 @@ class TestScenarioFactory:
         )
 
 
+# Symbolic execution specific factories
+class SymbolicExecutionFactory:
+    """Factory for generating symbolic execution test data."""
+
+    @staticmethod
+    def basic_parameter_state() -> dict[str, Any]:
+        """Generate basic Parameter state for testing."""
+        return {
+            "stack": [1, 2, 3],
+            "calls": [],
+            "memory": [0x40, 0x80],
+            "visited": [0, 10, 20],
+            "overflow_pcs": [],
+            "mem": {"0x40": "0x80"},
+            "analysis": {"gas": 21000, "paths": 1},
+            "sha3_list": {},
+            "global_state": {"Ia": "0x1234", "balance": 1000},
+            "path_conditions_and_vars": {"vars": ["x", "y"], "conditions": []},
+        }
+
+    @staticmethod
+    def complex_parameter_state() -> dict[str, Any]:
+        """Generate complex Parameter state with realistic data."""
+        return {
+            "stack": list(range(10)),
+            "calls": [
+                {"target": "0x123", "value": 1000, "gas": 21000},
+                {"target": "0x456", "value": 0, "gas": 5000},
+            ],
+            "memory": list(range(0, 1000, 32)),
+            "visited": list(range(0, 100, 5)),
+            "overflow_pcs": [50, 75, 125],
+            "mem": {f"0x{i:02x}": f"0x{i*2:02x}" for i in range(10)},
+            "analysis": {
+                "gas": 150000,
+                "paths": 5,
+                "depth": 10,
+                "vulnerabilities": ["reentrancy", "overflow"],
+            },
+            "sha3_list": {
+                "hash1": "data1",
+                "hash2": "data2",
+            },
+            "global_state": {
+                "Ia": generate_random_address(),
+                "Iv": random.randint(0, 10**20),  # noqa: S311
+                "balance": random.randint(0, 10**18),  # noqa: S311
+                "storage": {f"slot_{i}": f"value_{i}" for i in range(5)},
+            },
+            "path_conditions_and_vars": {
+                "vars": [f"var_{i}" for i in range(5)],
+                "conditions": [f"condition_{i}" for i in range(3)],
+            },
+        }
+
+    @staticmethod
+    def disassembly_lines_simple() -> list[str]:
+        """Generate simple disassembly lines for testing."""
+        return [
+            "0: PUSH1 0x80",
+            "2: PUSH1 0x40",
+            "4: MSTORE",
+            "5: PUSH1 0x01",
+            "7: PUSH1 0x00",
+            "9: SSTORE",
+            "10: STOP",
+        ]
+
+    @staticmethod
+    def disassembly_lines_with_jumps() -> list[str]:
+        """Generate disassembly with jump instructions."""
+        return [
+            "0: PUSH1 0x80",
+            "2: PUSH1 0x40",
+            "4: MSTORE",
+            "5: CALLVALUE",
+            "6: DUP1",
+            "7: ISZERO",
+            "8: PUSH1 0x15",
+            "10: JUMPI",
+            "11: PUSH1 0x00",
+            "13: DUP1",
+            "14: REVERT",
+            "15: JUMPDEST",
+            "16: POP",
+            "17: PUSH1 0x04",
+            "19: CALLDATASIZE",
+            "20: LT",
+            "21: PUSH1 0x2b",
+            "23: JUMPI",
+            "24: PUSH1 0x00",
+            "26: CALLDATALOAD",
+            "27: PUSH1 0x20",
+            "29: SHR",
+            "30: PUSH4 0x60fe47b1",
+            "35: EQ",
+            "36: PUSH1 0x30",
+            "38: JUMPI",
+            "39: JUMPDEST",
+            "40: PUSH1 0x00",
+            "42: DUP1",
+            "43: REVERT",
+            "44: JUMPDEST",
+            "45: PUSH1 0x36",
+            "47: STOP",
+            "48: JUMPDEST",
+            "49: PUSH1 0x00",
+            "51: SLOAD",
+            "52: SWAP1",
+            "53: JUMP",
+        ]
+
+    @staticmethod
+    def vulnerability_detection_scenario(vuln_type: str) -> dict[str, Any]:
+        """Generate vulnerability detection scenario."""
+        scenarios = {
+            "reentrancy": {
+                "disasm_lines": [
+                    "0: PUSH1 0x80",
+                    "2: PUSH1 0x40", 
+                    "4: MSTORE",
+                    "5: CALLER",
+                    "6: PUSH1 0x00",
+                    "8: DUP1",
+                    "9: DUP1",
+                    "10: DUP1",
+                    "11: DUP5",
+                    "12: GAS",
+                    "13: CALL",  # External call before state change
+                    "14: SWAP1",
+                    "15: POP",
+                    "16: CALLER",
+                    "17: PUSH1 0x00",
+                    "19: DUP2",
+                    "20: DUP2",
+                    "21: SLOAD",
+                    "22: SUB",
+                    "23: SWAP1",
+                    "24: SSTORE",  # State change after external call - reentrancy vulnerability
+                    "25: POP",
+                    "26: STOP",
+                ],
+                "expected_pcs": [13, 24],  # CALL and SSTORE PCs
+                "expected_warnings": ["State change after external call detected"],
+                "vulnerable": True,
+            },
+            "integer_overflow": {
+                "disasm_lines": [
+                    "0: PUSH1 0xff",
+                    "2: PUSH1 0x01", 
+                    "4: ADD",  # 255 + 1 = overflow
+                    "5: PUSH1 0x00",
+                    "7: SSTORE",
+                    "8: STOP",
+                ],
+                "expected_pcs": [4],  # ADD PC
+                "expected_warnings": ["Potential integer overflow in arithmetic operation"],
+                "vulnerable": True,
+            },
+            "safe": {
+                "disasm_lines": [
+                    "0: PUSH1 0x80",
+                    "2: PUSH1 0x40",
+                    "4: MSTORE",
+                    "5: PUSH1 0x01",
+                    "7: PUSH1 0x00",
+                    "9: SSTORE",
+                    "10: STOP",
+                ],
+                "expected_pcs": [],
+                "expected_warnings": [],
+                "vulnerable": False,
+            },
+        }
+        
+        return scenarios.get(vuln_type, scenarios["safe"])
+
+
+class SymbolicExecutionResultFactory(factory.Factory):
+    """Factory for generating symbolic execution results."""
+
+    class Meta:
+        model = dict
+
+    # Basic execution metrics
+    gas_used = factory.Faker("random_int", min=21000, max=1000000)
+    paths_explored = factory.Faker("random_int", min=1, max=50)
+    depth_reached = factory.Faker("random_int", min=1, max=100)
+    execution_time = factory.Faker("random_int", min=100, max=5000)  # milliseconds
+
+    # Vulnerability results
+    vulnerabilities = factory.LazyFunction(lambda: {
+        "integer_overflow": [],
+        "integer_underflow": [],
+        "reentrancy": [],
+        "time_dependency": [],
+        "money_concurrency": [],
+        "callstack": [],
+        "assertion_failure": [],
+        "parity_multisig_bug_2": [],
+    })
+
+    # Coverage information
+    evm_code_coverage = factory.Faker("random_int", min=50, max=100)
+    basic_blocks_covered = factory.LazyFunction(list)
+    instructions_covered = factory.LazyFunction(list)
+
+
 # Utility functions for test data generation
 def generate_random_address() -> str:
     """Generate a random Ethereum address."""
