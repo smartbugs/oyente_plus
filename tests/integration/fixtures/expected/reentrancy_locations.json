@@ -1,0 +1,16 @@
+{
+  "vulnerabilities": {
+    "reentrancy": [
+      {
+        "type": "reentrancy",
+        "description": "External call before state change",
+        "severity": "high",
+        "line": 14,
+        "column": 8,
+        "function": "vulnerableFunction"
+      }
+    ]
+  },
+  "analysis_time": 1.5,
+  "success": true
+}

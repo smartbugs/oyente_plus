@@ -1,0 +1,7 @@
+{
+  "vulnerabilities": {
+    "reentrancy": []
+  },
+  "analysis_time": 1.23,
+  "contract_name": "ReentrancySafe"
+}
