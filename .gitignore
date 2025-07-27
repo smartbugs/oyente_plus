@@ -22,7 +22,9 @@ venv/
 .venv/
 
 # Testing and coverage
+.benchmarks
 .coverage
+.hypothesis
 htmlcov/
 coverage.xml
 
