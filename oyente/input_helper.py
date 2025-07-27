@@ -152,6 +152,10 @@ class InputHelper:
                 "root_path": "",
                 "compiled_contracts": [],
             }
+        else:
+            raise ValueError(
+                f"Invalid input_type: {input_type}. Must be one of: {InputHelper.BYTECODE}, {InputHelper.SOLIDITY}, {InputHelper.STANDARD_JSON}, {InputHelper.STANDARD_JSON_OUTPUT}"
+            )
 
         for attr, default in attr_defaults.items():
             val = kwargs.get(attr, default)
