@@ -1,0 +1,211 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "oyente_plus"
+version = "2.0.0"
+description = "An analysis tool for smart contracts"
+authors = [{ name = "Thomas Fenninger" }]
+readme = "README.md"
+license = { text = "GPL-3.0" }
+requires-python = ">=3.8,!=3.12.0,<4.0"
+dependencies = [
+    "requests>=2.25.0",
+    "web3>=6.0.0",
+    "z3-solver==4.14.1.0",
+    "crytic-compile==0.3.8",
+    "solc-select>=1.0.0",
+    "cbor2>=5.0.0",
+    "six>=1.16.0",
+    "ethutils @ git+https://github.com/gsalzer/ethutils.git@main",
+]
+
+[project.scripts]
+oyente = "oyente.oyente:main"
+
+[project.urls]
+Homepage = "https://github.com/smartbugs/oyente_plus"
+Repository = "https://github.com/smartbugs/oyente_plus"
+Issues = "https://github.com/smartbugs/oyente_plus/issues"
+Documentation = "https://github.com/smartbugs/oyente_plus/blob/main/README.md"
+
+[tool.poetry]
+name = "oyente_plus"
+version = "2.0.0"
+description = "An analysis tool for smart contracts"
+authors = ["Thomas Fenninger"]
+readme = "README.md"
+license = "GPL-3.0"
+packages = [{ include = "oyente" }]
+# Maintained for compatibility - prefer [project] section above
+package-mode = true
+
+[tool.poetry.dependencies]
+python = ">=3.8,!=3.12.0,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+black = ">=24.0.0"
+ruff = ">=0.7.0"
+mypy = ">=1.8.0"
+pytest = ">=8.0.0"
+pytest-cov = ">=4.0.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=8.0.0"
+pytest-cov = ">=4.0.0"
+
+[tool.poetry.group.lint.dependencies]
+black = ">=24.0.0"
+ruff = ">=0.7.0"
+mypy = ">=1.8.0"
+
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Directories
+  \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.ruff_cache
+  | \.tox
+  | \.venv
+  | venv
+  | build
+  | dist
+  | web/node_modules
+)/
+'''
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+    "T20", # flake8-print
+    "SIM", # flake8-simplify
+    "N",   # pep8-naming
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "S101",  # use of assert (common in tests)
+    "T201",  # print statements (allow for debugging/logging)
+    "S608",  # possible SQL injection (allow for dynamic queries)
+    "UP007", # use X | Y for type annotations (compatibility with older Python)
+]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "web/node_modules",
+    "__pycache__",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]       # unused imports in __init__ files
+"test_*.py" = ["S101", "B018"] # allow asserts and unused expressions in tests
+"tests/*" = ["S101", "B018"]   # allow asserts and unused expressions in tests
+"oyente/test_evm/*" = ["S101"] # allow asserts in test files
+
+[tool.ruff.lint.isort]
+known-first-party = ["oyente"]
+force-single-line = true
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.9"
+platform = "linux"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+strict_optional = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+exclude = ["^venv/", "^build/", "^dist/", "^web/", "test_evm/test_data/"]
+
+# Gradual typing - start strict for new modules
+[[tool.mypy.overrides]]
+module = ["oyente.new_module", "oyente.utils.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+strict = true
+
+# Relaxed rules for test files
+[[tool.mypy.overrides]]
+module = ["tests.*", "oyente.test_evm.*"]
+disallow_untyped_defs = false
+ignore_errors = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=oyente",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests", "oyente/test_evm"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["oyente"]
+omit = ["*/test_*", "*/tests/*", "*/venv/*", "*/build/*", "*/dist/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

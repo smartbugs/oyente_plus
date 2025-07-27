@@ -1,7 +1,7 @@
 # enable reporting of the result
 REPORT_MODE = 0
 
-#print everything in the console
+# print everything in the console
 PRINT_MODE = 0
 
 # enable log file to print all exception

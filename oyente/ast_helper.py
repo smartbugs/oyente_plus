@@ -1,9 +1,13 @@
-import logging
-from utils import run_command
-from ast_walker import AstWalker
-import json
 import copy
-from typing import Any, Dict, List
+import json
+import logging
+from typing import Any
+from typing import Dict
+from typing import List
+
+from ast_walker import AstWalker
+from utils import run_command
+
 
 class AstHelper:
     def __init__(self, filename, input_type, remap, allow_paths=""):
@@ -19,7 +23,7 @@ class AstHelper:
         self.contracts = self.extract_contract_definitions(self.source_list)
 
     def get_source_list_standard_json(self, filename):
-        with open('standard_json_output', 'r') as f:
+        with open("standard_json_output") as f:
             out = f.read()
         out = json.loads(out)
         return out["sources"]
@@ -37,28 +41,18 @@ class AstHelper:
         #         code and the called function, when the refactoring is done.
         #
         # The solc v4 AST format is currently required by the symexecution code in Oyente,
-        # because the symexecution code does not yet understand the new v5+ AST format. 
-        # The v5+ AST format is a tree of nodes, where each node has a "nodeType" and a 
+        # because the symexecution code does not yet understand the new v5+ AST format.
+        # The v5+ AST format is a tree of nodes, where each node has a "nodeType" and a
         # "nodes" array. The v4 AST format is a flat list of nodes, where each node has a
         # "name" and "attributes" field.
-        if any(
-            isinstance(e.get("AST"), dict) and "nodeType" in e["AST"]
-            for e in out.get("sources", {}).values()
-        ):
+        if any(isinstance(e.get("AST"), dict) and "nodeType" in e["AST"] for e in out.get("sources", {}).values()):
             out = self._semi_convert_new_to_old_ast_format(out)
 
-        normalized = {
-            path: {"AST": entry["AST"]}
-            for path, entry in out["sources"].items()
-        }
+        normalized = {path: {"AST": entry["AST"]} for path, entry in out["sources"].items()}
         return normalized
 
     def extract_contract_definitions(self, sourcesList):
-        ret = {
-            "contractsById": {},
-            "contractsByName": {},
-            "sourcesByContract": {}
-        }
+        ret = {"contractsById": {}, "contractsByName": {}, "sourcesByContract": {}}
         walker = AstWalker()
         for k in sourcesList:
             if self.input_type == "solidity":
@@ -70,7 +64,7 @@ class AstHelper:
             for node in nodes:
                 ret["contractsById"][node["id"]] = node
                 ret["sourcesByContract"][node["id"]] = k
-                ret["contractsByName"][k + ':' + node["attributes"]["name"]] = node
+                ret["contractsByName"][k + ":" + node["attributes"]["name"]] = node
         return ret
 
     def get_linearized_base_contracts(self, id, contractsById):
@@ -104,7 +98,7 @@ class AstHelper:
         walker = AstWalker()
         nodes = []
         if node:
-            walker.walk(node, {"name":  "FunctionCall"}, nodes)
+            walker.walk(node, {"name": "FunctionCall"}, nodes)
         return nodes
 
     def extract_func_calls_definitions(self):
@@ -138,13 +132,13 @@ class AstHelper:
             list_of_attributes = [
                 {"attributes": {"member_name": "delegatecall"}},
                 {"attributes": {"member_name": "call"}},
-                {"attributes": {"member_name": "callcode"}}
+                {"attributes": {"member_name": "callcode"}},
             ]
             walker.walk(node, list_of_attributes, nodes)
 
         callee_src_pairs = []
         for node in nodes:
-            if "children" in node and node["children"]:
+            if node.get("children"):
                 type_of_first_child = node["children"][0]["attributes"]["type"]
                 if type_of_first_child.split(" ")[0] == "contract":
                     contract = type_of_first_child.split(" ")[1]
@@ -153,37 +147,37 @@ class AstHelper:
         return callee_src_pairs
 
     def get_func_name_to_params(self, c_name):
-        node = self.contracts['contractsByName'][c_name]
+        node = self.contracts["contractsByName"][c_name]
         walker = AstWalker()
         func_def_nodes = []
         if node:
-            walker.walk(node, {'name': 'FunctionDefinition'}, func_def_nodes)
+            walker.walk(node, {"name": "FunctionDefinition"}, func_def_nodes)
 
         func_name_to_params = {}
         for func_def_node in func_def_nodes:
-            func_name = func_def_node['attributes']['name']
+            func_name = func_def_node["attributes"]["name"]
             params_nodes = []
-            walker.walk(func_def_node, {'name': 'ParameterList'}, params_nodes)
+            walker.walk(func_def_node, {"name": "ParameterList"}, params_nodes)
 
             params_node = params_nodes[0]
             param_nodes = []
-            walker.walk(params_node, {'name': 'VariableDeclaration'}, param_nodes)
+            walker.walk(params_node, {"name": "VariableDeclaration"}, param_nodes)
 
             for param_node in param_nodes:
-                var_name = param_node['attributes']['name']
-                type_name = param_node['children'][0]['name']
-                if type_name == 'ArrayTypeName':
+                var_name = param_node["attributes"]["name"]
+                type_name = param_node["children"][0]["name"]
+                if type_name == "ArrayTypeName":
                     literal_nodes = []
-                    walker.walk(param_node, {'name': 'Literal'}, literal_nodes)
+                    walker.walk(param_node, {"name": "Literal"}, literal_nodes)
                     if literal_nodes:
-                        array_size = int(literal_nodes[0]['attributes']['value'])
+                        array_size = int(literal_nodes[0]["attributes"]["value"])
                     else:
                         array_size = 1
-                    param = {'name': var_name, 'type': type_name, 'value': array_size}
-                elif type_name == 'ElementaryTypeName':
-                    param = {'name': var_name, 'type': type_name}
+                    param = {"name": var_name, "type": type_name, "value": array_size}
+                elif type_name == "ElementaryTypeName":
+                    param = {"name": var_name, "type": type_name}
                 else:
-                    param = {'name': var_name, 'type': type_name}
+                    param = {"name": var_name, "type": type_name}
 
                 if func_name not in func_name_to_params:
                     func_name_to_params[func_name] = [param]
@@ -198,7 +192,6 @@ class AstHelper:
                 return path
         return ""
 
-
     def _semi_convert_new_to_old_ast_format(self, ast_tree: Dict[str, Any]) -> Dict[str, Any]:
         """
         Semi-convert solc v5+ AST (nodeType/nodes) to solc v4 AST structure,
@@ -209,7 +202,7 @@ class AstHelper:
         # conversion in one place. This is a temporary workaround until the
         # symexecution code is updated to use the new format.
         tree = copy.deepcopy(ast_tree)
-        
+
         # Normally this would be a fully defined function, but it is only used
         # here, so using a lamda object is fine.
         is_node = lambda obj: (isinstance(obj, dict) and "nodeType" in obj)
@@ -224,7 +217,7 @@ class AstHelper:
                 if is_node(v) or (isinstance(v, list) and all(is_node(i) for i in v)):
                     continue
                 out[k] = v
-            
+
             logging.debug(f"Converted leaf attributes: {out}")
             return out
 
@@ -267,8 +260,7 @@ class AstHelper:
                     documentation=None,
                 )
 
-            if ntype in {"ElementaryTypeName", "UserDefinedTypeName",
-                        "ArrayTypeName", "Mapping"}:
+            if ntype in {"ElementaryTypeName", "UserDefinedTypeName", "ArrayTypeName", "Mapping"}:
                 td = attrs.pop("typeDescriptions", None)
                 if isinstance(td, dict) and "typeString" in td:
                     attrs["type"] = td["typeString"]

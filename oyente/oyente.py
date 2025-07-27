@@ -1,26 +1,21 @@
 #!/usr/bin/env python
 
-import os
-import re
-import six
-import json
-import symExec
-import logging
-import requests
 import argparse
+import json
+import logging
+import re
 import subprocess
+
 import global_params
-from utils import run_command
+import requests
+import six
+import symExec
 from input_helper import InputHelper
+from utils import run_command
 
 
 def cmd_exists(cmd):
-    return (
-        subprocess.call(
-            "type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        == 0
-    )
+    return subprocess.call("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
 
 def compare_versions(version1, version2):
@@ -44,20 +39,15 @@ def has_dependencies_installed():
         tested_z3_version = "4.14.1.0"
         if compare_versions(z3_version, tested_z3_version) > 0:
             logging.warning(
-                "You are using an untested version of z3. %s is the officially tested version"
-                % tested_z3_version
+                "You are using an untested version of z3. %s is the officially tested version" % tested_z3_version
             )
     except e:
         logging.critical(e)
-        logging.critical(
-            "Z3 is not available. Please install z3 from https://github.com/Z3Prover/z3."
-        )
+        logging.critical("Z3 is not available. Please install z3 from https://github.com/Z3Prover/z3.")
         return False
 
     if not cmd_exists("evm"):
-        logging.critical(
-            "Please install evm from go-ethereum and make sure it is in the path."
-        )
+        logging.critical("Please install evm from go-ethereum and make sure it is in the path.")
         return False
     else:
         cmd = "evm --version"
@@ -66,14 +56,11 @@ def has_dependencies_installed():
         tested_evm_version = "1.16.1"
         if compare_versions(evm_version, tested_evm_version) > 0:
             logging.warning(
-                "You are using evm version %s. The supported version is %s"
-                % (evm_version, tested_evm_version)
+                "You are using evm version %s. The supported version is %s" % (evm_version, tested_evm_version)
             )
 
     if not cmd_exists("solc"):
-        logging.critical(
-            "solc is missing. Please install the solidity compiler and make sure solc is in the path."
-        )
+        logging.critical("solc is missing. Please install the solidity compiler and make sure solc is in the path.")
         return False
 
     return True
@@ -181,15 +168,9 @@ def main():
         nargs="+",
         help="The name of targeted contracts. If specified, only the specified contracts in the source code will be processed. By default, all contracts in Solidity code are processed.",
     )
-    parser.add_argument(
-        "--version", action="version", version="oyente version 0.2.7 - Commonwealth"
-    )
-    parser.add_argument(
-        "-rmp", "--remap", help="Remap directory paths", action="store", type=str
-    )
-    parser.add_argument(
-        "-t", "--timeout", help="Timeout for Z3 in ms.", action="store", type=int
-    )
+    parser.add_argument("--version", action="version", version="oyente version 0.2.7 - Commonwealth")
+    parser.add_argument("-rmp", "--remap", help="Remap directory paths", action="store", type=str)
+    parser.add_argument("-t", "--timeout", help="Timeout for Z3 in ms.", action="store", type=int)
     parser.add_argument(
         "-gl",
         "--gaslimit",
@@ -239,30 +220,14 @@ def main():
         type=int,
     )
 
-    parser.add_argument(
-        "-e", "--evm", help="Do not remove the .evm file.", action="store_true"
-    )
-    parser.add_argument(
-        "-w", "--web", help="Run Oyente for web service", action="store_true"
-    )
-    parser.add_argument(
-        "-j", "--json", help="Redirect results to a json file.", action="store_true"
-    )
-    parser.add_argument(
-        "-p", "--paths", help="Print path condition information.", action="store_true"
-    )
-    parser.add_argument(
-        "-db", "--debug", help="Display debug information", action="store_true"
-    )
-    parser.add_argument(
-        "-st", "--state", help="Get input state from state.json", action="store_true"
-    )
-    parser.add_argument(
-        "-r", "--report", help="Create .report file.", action="store_true"
-    )
-    parser.add_argument(
-        "-v", "--verbose", help="Verbose output, print everything.", action="store_true"
-    )
+    parser.add_argument("-e", "--evm", help="Do not remove the .evm file.", action="store_true")
+    parser.add_argument("-w", "--web", help="Run Oyente for web service", action="store_true")
+    parser.add_argument("-j", "--json", help="Redirect results to a json file.", action="store_true")
+    parser.add_argument("-p", "--paths", help="Print path condition information.", action="store_true")
+    parser.add_argument("-db", "--debug", help="Display debug information", action="store_true")
+    parser.add_argument("-st", "--state", help="Get input state from state.json", action="store_true")
+    parser.add_argument("-r", "--report", help="Create .report file.", action="store_true")
+    parser.add_argument("-v", "--verbose", help="Verbose output, print everything.", action="store_true")
     parser.add_argument(
         "-pl",
         "--parallel",
@@ -275,9 +240,7 @@ def main():
         help="read bytecode in source instead of solidity file.",
         action="store_true",
     )
-    parser.add_argument(
-        "-a", "--assertion", help="Check assertion failures.", action="store_true"
-    )
+    parser.add_argument("-a", "--assertion", help="Check assertion failures.", action="store_true")
     parser.add_argument(
         "-sj",
         "--standard-json",

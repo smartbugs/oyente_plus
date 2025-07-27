@@ -1,38 +1,43 @@
 import logging
 import math
-import six
+
+import global_params
 from opcodes import *
+from utils import *
+from vargenerator import *
 from z3 import *
 from z3.z3util import *
-from vargenerator import *
-from utils import *
-import global_params
+
 
 log = logging.getLogger(__name__)
 
 # THIS IS TO DEFINE A SKELETON FOR ANALYSIS
 # FOR NEW TYPE OF ANALYSIS: add necessary details to the skeleton functions
 
+
 def set_cur_file(c_file):
     global cur_file
     cur_file = c_file
+
 
 def init_analysis():
     analysis = {
         "gas": 0,
         "gas_mem": 0,
         "money_flow": [("Is", "Ia", "Iv")],  # (source, destination, amount)
-        "reentrancy_bug":[],
+        "reentrancy_bug": [],
         "money_concurrency_bug": [],
-        "time_dependency_bug": {}
+        "time_dependency_bug": {},
     }
     return analysis
 
 
 # Money flow: (source, destination, amount)
 
+
 def display_analysis(analysis):
     logging.debug("Money flow: " + str(analysis["money_flow"]))
+
 
 # Check if this call has the Reentrancy bug
 # Return true if it does, false otherwise
@@ -47,13 +52,13 @@ def check_reentrancy_bug(path_conditions_and_vars, stack, global_state):
             # check if a var is global
             if is_storage_var(var):
                 pos = get_storage_position(var)
-                if pos in global_state['Ia']:
-                    new_path_condition.append(var == global_state['Ia'][pos])
+                if pos in global_state["Ia"]:
+                    new_path_condition.append(var == global_state["Ia"][pos])
     transfer_amount = stack[2]
     if isSymbolic(transfer_amount) and is_storage_var(transfer_amount):
         pos = get_storage_position(transfer_amount)
-        if pos in global_state['Ia']:
-            new_path_condition.append(global_state['Ia'][pos] != 0)
+        if pos in global_state["Ia"]:
+            new_path_condition.append(global_state["Ia"][pos] != 0)
     if global_params.DEBUG_MODE:
         log.info("=>>>>>> New PC: " + str(new_path_condition))
 
@@ -65,15 +70,16 @@ def check_reentrancy_bug(path_conditions_and_vars, stack, global_state):
     # If outgas > 2300 when using call.gas.value then the contract will be considered to contain reentrancy bug
     solver.add(stack[0] > 2300)
     # transfer_amount > deposit_amount => reentrancy
-    solver.add(stack[2] > BitVec('Iv', 256))
+    solver.add(stack[2] > BitVec("Iv", 256))
     # if it is not feasible to re-execute the call, its not a bug
     ret_val = not (solver.check() == unsat)
     if global_params.DEBUG_MODE:
         log.info("Reentrancy_bug? " + str(ret_val))
     return ret_val
 
+
 def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
-    gas_increment = get_ins_cost(opcode) # base cost
+    gas_increment = get_ins_cost(opcode)  # base cost
     gas_memory = analysis["gas_mem"]
     # In some opcodes, gas cost is not only depend on opcode itself but also current state of evm
     # For symbolic variables, we only add base cost part for simplicity
@@ -101,7 +107,7 @@ def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
                     gas_increment += GCOST["Gsset"]
                 else:
                     gas_increment += GCOST["Gsreset"]
-            except: # when storage address at considered key is empty
+            except:  # when storage address at considered key is empty
                 if stack[1] != 0:
                     gas_increment += GCOST["Gsset"]
                 elif stack[1] == 0:
@@ -113,7 +119,7 @@ def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
                 except:
                     storage_value = global_state["Ia"][str(stack[0])]
                 solver.push()
-                solver.add(Not( And(storage_value == 0, stack[1] != 0) ))
+                solver.add(Not(And(storage_value == 0, stack[1] != 0)))
                 if solver.check() == unsat:
                     gas_increment += GCOST["Gsset"]
                 else:
@@ -123,7 +129,7 @@ def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
                 if str(e) == "canceled":
                     solver.pop()
                 solver.push()
-                solver.add(Not( stack[1] != 0 ))
+                solver.add(Not(stack[1] != 0))
                 if solver.check() == unsat:
                     gas_increment += GCOST["Gsset"]
                 else:
@@ -146,7 +152,7 @@ def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
                 gas_increment += GCOST["Gcallvalue"]
         else:
             solver.push()
-            solver.add(Not (stack[2] != 0))
+            solver.add(Not(stack[2] != 0))
             if check_sat(solver) == unsat:
                 gas_increment += GCOST["Gcallvalue"]
             solver.pop()
@@ -156,13 +162,13 @@ def calculate_gas(opcode, stack, mem, global_state, analysis, solver):
     elif opcode == "CREATE2" and isReal(stack[2]):
         gas_increment += GCOST["Gsha3word"] * math.ceil(stack[2] / 32)
 
-
-    #Calculate gas memory, add it to total gas used
-    length = len(mem.keys()) # number of memory words
-    new_gas_memory = GCOST["Gmemory"] * length + (length ** 2) // 512
+    # Calculate gas memory, add it to total gas used
+    length = len(mem.keys())  # number of memory words
+    new_gas_memory = GCOST["Gmemory"] * length + (length**2) // 512
     gas_increment += new_gas_memory - gas_memory
 
     return (gas_increment, new_gas_memory)
+
 
 def update_analysis(analysis, opcode, stack, mem, global_state, path_conditions_and_vars, solver):
     gas_increment, gas_memory = calculate_gas(opcode, stack, mem, global_state, analysis, solver)
@@ -181,13 +187,14 @@ def update_analysis(analysis, opcode, stack, mem, global_state, path_conditions_
         analysis["reentrancy_bug"].append(reentrancy_result)
 
         analysis["money_concurrency_bug"].append(global_state["pc"])
-        analysis["money_flow"].append( ("Ia", str(recipient), str(transfer_amount)))
+        analysis["money_flow"].append(("Ia", str(recipient), str(transfer_amount)))
     elif opcode == "SUICIDE":
         recipient = stack[0]
         if isSymbolic(recipient):
             recipient = simplify(recipient)
-        analysis['money_concurrency_bug'].append(global_state['pc'])
+        analysis["money_concurrency_bug"].append(global_state["pc"])
         analysis["money_flow"].append(("Ia", str(recipient), "all_remaining"))
+
 
 # Check if it is possible to execute a path after a previous path
 # Previous path has prev_pc (previous path condition) and set global state variables as in gstate (only storage values)
@@ -242,15 +249,15 @@ def is_diff(flow1, flow2):
         if flow1[i] == flow2[i]:
             continue
         try:
-            tx_cd = Or(Not(flow1[i][0] == flow2[i][0]),
-                       Not(flow1[i][1] == flow2[i][1]),
-                       Not(flow1[i][2] == flow2[i][2]))
+            tx_cd = Or(
+                Not(flow1[i][0] == flow2[i][0]), Not(flow1[i][1] == flow2[i][1]), Not(flow1[i][2] == flow2[i][2])
+            )
             solver = Solver()
             solver.set("timeout", global_params.TIMEOUT)
             solver.add(tx_cd)
 
             if solver.check() == sat:
                 return 1
-        except Exception as e:
+        except Exception:
             return 1
     return 0

@@ -5,15 +5,25 @@ import json
 import os
 import pickle
 
+
 os.chdir(os.path.dirname(__file__))
 
-from test_evm.global_test_params import PASS, FAIL, TIME_OUT, UNKNOWN_INSTRUCTION, EXCEPTION, EMPTY_RESULT, INCORRECT_GAS, PICKLE_PATH
 from test_evm.evm_unit_test import EvmUnitTest
+from test_evm.global_test_params import EMPTY_RESULT
+from test_evm.global_test_params import EXCEPTION
+from test_evm.global_test_params import FAIL
+from test_evm.global_test_params import INCORRECT_GAS
+from test_evm.global_test_params import PASS
+from test_evm.global_test_params import PICKLE_PATH
+from test_evm.global_test_params import TIME_OUT
+from test_evm.global_test_params import UNKNOWN_INSTRUCTION
+
 
 def remove_temporary_files():
-    rm_file('bytecode')
-    rm_file('bytecode.disasm')
+    rm_file("bytecode")
+    rm_file("bytecode.disasm")
     rm_file(PICKLE_PATH)
+
 
 def rm_file(path):
     if os.path.isfile(path):
@@ -21,29 +31,34 @@ def rm_file(path):
 
 
 def status(exit_code):
-    if exit_code == 100: return "Pass"
-    if exit_code == 101: return "Fail"
-    if exit_code == 102: return "Time out"
-    if exit_code == 103: return "Unkown instruction"
-    if exit_code == 104: return "Exception"
-    if exit_code == 105: return "Empty result"
-    if exit_code == 106: return "Incorrect gas tracked"
+    if exit_code == 100:
+        return "Pass"
+    if exit_code == 101:
+        return "Fail"
+    if exit_code == 102:
+        return "Time out"
+    if exit_code == 103:
+        return "Unkown instruction"
+    if exit_code == 104:
+        return "Exception"
+    if exit_code == 105:
+        return "Empty result"
+    if exit_code == 106:
+        return "Incorrect gas tracked"
 
     return str(exit_code)
 
 
 def main():
-    test_dir = 'test_evm/test_data'
-    files = glob.glob(test_dir + '/*.json')
+    test_dir = "test_evm/test_data"
+    files = glob.glob(test_dir + "/*.json")
     test_cases = {}
 
-    num_tests = num_passes = num_fails = \
-        num_time_outs = num_unkown_instrs = \
-        num_exceptions = num_empty_res = num_incorrect_gas = 0
+    num_tests = num_passes = num_fails = num_time_outs = num_unkown_instrs = num_exceptions = num_empty_res = (
+        num_incorrect_gas
+    ) = 0
 
-    fails, time_outs, \
-        unkown_instrs, exceptions, empty_res, \
-        incorrect_gas = [], [], [], [], [], []
+    fails, time_outs, unkown_instrs, exceptions, empty_res, incorrect_gas = [], [], [], [], [], []
 
     for f in files:
         test_cases.update(json.loads(open(f).read()))
@@ -58,7 +73,7 @@ def main():
 
         current_test = EvmUnitTest(testname, testdata)
 
-        pickle.dump(current_test, open(PICKLE_PATH, 'wb'), pickle.HIGHEST_PROTOCOL)
+        pickle.dump(current_test, open(PICKLE_PATH, "wb"), pickle.HIGHEST_PROTOCOL)
 
         exit_code = current_test.run_test()
 
@@ -71,7 +86,7 @@ def main():
         else:
             print("no exit code returned")
 
-        testname = testname.encode('utf8')
+        testname = testname.encode("utf8")
         num_tests += 1
         if exit_code == PASS:
             num_passes += 1
@@ -113,5 +128,5 @@ def main():
     print("Incorrect gas tracked", num_incorrect_gas, incorrect_gas)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
