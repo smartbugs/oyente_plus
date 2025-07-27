@@ -32,10 +32,7 @@ class AstWalker:
     """
 
     def walk(
-        self,
-        node: Dict[str, Any],
-        attributes: Union[Dict[str, Any], List[Dict[str, Any]]],
-        nodes: List[Dict[str, Any]]
+        self, node: Dict[str, Any], attributes: Union[Dict[str, Any], List[Dict[str, Any]]], nodes: List[Dict[str, Any]]
     ) -> None:
         """Walk the AST and collect nodes matching the given attributes.
 
@@ -50,12 +47,7 @@ class AstWalker:
         else:
             self._walk_with_list_of_attrs(node, attributes, nodes)
 
-    def _walk_with_attrs(
-        self,
-        node: Dict[str, Any],
-        attributes: Dict[str, Any],
-        nodes: List[Dict[str, Any]]
-    ) -> None:
+    def _walk_with_attrs(self, node: Dict[str, Any], attributes: Dict[str, Any], nodes: List[Dict[str, Any]]) -> None:
         """Walk AST with exact attribute matching.
 
         Args:
@@ -65,7 +57,7 @@ class AstWalker:
         """
         if node is None:
             return
-            
+
         if self._check_attributes(node, attributes):
             nodes.append(node)
         else:
@@ -74,10 +66,7 @@ class AstWalker:
                     self._walk_with_attrs(child, attributes, nodes)
 
     def _walk_with_list_of_attrs(
-        self,
-        node: Dict[str, Any],
-        list_of_attributes: List[Dict[str, Any]],
-        nodes: List[Dict[str, Any]]
+        self, node: Dict[str, Any], list_of_attributes: List[Dict[str, Any]], nodes: List[Dict[str, Any]]
     ) -> None:
         """Walk AST with pattern matching using multiple attribute sets.
 
@@ -88,7 +77,7 @@ class AstWalker:
         """
         if node is None:
             return
-            
+
         if self._check_list_of_attributes(node, list_of_attributes):
             nodes.append(node)
         else:
@@ -108,7 +97,7 @@ class AstWalker:
         """
         if node is None:
             return False
-            
+
         for name in attributes:
             if name == "attributes":
                 if "attributes" not in node or not self._check_attributes(node["attributes"], attributes["attributes"]):
@@ -118,11 +107,7 @@ class AstWalker:
                     return False
         return True
 
-    def _check_list_of_attributes(
-        self,
-        node: Dict[str, Any],
-        list_of_attributes: List[Dict[str, Any]]
-    ) -> bool:
+    def _check_list_of_attributes(self, node: Dict[str, Any], list_of_attributes: List[Dict[str, Any]]) -> bool:
         """Check if a node matches any of the attribute patterns.
 
         Args:

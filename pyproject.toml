@@ -144,6 +144,7 @@ exclude = [
 "__init__.py" = ["F401"]       # unused imports in __init__ files
 "test_*.py" = ["S101", "B018"] # allow asserts and unused expressions in tests
 "tests/*" = ["S101", "B018"]   # allow asserts and unused expressions in tests
+"tests/integration/*" = ["S101", "B018", "S603"]  # allow subprocess in integration tests
 "oyente/test_evm/*" = ["S101"] # allow asserts in test files
 
 [tool.ruff.lint.isort]
@@ -203,7 +204,7 @@ addopts = [
     "--tb=auto",
     "--maxfail=1",
     "--verbose",
-    "-m 'not integration'",  # Exclude integration tests by default
+    "-m", "not integration",  # Exclude integration tests by default
 ]
 testpaths = ["tests"]
 norecursedirs = [".*venv*", "build", "dist", ".git", ".pytest_cache", ".mypy_cache", ".ruff_cache"]

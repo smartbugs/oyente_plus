@@ -23,10 +23,10 @@ An Analysis Tool for Smart Contracts
 
 ### Prerequisites
 
-- Python 3.8+ (excluding 3.12.0)
-- [Poetry](https://python-poetry.org/) for dependency management
-- [Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)
-- [Go Ethereum (geth)](https://geth.ethereum.org/downloads/) for EVM execution
+- **Python 3.8+** (excluding 3.12.0) - Modern type hints and features
+- **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management  
+- **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
+- **[Go Ethereum (geth)](https://geth.ethereum.org/downloads/)** - EVM execution engine
 
 ### Installation
 
@@ -47,10 +47,15 @@ poetry shell
 #### Option 2: Manual Setup
 
 ```bash
-# Install dependencies with Poetry
+# Install all dependencies (development, testing, linting)
 poetry install --with dev,test,lint
 
-# Or install only production dependencies
+# Install specific dependency groups
+poetry install --with dev    # Development tools only
+poetry install --with test   # Testing framework only  
+poetry install --with lint   # Linting tools only
+
+# Production installation only
 poetry install --only main
 ```
 
@@ -204,10 +209,12 @@ tests/
 ### Project Status
 
 **✅ Completed (Phase 1)**:
-- Modern Python packaging with Poetry
-- Comprehensive test infrastructure (27+ unit tests)
-- Code quality tooling (Black, Ruff, mypy)
-- Type hints for `vulnerability.py` module
+- **PEP 621 compliant packaging** with Poetry integration
+- **Comprehensive pyproject.toml configuration** for all tools
+- **Organized dependency groups** (dev, test, lint)
+- **Comprehensive test infrastructure** (27+ unit tests)
+- **Security-first code quality tooling** (Black, Ruff, mypy)
+- **Type hints for `vulnerability.py` module** (100% coverage)
 
 **🔄 In Progress**:
 - Type hints for core modules (`oyente.py`, `input_helper.py`)

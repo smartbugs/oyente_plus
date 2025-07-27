@@ -61,13 +61,7 @@ class AstHelper:
         >>> print(f"State variables: {state_vars}")
     """
 
-    def __init__(
-        self,
-        filename: str,
-        input_type: str,
-        remap: str,
-        allow_paths: str = ""
-    ) -> None:
+    def __init__(self, filename: str, input_type: str, remap: str, allow_paths: str = "") -> None:
         """Initialize AST helper with contract source.
 
         Args:
@@ -158,11 +152,7 @@ class AstHelper:
             - contractsByName: Maps "file:name" to contract nodes
             - sourcesByContract: Maps contract IDs to source file paths
         """
-        ret: Dict[str, Dict[str, Any]] = {
-            "contractsById": {},
-            "contractsByName": {},
-            "sourcesByContract": {}
-        }
+        ret: Dict[str, Dict[str, Any]] = {"contractsById": {}, "contractsByName": {}, "sourcesByContract": {}}
         walker = AstWalker()
         for k in sources_list:
             ast = sources_list[k]["AST"] if self.input_type == "solidity" else sources_list[k]["legacyAST"]
@@ -198,7 +188,7 @@ class AstHelper:
         Returns:
             List of state variable declaration nodes
         """
-        node = self.contracts["contractsByName"][c_name]
+        node = self.contracts["contractsByName"].get(c_name)
         state_vars: List[Dict[str, Any]] = []
         if node:
             base_contracts = self.get_linearized_base_contracts(node["id"], self.contracts["contractsById"])
