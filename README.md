@@ -130,60 +130,17 @@ make test-cov    # Run tests with coverage
 
 ## 🧪 Testing
 
-The project includes comprehensive testing infrastructure:
+**Status**: 338 test functions across comprehensive test infrastructure
 
 ```bash
-# Run all tests using Makefile (preferred)
-make test
-
-# Run specific test types
-make test-unit           # Unit tests only (tests/unit/)
-make test-integration    # Integration tests only (tests/integration/)
-make test-performance    # Performance tests only (tests/performance/)
-make test-property       # Property-based tests only (tests/property/)
-
-# Run specific test file
-make test TEST=tests/unit/test_analysis.py
-
-# Run tests with coverage reporting
-make test-cov                    # All tests with coverage
-make test-unit-cov               # Unit tests with coverage
-make test-integration-cov        # Integration tests with coverage
-
-# Run specific test file with coverage
-make test-cov TEST=tests/unit/test_analysis.py
-
-# Run legacy EVM tests (JSON-based)
-make test-legacy
-
-# Direct pytest commands (alternative)
-python -m pytest tests/ -v           # All tests
-python -m pytest tests/unit/         # Unit tests only
-python -m pytest tests/integration/  # Integration tests only
-python -m pytest -m "not slow"       # Skip slow tests
-python -m pytest -m integration      # Integration tests by marker
-python -m pytest -m unit             # Unit tests by marker
+# Quick commands
+make test          # Run all tests
+make test-unit     # Unit tests only
+make test-cov      # Tests with coverage
+make all          # Format, lint, type-check, test
 ```
 
-### Test Structure
-
-```
-tests/
-├── unit/           # Fast, isolated unit tests (312+ tests, 99.7% pass rate)
-├── integration/    # Component interaction tests 
-├── property/       # Hypothesis property-based tests (edge case discovery)
-├── performance/    # Benchmark tests with pytest-benchmark
-├── fixtures/       # Test data generators and utilities
-└── mocks/          # Mock objects (Z3, filesystem, subprocess)
-```
-
-### Test Coverage Status
-
-- **`vulnerability.py`**: ✅ 100% coverage (27+ unit tests)
-- **`ast_helper.py`**: ✅ Comprehensive coverage (15+ complex test scenarios)
-- **Mock infrastructure**: ✅ Complete (Z3 solver, filesystem, subprocess)
-- **Property-based testing**: ✅ Hypothesis integration for edge cases
-- **Performance benchmarking**: ✅ pytest-benchmark integration
+**📋 For detailed testing guide**: See `docs/testing.md`
 
 ## 📊 Architecture Overview
 
