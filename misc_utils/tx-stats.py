@@ -1,15 +1,19 @@
 import json
 import os
 import re
+from typing import Any
+from typing import Dict
+from typing import List
 
 from tqdm import tqdm
 
 
-def get_transactions(fname):
+def get_transactions(fname: str) -> List[Dict[str, Any]]:
     pattern = r"(>(0x[\da-f]+)<|block\/(\d+)|<td>(\d.+?)</td>)"
-    res = re.findall(pattern, open(fname).read(), re.IGNORECASE)
-    txs = []
-    curtx = {}
+    with open(fname) as f:
+        res = re.findall(pattern, f.read(), re.IGNORECASE)
+    txs: List[Dict[str, Any]] = []
+    curtx: Dict[str, Any] = {}
 
     for match in res:
         if match[2] != "":
@@ -33,23 +37,22 @@ def get_transactions(fname):
     return txs
 
 
-def load_txdir(path):
+def load_txdir(path: str) -> List[Dict[str, Any]]:
     files = os.listdir(path)
     if path[-1] != "/":
         path += "/"
-    txs = []
+    txs: List[Dict[str, Any]] = []
     for f in tqdm(files):
         if f.endswith(".html"):
             txs += get_transactions(path + f)
     return txs
 
 
-def pprint(fn):
-    inj = json.loads(open(fn).read())
-    outj = open(fn, "w")
-    outj.write(json.dumps(inj, indent=1))
-    outj.flush()
-    outj.close()
+def pprint(fn: str) -> None:
+    with open(fn) as f:
+        inj = json.loads(f.read())
+    with open(fn, "w") as outj:
+        outj.write(json.dumps(inj, indent=1))
 
 
 txs_dir = "../transaction-scraper/transactions"
