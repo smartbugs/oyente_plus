@@ -17,7 +17,7 @@ endif
 
 help: ## Show this help message
 	@echo "Available targets:"
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development Setup
 
@@ -60,19 +60,19 @@ endif
 
 test-unit: ## Run only unit tests
 	@echo "🧪 Running unit tests..."
-	@$(POETRY_RUN) pytest tests/unit/ -v && echo "✅ Unit tests complete" || (echo "❌ Unit tests failed" && exit 1)
+	@$(POETRY_RUN) pytest tests/unit/ -v -m "" && echo "✅ Unit tests complete" || (echo "❌ Unit tests failed" && exit 1)
 
-test-integration: ## Run only integration tests  
+test-integration: ## Run only integration tests
 	@echo "🧪 Running integration tests..."
-	@$(POETRY_RUN) pytest tests/integration/ -v && echo "✅ Integration tests complete" || (echo "❌ Integration tests failed" && exit 1)
+	@$(POETRY_RUN) pytest tests/integration/ -v -m "" && echo "✅ Integration tests complete" || (echo "❌ Integration tests failed" && exit 1)
 
 test-performance: ## Run only performance tests
 	@echo "🧪 Running performance tests..."
-	@$(POETRY_RUN) pytest tests/performance/ -v && echo "✅ Performance tests complete" || (echo "❌ Performance tests failed" && exit 1)
+	@$(POETRY_RUN) pytest tests/performance/ -v -m "" && echo "✅ Performance tests complete" || (echo "❌ Performance tests failed" && exit 1)
 
 test-property: ## Run only property-based tests
 	@echo "🧪 Running property-based tests..."
-	@$(POETRY_RUN) pytest tests/property/ -v && echo "✅ Property tests complete" || (echo "❌ Property tests failed" && exit 1)
+	@$(POETRY_RUN) pytest tests/property/ -v -m "" && echo "✅ Property tests complete" || (echo "❌ Property tests failed" && exit 1)
 
 test-legacy: ## Run legacy EVM tests
 	@echo "🧪 Running legacy EVM tests..."
@@ -89,11 +89,13 @@ endif
 
 test-unit-cov: ## Run unit tests with coverage
 	@echo "🧪 Running unit tests with coverage..."
-	@$(POETRY_RUN) pytest tests/unit/ --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov/unit --cov-report=xml:coverage-unit.xml -v && echo "✅ Unit test coverage complete" || (echo "❌ Unit test coverage failed" && exit 1)
+	@mkdir -p htmlcov
+	@$(POETRY_RUN) pytest tests/unit/ --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov/unit --cov-report=xml:coverage-unit.xml -v -m "" && echo "✅ Unit test coverage complete" || (echo "❌ Unit test coverage failed" && exit 1)
 
 test-integration-cov: ## Run integration tests with coverage
 	@echo "🧪 Running integration tests with coverage..."
-	@$(POETRY_RUN) pytest tests/integration/ --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov/integration --cov-report=xml:coverage-integration.xml -v && echo "✅ Integration test coverage complete" || (echo "❌ Integration test coverage failed" && exit 1)
+	@mkdir -p htmlcov
+	@$(POETRY_RUN) pytest tests/integration/ --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov/integration --cov-report=xml:coverage-integration.xml -v -m "" && echo "✅ Integration test coverage complete" || (echo "❌ Integration test coverage failed" && exit 1)
 
 ##@ Comprehensive
 
@@ -110,6 +112,7 @@ clean: ## Clean up temporary files and caches
 	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf htmlcov/ coverage*.xml .coverage
 	@rm -f bytecode bytecode.disasm
 	@echo "✅ Cleanup complete"
 
