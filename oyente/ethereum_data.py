@@ -22,7 +22,7 @@ class EthereumData:
                 address,
                 self.apikey,
             )
-            r = requests.get(apiEndPoint)
+            r = requests.get(apiEndPoint, timeout=30)
             result = r.json()
             status = result["message"]
             if status == "OK":
@@ -39,7 +39,7 @@ class EthereumData:
                 address,
                 self.apikey,
             )
-            r = requests.get(apiEndPoint)
+            r = requests.get(apiEndPoint, timeout=30)
             result = r.json()["result"]
         except Exception as e:
             log.exception("Error at: contract address: %s" % address)
@@ -57,7 +57,7 @@ class EthereumData:
                 position,
                 self.apikey,
             )
-            r = requests.get(apiEndPoint)
+            r = requests.get(apiEndPoint, timeout=30)
             result = r.json()["result"]
         except Exception as e:
             if str(e) != "timeout":
