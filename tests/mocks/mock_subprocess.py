@@ -6,13 +6,11 @@ preventing actual external command execution during tests and allowing
 controlled behavior for testing error conditions.
 """
 
+from __future__ import annotations
+
 import subprocess
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Union
-from unittest.mock import Mock
 from unittest.mock import patch
 
 
@@ -21,11 +19,11 @@ class MockCompletedProcess:
 
     def __init__(
         self,
-        args: List[str],
+        args: list[str],
         returncode: int = 0,
         stdout: str = "",
         stderr: str = "",
-        encoding: Optional[str] = None,
+        encoding: str | None = None,
     ):
         self.args = args
         self.returncode = returncode
@@ -43,21 +41,21 @@ class MockSubprocess:
     """Mock subprocess module for testing."""
 
     def __init__(self):
-        self.commands: Dict[str, Dict[str, Any]] = {}
+        self.commands: dict[str, dict[str, Any]] = {}
         self.default_result = {
             "returncode": 0,
             "stdout": "",
             "stderr": "",
         }
-        self.call_history: List[Dict[str, Any]] = []
+        self.call_history: list[dict[str, Any]] = []
 
     def add_command(
         self,
-        command: Union[str, List[str]],
+        command: Union[str, list[str]],
         returncode: int = 0,
         stdout: str = "",
         stderr: str = "",
-        side_effect: Optional[Exception] = None,
+        side_effect: Exception | None = None,
     ):
         """
         Add a command and its expected result.
@@ -79,14 +77,14 @@ class MockSubprocess:
 
     def run(
         self,
-        args: Union[str, List[str]],
+        args: Union[str, list[str]],
         *,
         capture_output: bool = False,
         text: bool = False,
         shell: bool = False,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         check: bool = False,
-        **kwargs
+        **kwargs,
     ) -> MockCompletedProcess:
         """Mock subprocess.run implementation."""
         # Record the call
@@ -102,10 +100,7 @@ class MockSubprocess:
         self.call_history.append(call_info)
 
         # Get command key
-        if isinstance(args, list):
-            cmd_key = " ".join(args)
-        else:
-            cmd_key = args
+        cmd_key = " ".join(args) if isinstance(args, list) else args
 
         # Look up command result
         if cmd_key in self.commands:
@@ -145,24 +140,14 @@ class MockSubprocess:
         return result
 
     def check_output(
-        self,
-        args: Union[str, List[str]],
-        *,
-        shell: bool = False,
-        timeout: Optional[float] = None,
-        **kwargs
+        self, args: Union[str, list[str]], *, shell: bool = False, timeout: float | None = None, **kwargs
     ) -> bytes:
         """Mock subprocess.check_output implementation."""
         result = self.run(args, capture_output=True, check=True, shell=shell, timeout=timeout, **kwargs)
         return result.stdout.encode() if isinstance(result.stdout, str) else result.stdout
 
     def check_call(
-        self,
-        args: Union[str, List[str]],
-        *,
-        shell: bool = False,
-        timeout: Optional[float] = None,
-        **kwargs
+        self, args: Union[str, list[str]], *, shell: bool = False, timeout: float | None = None, **kwargs
     ) -> int:
         """Mock subprocess.check_call implementation."""
         result = self.run(args, check=True, shell=shell, timeout=timeout, **kwargs)
@@ -173,7 +158,7 @@ class MockSubprocess:
         self.commands.clear()
         self.call_history.clear()
 
-    def assert_called_with(self, args: Union[str, List[str]]):
+    def assert_called_with(self, args: Union[str, list[str]]):
         """Assert that subprocess was called with specific arguments."""
         expected = args if isinstance(args, list) else [args]
         for call in self.call_history:
@@ -192,7 +177,7 @@ class OyenteCommandMocks:
     """Pre-configured mocks for common Oyente commands."""
 
     @staticmethod
-    def mock_evm_version() -> Dict[str, Any]:
+    def mock_evm_version() -> dict[str, Any]:
         """Mock evm --version command."""
         return {
             "returncode": 0,
@@ -201,7 +186,7 @@ class OyenteCommandMocks:
         }
 
     @staticmethod
-    def mock_solc_version() -> Dict[str, Any]:
+    def mock_solc_version() -> dict[str, Any]:
         """Mock solc --version command."""
         return {
             "returncode": 0,
@@ -210,7 +195,7 @@ class OyenteCommandMocks:
         }
 
     @staticmethod
-    def mock_solc_compile_success(bytecode: str = "608060405234801561001057600080fd5b50") -> Dict[str, Any]:
+    def mock_solc_compile_success(bytecode: str = "608060405234801561001057600080fd5b50") -> dict[str, Any]:
         """Mock successful solc compilation."""
         return {
             "returncode": 0,
@@ -219,7 +204,7 @@ class OyenteCommandMocks:
         }
 
     @staticmethod
-    def mock_solc_compile_error() -> Dict[str, Any]:
+    def mock_solc_compile_error() -> dict[str, Any]:
         """Mock solc compilation error."""
         return {
             "returncode": 1,
@@ -228,7 +213,7 @@ class OyenteCommandMocks:
         }
 
     @staticmethod
-    def mock_mythril_analysis() -> Dict[str, Any]:
+    def mock_mythril_analysis() -> dict[str, Any]:
         """Mock mythril analysis output."""
         return {
             "returncode": 0,
@@ -237,7 +222,7 @@ class OyenteCommandMocks:
         }
 
 
-def create_mock_subprocess(commands: Optional[Dict[str, Dict[str, Any]]] = None) -> MockSubprocess:
+def create_mock_subprocess(commands: dict[str, dict[str, Any]] | None = None) -> MockSubprocess:
     """Create a mock subprocess with pre-configured commands."""
     mock = MockSubprocess()
 
@@ -256,7 +241,7 @@ def create_mock_subprocess(commands: Optional[Dict[str, Dict[str, Any]]] = None)
     return mock
 
 
-def patch_subprocess(commands: Optional[Dict[str, Dict[str, Any]]] = None):
+def patch_subprocess(commands: dict[str, dict[str, Any]] | None = None):
     """
     Decorator to patch subprocess with mock implementation.
 
@@ -273,11 +258,11 @@ def patch_subprocess(commands: Optional[Dict[str, Dict[str, Any]]] = None):
         def wrapper(*args, **kwargs):
             mock = create_mock_subprocess(commands)
 
-            with patch("subprocess.run", side_effect=mock.run):
-                with patch("subprocess.check_output", side_effect=mock.check_output):
-                    with patch("subprocess.check_call", side_effect=mock.check_call):
-                        # Add mock to function arguments
-                        return func(mock, *args, **kwargs)
+            with patch("subprocess.run", side_effect=mock.run), patch(
+                "subprocess.check_output", side_effect=mock.check_output
+            ), patch("subprocess.check_call", side_effect=mock.check_call):
+                # Add mock to function arguments
+                return func(mock, *args, **kwargs)
 
         return wrapper
 
@@ -285,10 +270,10 @@ def patch_subprocess(commands: Optional[Dict[str, Dict[str, Any]]] = None):
 
 
 # Context manager for subprocess mocking
-class mock_subprocess_context:
+class MockSubprocessContext:
     """Context manager for subprocess mocking."""
 
-    def __init__(self, commands: Optional[Dict[str, Dict[str, Any]]] = None):
+    def __init__(self, commands: dict[str, dict[str, Any]] | None = None):
         self.mock = create_mock_subprocess(commands)
         self.patches = []
 

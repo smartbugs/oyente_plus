@@ -8,16 +8,15 @@ This module provides the core testing infrastructure including:
 - Utility functions for testing
 """
 
-import os
+from __future__ import annotations
+
+import logging
 import shutil
 import tempfile
+from io import StringIO
 from pathlib import Path
 from typing import Any
-from typing import Dict
 from typing import Generator
-from typing import List
-from typing import Optional
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -64,7 +63,7 @@ def sample_contract_source() -> str:
     pragma solidity ^0.8.0;
     contract SimpleToken {
         mapping(address => uint256) balances;
-        
+
         function transfer(address to, uint256 amount) public {
             balances[msg.sender] -= amount;
             balances[to] += amount;
@@ -80,7 +79,7 @@ def sample_vulnerable_contract() -> str:
     pragma solidity ^0.8.0;
     contract Vulnerable {
         mapping(address => uint256) balances;
-        
+
         function withdraw() public {
             uint256 amount = balances[msg.sender];
             (bool success, ) = msg.sender.call{value: amount}("");
@@ -132,7 +131,7 @@ def mock_global_params():
 
 
 @pytest.fixture
-def analysis_result() -> Dict[str, Any]:
+def analysis_result() -> dict[str, Any]:
     """Sample analysis result structure."""
     return {
         "gas": 0,
@@ -166,7 +165,7 @@ def reset_globals():
     """Reset any global state between tests."""
     # This can be expanded to reset specific global variables
     # that might affect test isolation
-    yield
+    return
 
 
 # Test markers for categorizing tests
@@ -201,7 +200,7 @@ def pytest_collection_modifyitems(config, items):
 def mock_file_content():
     """Factory for creating mock file content."""
 
-    def _create_content(content: str, path: Optional[Path] = None) -> Mock:
+    def _create_content(content: str, path: Path | None = None) -> Mock:
         mock_open = Mock()
         mock_open.return_value.__enter__ = Mock(return_value=Mock(read=Mock(return_value=content)))
         mock_open.return_value.__exit__ = Mock(return_value=None)
@@ -213,9 +212,6 @@ def mock_file_content():
 @pytest.fixture
 def capture_logs():
     """Capture log output during tests."""
-    import logging
-    from io import StringIO
-
     log_capture = StringIO()
     handler = logging.StreamHandler(log_capture)
     handler.setLevel(logging.DEBUG)
@@ -244,7 +240,7 @@ def mock_crytic_compile():
         mock_instance.bytecode_init = {"SimpleToken": "608060405234801561001057600080fd5b50"}
         mock_instance.contracts_names = ["SimpleToken"]
         mock_instance.compilation_units = {
-            "SimpleToken.sol": Mock(source_unit_to_slither_file={"SimpleToken.sol": Mock()})
+            "SimpleToken.sol": Mock(source_unit_to_slither_file={"SimpleToken.sol": Mock()}),
         }
         mock_compile.return_value = mock_instance
         yield mock_instance

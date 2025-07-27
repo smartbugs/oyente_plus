@@ -6,13 +6,11 @@ fast unit testing without requiring actual constraint solving. The mocks
 support common Z3 operations while allowing tests to control solver behavior.
 """
 
+from __future__ import annotations
+
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Union
 from unittest.mock import MagicMock
-from unittest.mock import Mock
 
 
 class MockZ3Expr:
@@ -71,7 +69,7 @@ class MockZ3Expr:
 class MockZ3BitVec(MockZ3Expr):
     """Mock Z3 BitVec for testing."""
 
-    def __init__(self, name: str, size: int, value: Optional[int] = None):
+    def __init__(self, name: str, size: int, value: int | None = None):
         super().__init__(name, value)
         self.size = size
 
@@ -82,7 +80,7 @@ class MockZ3BitVec(MockZ3Expr):
 class MockZ3Model:
     """Mock Z3 model for constraint solutions."""
 
-    def __init__(self, values: Optional[Dict[str, Any]] = None):
+    def __init__(self, values: dict[str, Any] | None = None):
         self.values = values or {}
 
     def eval(self, expr: Union[MockZ3Expr, Any], model_completion: bool = True):
@@ -101,13 +99,13 @@ class MockZ3Model:
 
     def decls(self):
         """Return all declarations in the model."""
-        return [MockZ3Expr(name) for name in self.values.keys()]
+        return [MockZ3Expr(name) for name in self.values]
 
 
 class MockZ3Solver:
     """Mock Z3 solver for fast unit testing."""
 
-    def __init__(self, result: str = "sat", model_values: Optional[Dict[str, Any]] = None):
+    def __init__(self, result: str = "sat", model_values: dict[str, Any] | None = None):
         """
         Initialize mock solver.
 
@@ -117,10 +115,10 @@ class MockZ3Solver:
         """
         self.result = result
         self.model_values = model_values or {}
-        self.constraints: List[Any] = []
-        self.assertions_list: List[Any] = []
+        self.constraints: list[Any] = []
+        self.assertions_list: list[Any] = []
         self.push_count = 0
-        self.solver_stack: List[List[Any]] = []
+        self.solver_stack: list[list[Any]] = []
 
     def add(self, *constraints):
         """Add constraints to the solver."""
@@ -170,37 +168,37 @@ class MockZ3:
     """Mock Z3 module for testing."""
 
     @staticmethod
-    def BitVec(name: str, size: int) -> MockZ3BitVec:
+    def BitVec(name: str, size: int) -> MockZ3BitVec:  # noqa: N802
         """Create a mock BitVec."""
         return MockZ3BitVec(name, size)
 
     @staticmethod
-    def BitVecVal(value: int, size: int) -> MockZ3BitVec:
+    def BitVecVal(value: int, size: int) -> MockZ3BitVec:  # noqa: N802
         """Create a mock BitVec with value."""
         return MockZ3BitVec(f"val_{value}", size, value)
 
     @staticmethod
-    def Int(name: str) -> MockZ3Expr:
+    def Int(name: str) -> MockZ3Expr:  # noqa: N802
         """Create a mock Int."""
         return MockZ3Expr(name)
 
     @staticmethod
-    def IntVal(value: int) -> MockZ3Expr:
+    def IntVal(value: int) -> MockZ3Expr:  # noqa: N802
         """Create a mock Int with value."""
         return MockZ3Expr(f"val_{value}", value)
 
     @staticmethod
-    def Bool(name: str) -> MockZ3Expr:
+    def Bool(name: str) -> MockZ3Expr:  # noqa: N802
         """Create a mock Bool."""
         return MockZ3Expr(name)
 
     @staticmethod
-    def BoolVal(value: bool) -> MockZ3Expr:
+    def BoolVal(value: bool) -> MockZ3Expr:  # noqa: N802
         """Create a mock Bool with value."""
         return MockZ3Expr(f"val_{value}", value)
 
     @staticmethod
-    def And(*args) -> MockZ3Expr:
+    def And(*args) -> MockZ3Expr:  # noqa: N802
         """Create And expression."""
         if len(args) == 0:
             return MockZ3Expr("True", True)
@@ -209,7 +207,7 @@ class MockZ3:
         return MockZ3Expr(f"And({', '.join(str(arg) for arg in args)})")
 
     @staticmethod
-    def Or(*args) -> MockZ3Expr:
+    def Or(*args) -> MockZ3Expr:  # noqa: N802
         """Create Or expression."""
         if len(args) == 0:
             return MockZ3Expr("False", False)
@@ -218,22 +216,22 @@ class MockZ3:
         return MockZ3Expr(f"Or({', '.join(str(arg) for arg in args)})")
 
     @staticmethod
-    def Not(expr) -> MockZ3Expr:
+    def Not(expr) -> MockZ3Expr:  # noqa: N802
         """Create Not expression."""
         return MockZ3Expr(f"Not({expr})")
 
     @staticmethod
-    def Implies(a, b) -> MockZ3Expr:
+    def Implies(a, b) -> MockZ3Expr:  # noqa: N802
         """Create Implies expression."""
         return MockZ3Expr(f"Implies({a}, {b})")
 
     @staticmethod
-    def If(cond, true_expr, false_expr) -> MockZ3Expr:
+    def If(cond, true_expr, false_expr) -> MockZ3Expr:  # noqa: N802
         """Create If-Then-Else expression."""
         return MockZ3Expr(f"If({cond}, {true_expr}, {false_expr})")
 
     @staticmethod
-    def Solver() -> MockZ3Solver:
+    def Solver() -> MockZ3Solver:  # noqa: N802
         """Create a mock solver."""
         return MockZ3Solver()
 
@@ -273,7 +271,7 @@ class MockZ3:
         return expr
 
 
-def create_mock_z3_module(solver_result: str = "sat", model_values: Optional[Dict[str, Any]] = None):
+def create_mock_z3_module(solver_result: str = "sat", model_values: dict[str, Any] | None = None):
     """
     Create a complete mock Z3 module for patching.
 
@@ -316,7 +314,7 @@ def create_mock_z3_module(solver_result: str = "sat", model_values: Optional[Dic
 
 
 # Utility functions for common testing scenarios
-def create_sat_solver(model_values: Optional[Dict[str, Any]] = None) -> MockZ3Solver:
+def create_sat_solver(model_values: dict[str, Any] | None = None) -> MockZ3Solver:
     """Create a solver that always returns SAT."""
     return MockZ3Solver("sat", model_values)
 

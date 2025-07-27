@@ -5,16 +5,13 @@ This module provides mock implementations for filesystem operations,
 allowing tests to run without actual file I/O and in isolation.
 """
 
+from __future__ import annotations
+
 import os
 import tempfile
 from io import StringIO
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Union
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import mock_open
 from unittest.mock import patch
@@ -41,7 +38,7 @@ class MockFile:
         if self.closed:
             raise ValueError("I/O operation on closed file")
         if "w" not in self.mode and "a" not in self.mode:
-            raise IOError("File not open for writing")
+            raise OSError("File not open for writing")
         return self._buffer.write(data)
 
     def close(self):
@@ -60,8 +57,8 @@ class MockFilesystem:
     """Mock filesystem for testing."""
 
     def __init__(self):
-        self.files: Dict[str, str] = {}
-        self.directories: List[str] = []
+        self.files: dict[str, str] = {}
+        self.directories: list[str] = []
 
     def add_file(self, path: Union[str, Path], content: str = ""):
         """Add a file to the mock filesystem."""
@@ -104,7 +101,7 @@ class MockFilesystem:
         """Write file content."""
         self.add_file(path, content)
 
-    def list_dir(self, path: Union[str, Path]) -> List[str]:
+    def list_dir(self, path: Union[str, Path]) -> list[str]:
         """List directory contents."""
         path = str(path).rstrip("/")
         if path not in self.directories:
@@ -195,7 +192,7 @@ def create_mock_filesystem_patches(filesystem: MockFilesystem):
 class MockPath:
     """Mock pathlib.Path for testing."""
 
-    def __init__(self, path: Union[str, "MockPath"], filesystem: Optional[MockFilesystem] = None):
+    def __init__(self, path: Union[str, MockPath], filesystem: MockFilesystem | None = None):
         self.path = str(path)
         self.filesystem = filesystem or MockFilesystem()
 
@@ -243,7 +240,7 @@ class MockPath:
 
 
 # Utility functions for common testing scenarios
-def mock_file_content(content: str, path: Optional[str] = None):
+def mock_file_content(content: str, path: str | None = None):
     """Create a mock for reading file content."""
     return mock_open(read_data=content)
 
@@ -279,7 +276,7 @@ def create_temp_filesystem():
     return TempFilesystem()
 
 
-def patch_filesystem(files: Dict[str, str]):
+def patch_filesystem(files: dict[str, str]):
     """
     Decorator to patch filesystem with given files.
 
@@ -300,10 +297,10 @@ def patch_filesystem(files: Dict[str, str]):
                 fs.add_file(path, content)
 
             patches = create_mock_filesystem_patches(fs)
-            with patch.multiple("builtins", **{"open": patches["builtins.open"]}):
-                with patch.multiple("os.path", **{k: v for k, v in patches.items() if k.startswith("os.path.")}):
-                    with patch.multiple("pathlib.Path", **{k: v for k, v in patches.items() if k.startswith("pathlib.Path.")}):
-                        return func(fs, *args, **kwargs)
+            with patch.multiple("builtins", **{"open": patches["builtins.open"]}), patch.multiple(
+                "os.path", **{k: v for k, v in patches.items() if k.startswith("os.path.")}
+            ), patch.multiple("pathlib.Path", **{k: v for k, v in patches.items() if k.startswith("pathlib.Path.")}):
+                return func(fs, *args, **kwargs)
 
         return wrapper
 

@@ -50,10 +50,28 @@ ruff = ">=0.7.0"
 mypy = ">=1.8.0"
 pytest = ">=8.0.0"
 pytest-cov = ">=4.0.0"
+pytest-mock = ">=3.10.0"
+pytest-xdist = ">=3.2.0"
+hypothesis = ">=6.68.0"
+factory-boy = ">=3.2.0"
+faker = ">=18.0.0"
+pytest-benchmark = ">=4.0.0"
+pytest-sugar = ">=0.9.0"
+pytest-clarity = ">=1.0.0"
+pytest-timeout = ">=2.1.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = ">=8.0.0"
 pytest-cov = ">=4.0.0"
+pytest-mock = ">=3.10.0"
+pytest-xdist = ">=3.2.0"
+hypothesis = ">=6.68.0"
+factory-boy = ">=3.2.0"
+faker = ">=18.0.0"
+pytest-benchmark = ">=4.0.0"
+pytest-sugar = ">=0.9.0"
+pytest-clarity = ">=1.0.0"
+pytest-timeout = ">=2.1.0"
 
 [tool.poetry.group.lint.dependencies]
 black = ">=24.0.0"
@@ -170,31 +188,57 @@ module = ["tests.*", "oyente.test_evm.*"]
 disallow_untyped_defs = false
 ignore_errors = true
 
+# Ignore z3 library as it doesn't have type stubs
+[[tool.mypy.overrides]]
+module = ["z3", "z3.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=oyente",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
+    "--tb=short",
+    "--maxfail=1",
+    "--verbose",
 ]
-testpaths = ["tests", "oyente/test_evm"]
+testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "property: marks tests as property-based tests",
+    "performance: marks tests as performance tests",
+    "requires_z3: marks tests that require Z3 solver",
+    "requires_solc: marks tests that require Solidity compiler",
 ]
 filterwarnings = [
+    "error",
+    "ignore::UserWarning",
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
 ]
+xfail_strict = true
+junit_family = "xunit2"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
 
 [tool.coverage.run]
 source = ["oyente"]
-omit = ["*/test_*", "*/tests/*", "*/venv/*", "*/build/*", "*/dist/*"]
+omit = [
+    "*/test_*",
+    "*/tests/*",
+    "*/venv/*",
+    "*/build/*",
+    "*/dist/*",
+    "*/test_evm/*",
+    "setup.py",
+    "*/__init__.py",
+]
+parallel = true
+branch = true
 
 [tool.coverage.report]
 exclude_lines = [
@@ -208,4 +252,9 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+    "if TYPE_CHECKING:",
+    "except ImportError:",
+    "pass",
 ]
+show_missing = true
+precision = 2
