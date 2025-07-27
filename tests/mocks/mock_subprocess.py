@@ -221,6 +221,34 @@ class OyenteCommandMocks:
             "stderr": "",
         }
 
+    @staticmethod
+    def mock_solc_malformed_json() -> dict[str, Any]:
+        """Mock solc compilation with malformed JSON output."""
+        return {
+            "returncode": 0,
+            "stdout": '{"contracts": {"Test.sol:Test": {"bin": "60806040',  # Truncated/malformed JSON
+            "stderr": "",
+        }
+
+    @staticmethod
+    def mock_compilation_timeout() -> dict[str, Any]:
+        """Mock compilation that times out."""
+        return {
+            "returncode": 124,  # Timeout exit code
+            "stdout": "",
+            "stderr": "Compilation timed out",
+            "timeout_exceeded": True,
+        }
+
+    @staticmethod
+    def mock_permission_denied() -> dict[str, Any]:
+        """Mock permission denied error."""
+        return {
+            "returncode": 126,
+            "stdout": "",
+            "stderr": "Permission denied",
+        }
+
 
 def create_mock_subprocess(commands: dict[str, dict[str, Any]] | None = None) -> MockSubprocess:
     """Create a mock subprocess with pre-configured commands."""
