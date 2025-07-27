@@ -1,10 +1,20 @@
 #!/usr/bin/env python
+"""Oyente - Smart contract vulnerability analyzer.
+
+This is the main entry point for the Oyente smart contract analyzer.
+It provides a command-line interface for analyzing Ethereum smart contracts
+for security vulnerabilities using symbolic execution.
+"""
 
 import argparse
 import json
 import logging
 import re
 import subprocess
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 import global_params
 import requests
@@ -14,23 +24,54 @@ from input_helper import InputHelper
 from utils import run_command
 
 
-def cmd_exists(cmd):
-    return subprocess.call("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
+def cmd_exists(cmd: str) -> bool:
+    """Check if a command exists in the system PATH.
+
+    Args:
+        cmd: The command name to check
+
+    Returns:
+        True if the command exists, False otherwise
+    """
+    # Use 'which' command for better security (avoid shell=True)
+    try:
+        result = subprocess.run(["which", cmd], capture_output=True, check=False)
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
 
 
-def compare_versions(version1, version2):
-    def normalize(v):
+def compare_versions(version1: str, version2: str) -> int:
+    """Compare two version strings.
+
+    Args:
+        version1: First version string (e.g., "1.2.3")
+        version2: Second version string (e.g., "1.2.4")
+
+    Returns:
+        -1 if version1 < version2
+         0 if version1 == version2
+         1 if version1 > version2
+    """
+
+    def normalize(v: str) -> List[int]:
         return [int(x) for x in re.sub(r"(\.0+)*$", "", v).split(".")]
 
-    version1 = normalize(version1)
-    version2 = normalize(version2)
-    if six.PY2:
-        return cmp(version1, version2)
-    else:
-        return (version1 > version2) - (version1 < version2)
+    v1_normalized = normalize(version1)
+    v2_normalized = normalize(version2)
+    # Python 3 compatible comparison (cmp was removed in Python 3)
+    return int((v1_normalized > v2_normalized) - (v1_normalized < v2_normalized))
 
 
-def has_dependencies_installed():
+def has_dependencies_installed() -> bool:
+    """Check if all required dependencies are installed.
+
+    Verifies that Z3 solver, EVM, and Solidity compiler are available
+    and checks their versions for compatibility.
+
+    Returns:
+        True if all dependencies are satisfied, False otherwise
+    """
     try:
         import z3
         import z3.z3util
@@ -39,9 +80,9 @@ def has_dependencies_installed():
         tested_z3_version = "4.14.1.0"
         if compare_versions(z3_version, tested_z3_version) > 0:
             logging.warning(
-                "You are using an untested version of z3. %s is the officially tested version" % tested_z3_version
+                f"You are using an untested version of z3. {tested_z3_version} is the officially tested version"
             )
-    except e:
+    except Exception as e:
         logging.critical(e)
         logging.critical("Z3 is not available. Please install z3 from https://github.com/Z3Prover/z3.")
         return False
@@ -55,9 +96,7 @@ def has_dependencies_installed():
         evm_version = re.findall(r"evm version (\d*.\d*.\d*)", out)[0]
         tested_evm_version = "1.16.1"
         if compare_versions(evm_version, tested_evm_version) > 0:
-            logging.warning(
-                "You are using evm version %s. The supported version is %s" % (evm_version, tested_evm_version)
-            )
+            logging.warning(f"You are using evm version {evm_version}. The supported version is {tested_evm_version}")
 
     if not cmd_exists("solc"):
         logging.critical("solc is missing. Please install the solidity compiler and make sure solc is in the path.")
@@ -66,8 +105,15 @@ def has_dependencies_installed():
     return True
 
 
-def analyze_bytecode():
-    global args
+def analyze_bytecode(args: argparse.Namespace) -> int:
+    """Analyze EVM bytecode for vulnerabilities.
+
+    Args:
+        args: Command-line arguments from argparse
+
+    Returns:
+        Exit code (0 for success, 1 for errors found)
+    """
 
     helper = InputHelper(InputHelper.BYTECODE, source=args.source, evm=args.evm)
     inp = helper.get_inputs()[0]
@@ -78,11 +124,19 @@ def analyze_bytecode():
     if global_params.WEB:
         six.print_(json.dumps(result))
 
-    return exit_code
+    return int(exit_code)
 
 
-def run_solidity_analysis(inputs):
-    results = {}
+def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], int]:
+    """Run analysis on multiple Solidity contracts.
+
+    Args:
+        inputs: List of contract information dictionaries
+
+    Returns:
+        Tuple of (results dictionary, exit code)
+    """
+    results: Dict[str, Any] = {}
     exit_code = 0
 
     for inp in inputs:
@@ -93,20 +147,27 @@ def run_solidity_analysis(inputs):
             source_file=inp["source"],
         )
 
-        try:
-            c_source = inp["c_source"]
-            c_name = inp["c_name"]
-            results[c_source][c_name] = result
-        except:
-            results[c_source] = {c_name: result}
+        c_source = inp.get("c_source", "unknown")
+        c_name = inp.get("c_name", "unknown")
+        if c_source not in results:
+            results[c_source] = {}
+        results[c_source][c_name] = result
 
         if return_code == 1:
             exit_code = 1
     return results, exit_code
 
 
-def analyze_solidity(input_type="solidity"):
-    global args
+def analyze_solidity(args: argparse.Namespace, input_type: str = "solidity") -> int:
+    """Analyze Solidity source code for vulnerabilities.
+
+    Args:
+        args: Command-line arguments from argparse
+        input_type: Type of input ('solidity', 'standard_json', 'standard_json_output')
+
+    Returns:
+        Exit code (0 for success, 1 for errors found)
+    """
 
     if input_type == "solidity":
         helper = InputHelper(
@@ -137,13 +198,16 @@ def analyze_solidity(input_type="solidity"):
 
     if global_params.WEB:
         six.print_(json.dumps(results))
-    return exit_code
+    return int(exit_code)
 
 
-def main():
+def main() -> None:
+    """Main entry point for Oyente analyzer.
+
+    Parses command-line arguments and runs the appropriate analysis
+    based on the input type (bytecode or Solidity source).
+    """
     # TODO: Implement -o switch.
-
-    global args
 
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
@@ -272,7 +336,7 @@ def main():
         action="store_true",
     )
 
-    args = parser.parse_args()
+    args: argparse.Namespace = parser.parse_args()
 
     if args.root_path:
         if args.root_path[-1] != "/":
@@ -287,12 +351,12 @@ def main():
         global_params.TIMEOUT = args.timeout
 
     logging.basicConfig()
-    rootLogger = logging.getLogger(None)
+    root_logger = logging.getLogger(None)
 
     if args.verbose:
-        rootLogger.setLevel(level=logging.DEBUG)
+        root_logger.setLevel(level=logging.DEBUG)
     else:
-        rootLogger.setLevel(level=logging.INFO)
+        root_logger.setLevel(level=logging.INFO)
 
     global_params.PRINT_PATHS = 1 if args.paths else 0
     global_params.REPORT_MODE = 1 if args.report else 0
@@ -328,7 +392,7 @@ def main():
         return
 
     if args.remote_URL:
-        r = requests.get(args.remote_URL)
+        r = requests.get(args.remote_URL, timeout=30)  # 30 second timeout
         code = r.text
         filename = "remote_contract.evm" if args.bytecode else "remote_contract.sol"
         args.source = filename
@@ -337,13 +401,13 @@ def main():
 
     exit_code = 0
     if args.bytecode:
-        exit_code = analyze_bytecode()
+        exit_code = analyze_bytecode(args)
     elif args.standard_json:
-        exit_code = analyze_solidity(input_type="standard_json")
+        exit_code = analyze_solidity(args, input_type="standard_json")
     elif args.standard_json_output:
-        exit_code = analyze_solidity(input_type="standard_json_output")
+        exit_code = analyze_solidity(args, input_type="standard_json_output")
     else:
-        exit_code = analyze_solidity()
+        exit_code = analyze_solidity(args)
 
     exit(exit_code)
 

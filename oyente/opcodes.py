@@ -1,10 +1,20 @@
+"""EVM opcode definitions and gas cost calculations.
+
+This module contains definitions for Ethereum Virtual Machine (EVM) opcodes,
+including their hexadecimal values, stack effects, and gas costs. It provides
+functions to look up opcode information and calculate instruction costs.
+"""
+
+from typing import Dict
+from typing import List
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 
 # list of all opcodes except the SWAPi, PUSHi and DUPi
 # opcodes[name] has a list of [value (index), no. of items removed from stack, no. of items added to stack]
-opcodes = {
+opcodes: Dict[str, List[int]] = {
     "STOP": [0x00, 0, 0],
     "ADD": [0x01, 2, 1],
     "MUL": [0x02, 2, 1],
@@ -102,7 +112,7 @@ opcodes = {
 
 # TO BE UPDATED IF ETHEREUM VM CHANGES their fee structure
 
-GCOST = {
+GCOST: Dict[str, int] = {
     "Gzero": 0,
     "Gbase": 2,
     "Gverylow": 3,
@@ -142,7 +152,7 @@ GCOST = {
     "GTransientStorage": 100,
 }
 
-INSTRUCTIONS = [
+INSTRUCTIONS: List[str] = [
     "STOP",
     "ADD",
     "MUL",
@@ -401,9 +411,9 @@ INSTRUCTIONS = [
     "SELFDESTRUCT",  # 0xF8-0xFF
 ]
 
-Wzero = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
+Wzero: Tuple[str, ...] = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
 
-Wbase = (
+Wbase: Tuple[str, ...] = (
     "ADDRESS",
     "ORIGIN",
     "CALLER",
@@ -424,7 +434,7 @@ Wbase = (
     "PUSH0",
 )
 
-Wverylow = (
+Wverylow: Tuple[str, ...] = (
     "ADD",
     "SUB",
     "NOT",
@@ -451,18 +461,36 @@ Wverylow = (
     "BLOBBASEFEE",
 )
 
-Wlow = ("MUL", "DIV", "SDIV", "MOD", "SMOD", "SIGNEXTEND")
+Wlow: Tuple[str, ...] = ("MUL", "DIV", "SDIV", "MOD", "SMOD", "SIGNEXTEND")
 
-Wmid = ("ADDMOD", "MULMOD", "JUMP")
+Wmid: Tuple[str, ...] = ("ADDMOD", "MULMOD", "JUMP")
 
-Whigh = "JUMPI"
+Whigh: str = "JUMPI"
 
-Wext = "EXTCODESIZE"
+Wext: str = "EXTCODESIZE"
 
-Wtransientstorage = ("TLOAD", "TSTORE")
+Wtransientstorage: Tuple[str, ...] = ("TLOAD", "TSTORE")
 
 
 def get_opcode(opcode: str) -> Sequence[Union[str, int]]:
+    """Get opcode information including hex value and stack effects.
+
+    Args:
+        opcode: The opcode name (e.g., 'ADD', 'PUSH1', 'DUP3')
+
+    Returns:
+        A sequence containing:
+        - [0]: Hexadecimal value of the opcode (string or int)
+        - [1]: Number of items removed from stack
+        - [2]: Number of items added to stack
+
+    Raises:
+        ValueError: If the opcode is not recognized
+
+    Example:
+        >>> get_opcode('ADD')
+        [0x01, 2, 1]  # Takes 2 items, pushes 1 result
+    """
     if opcode in opcodes:
         return opcodes[opcode]
     # check PUSHi
@@ -479,10 +507,32 @@ def get_opcode(opcode: str) -> Sequence[Union[str, int]]:
     for i in range(16):
         if opcode == "SWAP" + str(i + 1):
             return [hex(0x90 + i), i + 2, i + 2]
-    raise ValueError("Bad Opcode" + opcode)
+    raise ValueError("Bad Opcode: " + opcode)
 
 
 def get_ins_cost(opcode: str) -> int:
+    """Calculate the gas cost for a given opcode.
+
+    This function returns the base gas cost for executing an opcode,
+    not including any dynamic costs that depend on operand values.
+
+    Args:
+        opcode: The opcode name (e.g., 'ADD', 'SSTORE')
+
+    Returns:
+        The gas cost in units, or 0 if the opcode is not recognized
+
+    Example:
+        >>> get_ins_cost('ADD')
+        3  # Gverylow cost
+        >>> get_ins_cost('SSTORE')
+        20000  # Gsset cost (simplified, actual cost is more complex)
+
+    Note:
+        This returns the base cost only. Many operations have additional
+        dynamic costs based on their operands (e.g., memory expansion,
+        storage changes, etc.) which are not included here.
+    """
     if opcode in Wzero:
         return GCOST["Gzero"]
     elif opcode in Wbase:
