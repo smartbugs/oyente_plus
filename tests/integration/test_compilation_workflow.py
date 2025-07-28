@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.mocks.mock_crytic_compile import MockCryticCompile
-from tests.mocks.mock_crytic_compile import MockInvalidCompilation
+from tests.mocks.mock_crytic_compile import MockInvalidCompilationError
 from tests.mocks.mock_subprocess import MockSubprocessContext
 
 
@@ -21,7 +21,7 @@ with patch.dict(
     {
         "global_params": Mock(WEB=False, DEBUG=False),
         "six": Mock(iteritems=lambda d: d.items(), print_=print),
-        "crytic_compile": Mock(CryticCompile=MockCryticCompile, InvalidCompilation=MockInvalidCompilation),
+        "crytic_compile": Mock(CryticCompile=MockCryticCompile, InvalidCompilation=MockInvalidCompilationError),
         "ethutils.metadata": Mock(zeroMetadata=lambda bytecode: (bytecode, None)),
         "opcodes": Mock(INSTRUCTIONS={}),
         "source_map": Mock(SourceMap=Mock),

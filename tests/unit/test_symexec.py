@@ -12,7 +12,6 @@ This module tests the core symbolic execution functionality including:
 
 from __future__ import annotations
 
-import sys
 import tempfile
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -20,39 +19,37 @@ from unittest.mock import patch
 
 import pytest
 
-from tests.mocks.mock_z3 import MockZ3Solver
-
 
 @pytest.fixture
 def mock_oyente_modules():
     """Mock all oyente module imports for symExec tests."""
     mocked_modules = {
-        'global_params': Mock(),
-        'analysis': Mock(),
-        'basicblock': Mock(),
-        'ethereum_data': Mock(),
-        'test_evm.global_test_params': Mock(),
-        'vargenerator': Mock(),
-        'vulnerability': Mock(),
-        'utils': Mock(),
+        "global_params": Mock(),
+        "analysis": Mock(),
+        "basicblock": Mock(),
+        "ethereum_data": Mock(),
+        "test_evm.global_test_params": Mock(),
+        "vargenerator": Mock(),
+        "vulnerability": Mock(),
+        "utils": Mock(),
     }
-    
+
     # Configure some basic mock attributes
-    mocked_modules['global_params'].PARALLEL = False
-    mocked_modules['global_params'].TIMEOUT = 30000
-    mocked_modules['global_params'].UNIT_TEST = False
-    mocked_modules['global_params'].IS_TESTING_EVM = False
-    mocked_modules['global_params'].INPUT_STATE = False  # Prevent file access
-    mocked_modules['global_params'].Ia = "0x1234567890123456789012345678901234567890"
-    mocked_modules['global_params'].Iv = 1000000000000000000
-    
+    mocked_modules["global_params"].PARALLEL = False
+    mocked_modules["global_params"].TIMEOUT = 30000
+    mocked_modules["global_params"].UNIT_TEST = False
+    mocked_modules["global_params"].IS_TESTING_EVM = False
+    mocked_modules["global_params"].INPUT_STATE = False  # Prevent file access
+    mocked_modules["global_params"].Ia = "0x1234567890123456789012345678901234567890"
+    mocked_modules["global_params"].Iv = 1000000000000000000
+
     # Configure utils mock to provide custom_deepcopy
-    mocked_modules['utils'].custom_deepcopy = Mock()
-    
+    mocked_modules["utils"].custom_deepcopy = Mock()
+
     # Configure analysis mock to also provide custom_deepcopy (star import from utils)
-    mocked_modules['analysis'].custom_deepcopy = mocked_modules['utils'].custom_deepcopy
-    
-    with patch.dict('sys.modules', mocked_modules):
+    mocked_modules["analysis"].custom_deepcopy = mocked_modules["utils"].custom_deepcopy
+
+    with patch.dict("sys.modules", mocked_modules):
         yield mocked_modules
 
 
@@ -111,7 +108,7 @@ class TestParameter:
         from oyente.symExec import Parameter
 
         # Configure the mock custom_deepcopy from the fixture (comes via analysis module)
-        mock_custom_deepcopy = mock_oyente_modules['analysis'].custom_deepcopy
+        mock_custom_deepcopy = mock_oyente_modules["analysis"].custom_deepcopy
         original_dict = {"stack": [1, 2], "mem": {"test": "data"}}
         mock_custom_deepcopy.return_value = original_dict
 
@@ -134,11 +131,11 @@ class TestGlobalVariableManagement:
         """Test basic global parameter access from initGlobalVars."""
         # This is a simplified test focusing on what can be unit tested
         # Complex global state initialization is better tested in integration tests
-        
-        mock_global_params = mock_oyente_modules['global_params']
+
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.PARALLEL = False
         mock_global_params.TIMEOUT = 30000
-        
+
         # Test that we can access the mocked global params
         assert mock_global_params.PARALLEL is False
         assert mock_global_params.TIMEOUT == 30000
@@ -146,8 +143,8 @@ class TestGlobalVariableManagement:
     def test_init_global_vars_parallel_solver(self, mock_oyente_modules):
         """Test parallel solver configuration parameters."""
         # Simplified test focusing on parameter configuration
-        
-        mock_global_params = mock_oyente_modules['global_params']
+
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.PARALLEL = True
         mock_global_params.TIMEOUT = 60000
 
@@ -158,7 +155,7 @@ class TestGlobalVariableManagement:
     def test_init_global_vars_with_msize(self, mock_oyente_modules):
         """Test MSIZE opcode detection logic."""
         # Simplified test focusing on the logic that can be unit tested
-        
+
         # Test that MSIZE detection would work with expected input
         test_content = "PUSH1 0x01\nMSIZE\nSTOP"
         assert "MSIZE" in test_content  # Basic string detection logic
@@ -166,9 +163,9 @@ class TestGlobalVariableManagement:
     def test_init_global_vars_with_source_map(self, mock_oyente_modules):
         """Test source map initialization logic."""
         # Simplified test focusing on source map structure
-        
+
         mock_src_map = {"source": "contract.sol"}
-        
+
         # Test that source map has expected structure
         assert "source" in mock_src_map
         assert mock_src_map["source"] == "contract.sol"
@@ -181,7 +178,7 @@ class TestControlFlowGraphConstruction:
         """Test bytecode format validation logic for collect_vertices."""
         # This test focuses on the format validation that can be unit tested
         # Complex global state workflows are better tested in integration tests
-        
+
         # Test that correct format passes basic validation
         valid_line = "00000: PUSH1 0x80"
         assert valid_line[5:7] == ": "  # Format validation
@@ -191,15 +188,15 @@ class TestControlFlowGraphConstruction:
     def test_collect_vertices_jump_instruction_detection(self, mock_oyente_modules):
         """Test jump instruction detection logic."""
         # Test the logic that can be isolated from global state
-        
+
         # Test that JUMP and JUMPI instructions are properly identified
         jump_line = "00000: JUMP"
         jumpi_line = "00002: JUMPI"
-        
+
         # Extract instruction part (after address and ": ")
         jump_instruction = jump_line[7:]
         jumpi_instruction = jumpi_line[7:]
-        
+
         assert jump_instruction == "JUMP"
         assert jumpi_instruction == "JUMPI"
         assert "JUMP" in jump_instruction  # Jump detection logic
@@ -207,12 +204,11 @@ class TestControlFlowGraphConstruction:
     def test_collect_vertices_invalid_instruction_handling(self, mock_oyente_modules):
         """Test invalid instruction handling logic."""
         # Test the transformation logic that can be isolated
-        
+
         # Test instruction normalization logic from collect_vertices
         invalid_instruction = "INVALID"
         keccak_instruction = "KECCAK256"
-        undefined_instruction = "not defined"
-        
+
         # Test the transformation logic used in collect_vertices
         assert invalid_instruction == "INVALID"  # Should become "ASSERTFAIL"
         assert keccak_instruction == "KECCAK256"  # Should become "SHA3"
@@ -220,11 +216,11 @@ class TestControlFlowGraphConstruction:
     def test_construct_bb_logic(self, mock_oyente_modules):
         """Test basic block construction logic."""
         # Test the logic that can be isolated from global state
-        
-        # Test that vertices and edges would be used properly 
+
+        # Test that vertices and edges would be used properly
         mock_vertices = [0, 10, 20]
         mock_edges = [(0, 10), (10, 20)]
-        
+
         # Test basic data structure relationships
         assert len(mock_vertices) == 3
         assert len(mock_edges) == 2
@@ -234,16 +230,16 @@ class TestControlFlowGraphConstruction:
     def test_mapping_push_instruction_logic(self, mock_oyente_modules):
         """Test PUSH instruction mapping logic."""
         # Test the logic that can be isolated from complex position tracking
-        
+
         # Test PUSH instruction detection and size calculation
         push1_content = "PUSH1 0x80"
         push2_content = "PUSH2 0x1234"
-        
+
         # Test that PUSH instructions can be identified
         assert "PUSH" in push1_content
         assert "PUSH1" in push1_content
         assert "PUSH2" in push2_content
-        
+
         # Test expected instruction sizes
         assert 2 == 2  # PUSH1 should be 2 bytes (opcode + 1 byte data)
         assert 3 == 3  # PUSH2 should be 3 bytes (opcode + 2 bytes data)
@@ -251,17 +247,17 @@ class TestControlFlowGraphConstruction:
     def test_mapping_non_push_instruction_logic(self, mock_oyente_modules):
         """Test non-PUSH instruction mapping logic."""
         # Test the logic that can be isolated
-        
+
         # Test non-PUSH instruction detection
         add_content = "ADD"
         sub_content = "SUB"
         stop_content = "STOP"
-        
+
         # Test that non-PUSH instructions can be identified
         assert "PUSH" not in add_content
         assert "PUSH" not in sub_content
         assert "PUSH" not in stop_content
-        
+
         # Test that they are single-byte instructions
         assert 1 == 1  # Most non-PUSH instructions are 1 byte
 
@@ -272,8 +268,8 @@ class TestSymbolicExecution:
     def test_get_init_global_state_logic(self, mock_oyente_modules):
         """Test global state initialization logic."""
         # Test the logic that can be isolated from complex path condition handling
-        
-        mock_global_params = mock_oyente_modules['global_params']
+
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.INPUT_STATE = False  # Test the else branch
         mock_global_params.Ia = "0x1234567890123456789012345678901234567890"
         mock_global_params.Iv = 1000000000000000000
@@ -289,8 +285,8 @@ class TestSymbolicExecution:
     def test_get_init_global_state_with_bitvec(self, mock_bitvec, mock_bitvecval, mock_oyente_modules):
         """Test get_init_global_state with BitVec variables."""
         # Test the logic that can be isolated from Z3 complexity
-        
-        mock_global_params = mock_oyente_modules['global_params']
+
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.Ia = None  # Trigger BitVec creation
         mock_global_params.Iv = None
         mock_global_params.INPUT_STATE = False
@@ -300,34 +296,30 @@ class TestSymbolicExecution:
         mock_iv = MagicMock()
         mock_bitvec.side_effect = lambda name, size: mock_ia if name == "Ia" else mock_iv
         mock_bitvecval.return_value = MagicMock()
-        
+
         # Mock comparison operations to avoid Z3 parsing issues
         mock_ia.__ge__ = MagicMock(return_value=MagicMock())
         mock_iv.__ge__ = MagicMock(return_value=MagicMock())
 
-        # Test that the function would create the expected structure
-        path_conditions = {}
-        
         # This is a simplified test that verifies the key logic without Z3 complexity
         expected_keys = {"balance", "pc", "It"}
         test_result = {"balance": {}, "pc": 0, "It": {}}
-        
+
         # Verify that the expected structure has the right keys
         for key in expected_keys:
             assert key in test_result
-            
+
         # Verify that BitVec would be called for None values
         assert mock_global_params.Ia is None
         assert mock_global_params.Iv is None
 
     def test_is_testing_evm(self, mock_oyente_modules):
         """Test is_testing_evm function."""
-        from oyente.symExec import is_testing_evm
 
         # Test that the function returns the IS_TESTING_EVM value
-        mock_global_params = mock_oyente_modules['global_params']
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.IS_TESTING_EVM = True
-        
+
         # Since we're mocking the global_params module, we test the expected behavior
         result_when_true = mock_global_params.IS_TESTING_EVM
         assert result_when_true is True
@@ -340,11 +332,11 @@ class TestSymbolicExecution:
         """Test detect_vulnerabilities orchestration logic."""
         # Test the logic that can be isolated from global state dependencies
         # The function should call individual vulnerability detectors
-        
+
         # Test that expected vulnerability types exist
         expected_vulnerability_types = [
             "money_concurrency",
-            "time_dependency", 
+            "time_dependency",
             "reentrancy",
             "integer_overflow",
             "integer_underflow",
@@ -352,12 +344,12 @@ class TestSymbolicExecution:
             "callstack",
             "parity_multisig_bug_2",
         ]
-        
+
         # Verify vulnerability detection workflow structure
         for vuln_type in expected_vulnerability_types:
             assert isinstance(vuln_type, str)
             assert len(vuln_type) > 0
-            
+
         # Test that all expected vulnerability types are defined
         assert len(expected_vulnerability_types) == 8
 
@@ -368,43 +360,43 @@ class TestVulnerabilityDetection:
     def test_vulnerability_detector_types(self, mock_oyente_modules):
         """Test vulnerability detector type validation."""
         # Test the types of vulnerabilities that should be detected
-        
+
         vulnerability_types = [
             "time_dependency",
-            "money_concurrency", 
+            "money_concurrency",
             "integer_overflow",
             "reentrancy",
             "assertion_failure",
             "callstack",
-            "parity_multisig_bug_2"
+            "parity_multisig_bug_2",
         ]
-        
+
         # Verify vulnerability types are defined correctly
         for vuln_type in vulnerability_types:
             assert isinstance(vuln_type, str)
             assert len(vuln_type) > 0
             assert "_" in vuln_type or vuln_type == "reentrancy" or vuln_type == "callstack"
-            
+
     def test_vulnerability_detector_logic(self, mock_oyente_modules):
         """Test vulnerability detector instantiation logic."""
         # Test the logic that can be isolated from global state
-        
+
         # Mock vulnerability classes should be instantiable
-        mock_vulnerability = mock_oyente_modules['vulnerability']
+        mock_vulnerability = mock_oyente_modules["vulnerability"]
         mock_vulnerability.TimeDependency = MagicMock()
         mock_vulnerability.MoneyConcurrency = MagicMock()
         mock_vulnerability.IntegerOverflow = MagicMock()
         mock_vulnerability.Reentrancy = MagicMock()
         mock_vulnerability.AssertionFailure = MagicMock()
-        
+
         # Test that vulnerability detectors have expected interface
         mock_detector = MagicMock()
         mock_detector.is_vulnerable.return_value = False
         mock_detector.get_warnings.return_value = []
-        
+
         # Verify detector interface
-        assert hasattr(mock_detector, 'is_vulnerable')
-        assert hasattr(mock_detector, 'get_warnings')
+        assert hasattr(mock_detector, "is_vulnerable")
+        assert hasattr(mock_detector, "get_warnings")
         assert callable(mock_detector.is_vulnerable)
         assert callable(mock_detector.get_warnings)
 
@@ -415,7 +407,7 @@ class TestUtilityFunctions:
     def test_log_info_logic(self, mock_oyente_modules):
         """Test log_info function logic."""
         # Test the logic that can be isolated from global state dependencies
-        
+
         # The function should handle vulnerability reporting
         # Test that logging structure would work with expected data
         vulnerability_data = {
@@ -424,9 +416,9 @@ class TestUtilityFunctions:
             "callstack": [],
             "money_concurrency": [],
             "time_dependency": [300],
-            "reentrancy": []
+            "reentrancy": [],
         }
-        
+
         # Test that vulnerability reporting logic would work
         for vuln_type, findings in vulnerability_data.items():
             assert isinstance(vuln_type, str)
@@ -437,14 +429,14 @@ class TestUtilityFunctions:
     def test_vulnerability_found_logic(self, mock_oyente_modules):
         """Test vulnerability_found detection logic."""
         # Test the logic that can be isolated from global state
-        
+
         # Test that function would identify vulnerabilities correctly
         vulnerabilities_with_findings = {
             "reentrancy": [100, 200],
             "integer_overflow": [],
             "time_dependency": [300],
         }
-        
+
         vulnerabilities_empty = {
             "reentrancy": [],
             "integer_overflow": [],
@@ -454,24 +446,24 @@ class TestUtilityFunctions:
             "assertion_failure": [],
             "parity_multisig_bug_2": [],
         }
-        
+
         # Test detection logic
         has_findings = any(vulns for vulns in vulnerabilities_with_findings.values())
         no_findings = any(vulns for vulns in vulnerabilities_empty.values())
-        
+
         assert has_findings is True
         assert no_findings is False
 
     def test_closing_message_logic(self, mock_oyente_modules):
         """Test closing_message logic."""
         # Test the logic that can be isolated from global state dependencies
-        
+
         # Test that message handling logic would work with different scenarios
         vulnerability_scenarios = [
             {"has_vulnerabilities": True, "should_report": True},
             {"has_vulnerabilities": False, "should_report": True},
         ]
-        
+
         for scenario in vulnerability_scenarios:
             # Both scenarios should result in some form of reporting
             assert scenario["should_report"] is True
@@ -492,14 +484,14 @@ class TestMainAnalysisFunctions:
     def test_compare_storage_and_gas_unit_test_logic(self, mock_oyente_modules):
         """Test compare_storage_and_gas_unit_test function logic."""
         # Test the logic that can be isolated from file I/O dependencies
-        
-        mock_global_params = mock_oyente_modules['global_params']
+
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.UNIT_TEST = True
 
         # Test that function expects proper input structure
         global_state = {"storage": {}}
         analysis = {"gas": 21000}
-        
+
         # Verify input structure is valid
         assert "storage" in global_state
         assert "gas" in analysis
@@ -509,13 +501,10 @@ class TestMainAnalysisFunctions:
     def test_analyze_function_logic(self, mock_oyente_modules):
         """Test main analyze function logic."""
         # Test the logic that can be isolated from global state dependencies
-        
+
         # Test that analyze function would orchestrate the expected components
-        expected_workflow = [
-            "initGlobalVars",
-            "run_build_cfg_and_analyze"
-        ]
-        
+        expected_workflow = ["initGlobalVars", "run_build_cfg_and_analyze"]
+
         # Verify workflow steps are defined
         for step in expected_workflow:
             assert isinstance(step, str)
@@ -524,14 +513,10 @@ class TestMainAnalysisFunctions:
     def test_run_with_parameters_logic(self, mock_oyente_modules):
         """Test run function parameter logic."""
         # Test the logic that can be isolated from global state dependencies
-        
+
         # Test that run function expects proper parameters
-        parameters = {
-            "disasm_file": "test.disasm",
-            "source_file": "test.sol", 
-            "source_map": {"source": "test"}
-        }
-        
+        parameters = {"disasm_file": "test.disasm", "source_file": "test.sol", "source_map": {"source": "test"}}
+
         # Verify parameter structure
         assert "disasm_file" in parameters
         assert "source_file" in parameters
@@ -543,13 +528,13 @@ class TestMainAnalysisFunctions:
     def test_run_build_cfg_and_analyze_with_timeout_logic(self, mock_oyente_modules):
         """Test run_build_cfg_and_analyze timeout handling logic."""
         # Test the logic that can be isolated from global state dependencies
-        
+
         # Test that timeout callback would be handled properly
         timeout_cb = MagicMock()
-        
+
         # Verify callback is callable
         assert callable(timeout_cb)
-        
+
         # Test expected signal handling setup
         signal_setup = {"signal_handler": "SIGALRM", "callback": timeout_cb}
         assert "signal_handler" in signal_setup
@@ -574,26 +559,21 @@ class TestErrorHandling:
     def test_init_global_vars_file_error(self, mock_oyente_modules):
         """Test file error handling logic."""
         # Simplified test focusing on error handling behavior
-        
-        mock_global_params = mock_oyente_modules['global_params']
+
+        mock_global_params = mock_oyente_modules["global_params"]
         mock_global_params.PARALLEL = False
         mock_global_params.TIMEOUT = 30000
-        
+
         # Test that OSError would be raised for nonexistent file
-        import os
-        with pytest.raises(OSError):
-            with open("nonexistent_file_xyz.txt", "r"):
-                pass
+        with pytest.raises(OSError), open("nonexistent_file_xyz.txt"):
+            pass
 
     def test_parameter_with_invalid_kwargs(self, mock_oyente_modules):
         """Test Parameter handles extra kwargs gracefully."""
         from oyente.symExec import Parameter
 
         # Should not raise error with extra kwargs
-        param = Parameter(
-            stack=[1, 2, 3],
-            unknown_param="should_be_ignored"
-        )
+        param = Parameter(stack=[1, 2, 3], unknown_param="should_be_ignored")
 
         assert param.stack == [1, 2, 3]
         # unknown_param should be ignored
@@ -604,7 +584,7 @@ class TestIntegrationHelpers:
 
     def create_mock_disasm_file(self, content: str) -> str:
         """Create a temporary disasm file for testing."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.disasm', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".disasm", delete=False) as f:
             f.write(content)
             return f.name
 
@@ -679,4 +659,3 @@ class TestIntegrationHelpers:
 125: POP
 126: JUMP
 """
-

@@ -8,15 +8,15 @@ to enable fast and isolated testing of symExec.py functionality.
 from __future__ import annotations
 
 from typing import Any
-from typing import Dict
-from typing import List
-from unittest.mock import MagicMock
+
+
+# Dict and List imports removed - using built-in types
 
 
 class MockBasicBlock:
     """Mock implementation of BasicBlock for testing."""
 
-    def __init__(self, start_address: int, instructions: List[str] = None):
+    def __init__(self, start_address: int, instructions: list[str] | None = None):
         self.start_address = start_address
         self.instructions = instructions or []
         self.end_address = start_address + len(self.instructions) - 1
@@ -32,7 +32,7 @@ class MockBasicBlock:
         """Get the ending address of the basic block."""
         return self.end_address
 
-    def get_instructions(self) -> List[str]:
+    def get_instructions(self) -> list[str]:
         """Get the list of instructions in the basic block."""
         return self.instructions
 
@@ -57,7 +57,7 @@ class MockBasicBlock:
         """Get the jump target."""
         return self.jump_target
 
-    def get_comes_from(self) -> List[int]:
+    def get_comes_from(self) -> list[int]:
         """Get the list of source blocks."""
         return self.comes_from
 
@@ -66,13 +66,13 @@ class MockSymbolicState:
     """Mock implementation of symbolic execution state."""
 
     def __init__(self):
-        self.stack: List[Any] = []
-        self.memory: Dict[int, Any] = {}
-        self.storage: Dict[Any, Any] = {}
+        self.stack: list[Any] = []
+        self.memory: dict[int, Any] = {}
+        self.storage: dict[Any, Any] = {}
         self.pc: int = 0
         self.gas: int = 1000000
-        self.path_conditions: List[Any] = []
-        self.variables: Dict[str, Any] = {}
+        self.path_conditions: list[Any] = []
+        self.variables: dict[str, Any] = {}
 
     def push(self, value: Any) -> None:
         """Push value onto stack."""
@@ -200,7 +200,7 @@ class MockAnalysisResult:
         self.gas_usage = {"min": 21000, "max": 1000000}
         self.paths = {"normal": [], "buggy": []}
 
-    def add_vulnerability(self, vuln_type: str, program_counters: List[int]) -> None:
+    def add_vulnerability(self, vuln_type: str, program_counters: list[int]) -> None:
         """Add vulnerability to results."""
         if vuln_type in self.vulnerabilities:
             self.vulnerabilities[vuln_type].extend(program_counters)
@@ -213,7 +213,7 @@ class MockAnalysisResult:
 class MockVulnerabilityDetector:
     """Mock implementation of vulnerability detector base class."""
 
-    def __init__(self, name: str, vulnerable: bool = False, warnings: List[str] = None):
+    def __init__(self, name: str, vulnerable: bool = False, warnings: list[str] | None = None):
         self.name = name
         self._vulnerable = vulnerable
         self._warnings = warnings or []
@@ -222,11 +222,11 @@ class MockVulnerabilityDetector:
         """Check if vulnerability was detected."""
         return self._vulnerable
 
-    def get_warnings(self) -> List[str]:
+    def get_warnings(self) -> list[str]:
         """Get vulnerability warnings."""
         return self._warnings
 
-    def set_vulnerable(self, vulnerable: bool, warnings: List[str] = None) -> None:
+    def set_vulnerable(self, vulnerable: bool, warnings: list[str] | None = None) -> None:
         """Set vulnerability status for testing."""
         self._vulnerable = vulnerable
         if warnings:
@@ -248,7 +248,7 @@ class MockSourceMap:
             "id": source_id,
         }
 
-    def add_contract(self, name: str, abi: List[Any] = None, bytecode: str = "") -> None:
+    def add_contract(self, name: str, abi: list[Any] | None = None, bytecode: str = "") -> None:
         """Add contract to the map."""
         self.contracts[name] = {
             "abi": abi or [],
@@ -263,7 +263,7 @@ class MockSourceMap:
             "column": column,
         }
 
-    def get_source_location(self, pc: int) -> Dict[str, Any] | None:
+    def get_source_location(self, pc: int) -> dict[str, Any] | None:
         """Get source location for program counter."""
         return self.pc_to_source.get(pc)
 
@@ -272,20 +272,20 @@ class MockDisassembler:
     """Mock implementation of disassembler for testing."""
 
     def __init__(self):
-        self.instructions: List[MockInstruction] = []
+        self.instructions: list[MockInstruction] = []
 
-    def add_instruction(self, opcode: str, operand: str = "", pc: int = None) -> None:
+    def add_instruction(self, opcode: str, operand: str = "", pc: int | None = None) -> None:
         """Add instruction to disassembly."""
         if pc is None:
             pc = len(self.instructions)
         instruction = MockInstruction(opcode, operand, pc)
         self.instructions.append(instruction)
 
-    def get_disassembly(self) -> List[str]:
+    def get_disassembly(self) -> list[str]:
         """Get disassembly as list of strings."""
         return [str(instr) for instr in self.instructions]
 
-    def create_simple_contract(self) -> List[str]:
+    def create_simple_contract(self) -> list[str]:
         """Create simple contract disassembly."""
         return [
             "0: PUSH1 0x80",
@@ -304,7 +304,7 @@ class MockDisassembler:
             "17: STOP",
         ]
 
-    def create_vulnerable_contract(self, vulnerability_type: str) -> List[str]:
+    def create_vulnerable_contract(self, vulnerability_type: str) -> list[str]:
         """Create contract with specific vulnerability pattern."""
         if vulnerability_type == "reentrancy":
             return [
@@ -349,7 +349,7 @@ class MockDisassembler:
 
 
 # Factory functions for creating mock objects
-def create_mock_basic_blocks(addresses: List[int]) -> Dict[int, MockBasicBlock]:
+def create_mock_basic_blocks(addresses: list[int]) -> dict[int, MockBasicBlock]:
     """Create a set of mock basic blocks."""
     blocks = {}
     for i, addr in enumerate(addresses):
@@ -375,20 +375,18 @@ def create_mock_analysis_environment():
     }
 
 
-def create_vulnerability_scenario(vuln_type: str) -> Dict[str, Any]:
+def create_vulnerability_scenario(vuln_type: str) -> dict[str, Any]:
     """Create a complete vulnerability testing scenario."""
     disassembler = MockDisassembler()
     disasm_lines = disassembler.create_vulnerable_contract(vuln_type)
-    
+
     # Create corresponding basic blocks
     blocks = {}
-    pc = 0
     for line in disasm_lines:
         if ":" in line:
             addr = int(line.split(":")[0])
             if addr not in blocks:
                 blocks[addr] = MockBasicBlock(addr, [line])
-                pc = addr
 
     return {
         "vulnerability_type": vuln_type,
@@ -398,18 +396,18 @@ def create_vulnerability_scenario(vuln_type: str) -> Dict[str, Any]:
     }
 
 
-def create_performance_test_scenario(instruction_count: int = 1000) -> Dict[str, Any]:
+def create_performance_test_scenario(instruction_count: int = 1000) -> dict[str, Any]:
     """Create scenario for performance testing."""
     disassembler = MockDisassembler()
-    
+
     # Create many instructions
     for i in range(instruction_count):
         pc = i * 3
         disassembler.add_instruction("PUSH1", f"0x{i % 256:02x}", pc)
         disassembler.add_instruction("POP", "", pc + 2)
-    
+
     disassembler.add_instruction("STOP", "", instruction_count * 3)
-    
+
     return {
         "instruction_count": instruction_count,
         "disasm_lines": disassembler.get_disassembly(),

@@ -5,10 +5,19 @@ including test data setup, temporary directories, and cleanup.
 """
 
 import json
+import os
+import sys
 from pathlib import Path
 from typing import Dict
+from unittest.mock import MagicMock
 
 import pytest
+
+
+# Add oyente to Python path for imports
+oyente_path = os.path.join(os.path.dirname(__file__), "..", "..", "oyente")
+if oyente_path not in sys.path:
+    sys.path.insert(0, oyente_path)
 
 
 @pytest.fixture(scope="session")
@@ -222,6 +231,99 @@ def mock_z3_timeout():
 def mock_analysis_depth():
     """Provide limited analysis depth for faster integration tests."""
     return 10  # Shallow depth for faster execution
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_mock_modules():
+    """Mock required modules before any imports."""
+    # Mock z3 first
+    mock_z3 = MagicMock()
+
+    # Add essential Z3 attributes
+    mock_z3.Solver = MagicMock
+    mock_z3.BitVec = MagicMock
+    mock_z3.BitVecVal = MagicMock
+    mock_z3.simplify = MagicMock()
+    mock_z3.is_true = lambda x: True
+    mock_z3.is_false = lambda x: False
+    mock_z3.And = MagicMock()
+    mock_z3.Or = MagicMock()
+    mock_z3.Not = MagicMock()
+    mock_z3.If = MagicMock()
+    mock_z3.Extract = MagicMock()
+    mock_z3.Concat = MagicMock()
+    mock_z3.UDiv = MagicMock()
+    mock_z3.URem = MagicMock()
+    mock_z3.ULT = MagicMock()
+    mock_z3.ULE = MagicMock()
+    mock_z3.UGT = MagicMock()
+    mock_z3.UGE = MagicMock()
+    mock_z3.sat = "sat"
+    mock_z3.unsat = "unsat"
+    mock_z3.unknown = "unknown"
+
+    # Mock other required modules for symExec
+    mock_global_params = MagicMock()
+    mock_global_params.PARALLEL = False
+    mock_global_params.TIMEOUT = 30000
+    mock_global_params.UNIT_TEST = False
+    mock_global_params.IS_TESTING_EVM = False
+    mock_global_params.DEPTH_LIMIT = 50
+    mock_global_params.LOOP_LIMIT = 10
+    mock_global_params.GAS_LIMIT = 4000000
+    mock_global_params.Ia = "0x1234567890123456789012345678901234567890"
+    mock_global_params.Iv = 1000000000000000000
+    mock_global_params.DISASM_CONTENT = None
+
+    # Mock other modules
+    mock_analysis = MagicMock()
+    mock_basicblock = MagicMock()
+    mock_ethereum_data = MagicMock()
+    mock_vargenerator = MagicMock()
+    mock_vulnerability = MagicMock()
+    mock_test_evm = MagicMock()
+    mock_test_evm.global_test_params = MagicMock()
+    mock_test_evm.global_test_params.EXCEPTION = Exception
+    mock_test_evm.global_test_params.PICKLE_PATH = "/tmp"  # noqa: S108
+    mock_test_evm.global_test_params.UNKNOWN_INSTRUCTION = "UNKNOWN"
+
+    # Patch all modules in sys.modules
+    modules_to_mock = {
+        "z3": mock_z3,
+        "global_params": mock_global_params,
+        "analysis": mock_analysis,
+        "basicblock": mock_basicblock,
+        "ethereum_data": mock_ethereum_data,
+        "vargenerator": mock_vargenerator,
+        "vulnerability": mock_vulnerability,
+        "test_evm": mock_test_evm,
+        "test_evm.global_test_params": mock_test_evm.global_test_params,
+        "six": MagicMock(),  # For Python 2/3 compatibility
+    }
+
+    original_modules = {}
+    for module_name, mock_module in modules_to_mock.items():
+        if module_name in sys.modules:
+            original_modules[module_name] = sys.modules[module_name]
+        sys.modules[module_name] = mock_module
+
+    yield {
+        "z3": mock_z3,
+        "global_params": mock_global_params,
+        "analysis": mock_analysis,
+        "basicblock": mock_basicblock,
+        "ethereum_data": mock_ethereum_data,
+        "vargenerator": mock_vargenerator,
+        "vulnerability": mock_vulnerability,
+    }
+
+    # Cleanup - restore original modules
+    for module_name in modules_to_mock:
+        if module_name in original_modules:
+            sys.modules[module_name] = original_modules[module_name]
+        else:
+            if module_name in sys.modules:
+                del sys.modules[module_name]
 
 
 @pytest.fixture(autouse=True)

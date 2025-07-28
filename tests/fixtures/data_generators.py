@@ -519,7 +519,7 @@ class SymbolicExecutionFactory:
             "reentrancy": {
                 "disasm_lines": [
                     "0: PUSH1 0x80",
-                    "2: PUSH1 0x40", 
+                    "2: PUSH1 0x40",
                     "4: MSTORE",
                     "5: CALLER",
                     "6: PUSH1 0x00",
@@ -549,7 +549,7 @@ class SymbolicExecutionFactory:
             "integer_overflow": {
                 "disasm_lines": [
                     "0: PUSH1 0xff",
-                    "2: PUSH1 0x01", 
+                    "2: PUSH1 0x01",
                     "4: ADD",  # 255 + 1 = overflow
                     "5: PUSH1 0x00",
                     "7: SSTORE",
@@ -574,7 +574,7 @@ class SymbolicExecutionFactory:
                 "vulnerable": False,
             },
         }
-        
+
         return scenarios.get(vuln_type, scenarios["safe"])
 
 
@@ -591,16 +591,18 @@ class SymbolicExecutionResultFactory(factory.Factory):
     execution_time = factory.Faker("random_int", min=100, max=5000)  # milliseconds
 
     # Vulnerability results
-    vulnerabilities = factory.LazyFunction(lambda: {
-        "integer_overflow": [],
-        "integer_underflow": [],
-        "reentrancy": [],
-        "time_dependency": [],
-        "money_concurrency": [],
-        "callstack": [],
-        "assertion_failure": [],
-        "parity_multisig_bug_2": [],
-    })
+    vulnerabilities = factory.LazyFunction(
+        lambda: {
+            "integer_overflow": [],
+            "integer_underflow": [],
+            "reentrancy": [],
+            "time_dependency": [],
+            "money_concurrency": [],
+            "callstack": [],
+            "assertion_failure": [],
+            "parity_multisig_bug_2": [],
+        }
+    )
 
     # Coverage information
     evm_code_coverage = factory.Faker("random_int", min=50, max=100)

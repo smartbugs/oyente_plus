@@ -17,7 +17,6 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 from typing import Generator
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 

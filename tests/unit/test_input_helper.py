@@ -32,7 +32,7 @@ from hypothesis import strategies as st
 
 # Import the mock classes first
 from tests.mocks.mock_crytic_compile import MockCryticCompile
-from tests.mocks.mock_crytic_compile import MockInvalidCompilation
+from tests.mocks.mock_crytic_compile import MockInvalidCompilationError
 
 
 # Use central mocking approach
@@ -41,7 +41,7 @@ with patch.dict(
     {
         "global_params": Mock(WEB=False, DEBUG=False),
         "six": Mock(iteritems=lambda d: d.items(), print_=print),
-        "crytic_compile": Mock(CryticCompile=MockCryticCompile, InvalidCompilation=MockInvalidCompilation),
+        "crytic_compile": Mock(CryticCompile=MockCryticCompile, InvalidCompilation=MockInvalidCompilationError),
         "ethutils.metadata": Mock(zeroMetadata=lambda bytecode: (bytecode, None)),
         "opcodes": Mock(
             INSTRUCTIONS={
@@ -76,7 +76,7 @@ from tests.mocks.mock_subprocess import MockSubprocessContext
 
 # The module is now mocked from the patch.dict above
 crytic_compile.CryticCompile = Mock()
-crytic_compile.InvalidCompilation = MockInvalidCompilation
+crytic_compile.InvalidCompilation = MockInvalidCompilationError
 
 
 class TestInputHelperInitialization:
