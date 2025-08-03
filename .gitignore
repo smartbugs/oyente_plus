@@ -46,6 +46,8 @@ secrets.json
 current_test.pickle
 contract_data/
 bytecode*
+!tests/fixtures/bytecode
+!tests/fixtures/bytecode/*
 
 # Keep test contracts
 !oyente/tests/contracts/*/*

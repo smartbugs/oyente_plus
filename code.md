@@ -1,99 +1,320 @@
-# Code Structure
+# Oyente+ Code Architecture
 
-### *oyente.py*
+## Overview
 
-This is the main entry point to the program. Oyente is able to analyze smart contracts via the following inputs
-- solidity program
-- evm bytecode
-- remote contracts
+Oyente+ is a modernized symbolic execution tool for Ethereum smart contract security analysis. The codebase has been significantly refactored from the original Oyente to support modern Python practices, comprehensive testing, and maintainable architecture.
 
-Other configuration options include getting the input state, setting timeouts for z3, etc. (Check ```python oyente.py --help``` or ```global_params.py```  for the full list of configuration options available).
-These options are collated and set in the *global_params* module which will be used during the rest of the execution.
+## Core Modules
 
-The contracts are then disassembled into opcodes using the ```evm disasm``` command.
+### *oyente.py* - Main Entry Point
 
-After this, the symexec module is called with the disassembled file which carries out the analyses of the contracts for various vulnerabilities (TOD, timestamp-dependence, mishandled exceptions).
+**Purpose**: Command-line interface and orchestration of the analysis pipeline.
 
-### *symExec.py*
+**Key Features**:
+- Multi-format input support (Solidity source, EVM bytecode, remote contracts)
+- Configuration management via `global_params.py`
+- Integration with modern compilation tools (crytic-compile)
+- Error handling and result formatting
 
-The analysis starts off with the ```build_cfg_and_analyze``` function. We break up the disasm file created by oyente.py into tokens using the native tokenize python module.
+**Input Types**:
+- **Solidity files** (`-s contract.sol`)
+- **EVM bytecode** (`-s bytecode_file -b`) 
+- **Remote contracts** (`-ru URL`)
+- **Assertion checking** (`-a` flag for Solidity assert verification)
 
-The *collect_vertices* and *construct_bb* functions identify the basic blocks in the program and we store them as vertices. Basic blocks are identified by using opcodes like ```JUMPDEST```, ```STOP```, ```RETURN```, ```SUICIDE```, ```JUMP``` and ```JUMPI``` as separators. Each basic block is backed by an instance of BasicBlock class defined in basicblock.py
+**Workflow**:
+1. Parse command-line arguments and validate inputs
+2. Configure analysis parameters (timeouts, depth limits, etc.)
+3. Delegate to `input_helper.py` for compilation/preprocessing
+4. Invoke `symExec.py` for symbolic execution analysis
+5. Format and output vulnerability reports
 
-After the basic blocks are created, we start to symbolically execute each basic block with the full_sym_exec function. We get the instructions stored in each basic block and execute each of them symbolically via the sym_exec_ins function. In this function, we model each opcode as closely as possible to the behaviour described in the ethereum yellow paper. Some interesting details regarding each class of opcodes is discussed below.
+### *input_helper.py* - Input Processing & Compilation
 
-#### Model
-The stack is modelled using a simple python list.
-The memory is modelled as a growing list. The maximum index of used by the memory list is stored as ```current_miu_i``` variable.
-The storage is stored as a python object as key-value pairs.
+**Purpose**: Handle diverse input formats and prepare bytecode for analysis.
 
-#### 0s: Stop and Arithmetic Operations, 10s: Comparison & Bitwise Logic Operations
-These group of opcodes is the most straightforward to implement. If one of the operands is symbolic, both of them are converted into a 256-bit symbolic variable. The arithmetic operation is carried out (symbolically, if the operands are symbolic) and the result is pushed on to the stack.
+**Key Components**:
+- **Solidity Compilation**: Integration with `solc` and `crytic-compile`
+- **Bytecode Parsing**: Direct EVM bytecode processing
+- **Remote Fetching**: Download and compile remote contracts
+- **Source Mapping**: Maintain source-to-bytecode mappings for error reporting
 
-#### 20s: SHA3
-A generic symbolic variable is created to mimic the behaviour of the SHA3 opcode
+**Modern Improvements**:
+- Uses `crytic-compile` for robust Solidity compilation
+- Support for latest Solidity versions
+- Better error handling for compilation failures
+- Improved source mapping generation
 
-#### 30s: Environmental Information, 40s: Block Information
-For most of these opcodes, a unique symbolic variable is generated to represent it (similar to SHA3). In some cases, to speed up the symbolic execution, concrete values for these opcodes are taken from the state.json file. This behaviour is enabled via the --state flag. We haven't found ways to robustly simulate ```CODECOPY``` and ```EXTCODESIZE``` symbolically yet.
+### *symExec.py* - Symbolic Execution Engine
 
-#### 40s: 50s: Stack, Memory, Storage and Flow Operations
-New edges which are found during analysing the ```JUMP``` and ```JUMPI``` instructions are added to the call graph on the fly.
+**Purpose**: Core symbolic execution engine using Z3 constraint solving.
 
-#### f0s: System operations
-To handle the ```CALL``` and ```CALLCODE``` opcodes, we construct symbolic expressions to ensure there are enough funds in the sender's account and the sender's address is different from the receiver's address. If these conditions hold true, we update the corresponding global state.
-
-
-After this, add this basic block to the list of already visited blocks and follow it to the next basic block. We also maintain the necessary path conditions required to get to the block in the ```path_conditions_and_vars``` variable. In case of instructions like JUMP, there is only one basic block to follow the program execution to. In other cases like ```JUMPI```, we first check if the branch expression is provably True or False using z3. If not, we explore both the branches by adding the branch expression and the negated branch expression to the ```path_conditions_and_vars``` variable.
-
-- Callstack attack
-
-Checking for the callstack attack is done by the *check_callstack_attack* function. If a ```CALL``` or a ```CALLCODE``` instruction is found without the ```SWAP4, POP, POP, POP, POP, ISZERO``` (or SWAP3 followed by 3 POP, etc.) following it, we flag it as being vulnerable to the callstack attack. This opcode sequence is the one generated by solc corresponding to the following recommended code pattern to prevent against the attack.
-
+**Architecture**:
 ```
-if (owner.send(amount)) {..}
+build_cfg_and_analyze()
+├── collect_vertices()     # Identify basic blocks
+├── construct_bb()         # Build control flow graph  
+├── full_sym_exec()        # Execute symbolic analysis
+│   └── sym_exec_ins()     # Process individual opcodes
+└── vulnerability_checks() # Apply security analysis
 ```
 
-- Timestamp dependence attack
+**Key Functions**:
+- **CFG Construction**: Parse disassembled bytecode into basic blocks
+- **Symbolic State Management**: Track stack, memory, storage symbolically
+- **Path Exploration**: Explore execution paths with constraint solving
+- **Z3 Integration**: Generate and solve logical constraints
 
-We find out if the ```path_conditions``` variable contains the symbolic variable corresponding to the block timestamp. If so, the program can be concluded to take a path in the program which makes use of the block timestamp, making it vulnerable to the Timestamp dependence attack.
+**Opcode Categories**:
+- **0x00-0x0f**: Arithmetic and stop operations
+- **0x10-0x1f**: Comparison and bitwise logic  
+- **0x20**: SHA3 hashing (modeled symbolically)
+- **0x30-0x3f**: Environmental information (address, balance, etc.)
+- **0x40-0x4f**: Block information (timestamp, number, etc.)
+- **0x50-0x5f**: Stack, memory, storage operations
+- **0x60-0x6f**: Push operations
+- **0x80-0x8f**: Duplication operations
+- **0x90-0x9f**: Exchange operations
+- **0xa0-0xa4**: Logging operations
+- **0xf0-0xff**: System operations (call, create, return, etc.)
 
-- Reentrancy bug
+**Modern EVM Support**:
+- **PUSH0** (0x5f): Zero push operation
+- **TLOAD/TSTORE**: Transient storage operations
+- **Latest opcodes**: Support for recent EVM updates
 
-This presence of this bug is analysed in the ```check_reentrancy_bug``` function in analysis.py. At each CALL that is encountered, we obtain the path condition for the execution before the CALL is executed. We then check if such condition with updated variables (e.g., storage values) still holds (i.e., if the call can be executed again). If so, we consider this a vulnerability, since it is possible for the callee to re-execute the call before finishing it.
-We also consider the case that users use `sender` and `transfer` instead of `call` function. It is safe to use `sender` and `transfer` because of the limited gas as part of `send` and `transfer`. To check whethera contract is safe or not based on the gas as part of these functions, we set a threshold to 2300 which is the amount of gas that `sender` and `transfer` provide. And then comparing the gas sent along with these functions with the threshold. If the gas is greater than the threshold, we flag the contract as being vulnerable to the reentrancy attack. Otherwise, we flag it as being safe.
+**State Management**:
+```python
+class SymbolicState:
+    stack: List[Any]           # EVM stack (max 1024 items)
+    memory: List[Any]          # Expandable memory array
+    storage: Dict[Any, Any]    # Persistent storage mapping
+    pc: int                    # Program counter
+    gas: int                   # Gas consumption tracking
+    path_conditions: List[Any] # Z3 constraints for current path
+```
 
-- Concurrency bug
+**Control Flow Analysis**:
+- **Basic Blocks**: Identified by jump destinations and terminators
+- **Edge Detection**: Dynamic discovery during symbolic execution
+- **Path Explosion Mitigation**: Configurable depth limits and timeouts
 
-We track the sender, recepient and the value transferred at each ```CALL``` and ```SUICIDE``` instruction in the ```update_analysis``` function. If these values are different for different flows, we report the bug in the ```detect_money_concurrency``` function.
+### *vulnerability.py* - Security Analysis (✅ **27+ Tests Complete**)
 
-- Assertion fails
+**Purpose**: Implement vulnerability detection patterns for smart contract security.
 
-This feature is active only if the option `-a` is used.
+**Architecture**: All vulnerability detectors inherit from base `Vulnerability` class:
 
-The feature verifies Solidity assertions, which tries to report `assert` fails if  INVALID instruction is reachable in the program. Because INVALID can be caused from different cases other than `assert`, there would be some cases that lead to false positives due to the ambiguity between an INVALID generated by `assert` and other types of INVALID. Currently, we consider all INVALID instructions to be derived from `assert` except thoses that follow a sequences of JUMPDEST, CALLVALUE, ISZERO, PUSH, JUMPI instructions. To find the function that contains the assertion fails, we record the path that leads to the INVALID instruction. By using this path, we can trace back and find the top-level function that causes the failure in the ```check_assertions``` function in `symExec.py`.
+```python
+class Vulnerability:
+    def __init__(self, source_map, pcs):
+        self.source_map = source_map      # Source code mapping
+        self.pcs = pcs                    # Program counters where found
+        self.warnings = []                # Formatted warning messages
+    
+    def is_vulnerable(self) -> bool:      # Check if vulnerable
+    def get_warnings(self) -> List[str]:  # Get formatted warnings
+```
 
-### *vargenerator.py*
+**Implemented Detectors**:
 
-This is a utility class to provide unqiue symbolic variables required for analysis
+1. **Reentrancy (`ReentrancyDetector`)**:
+   - Detects external calls that allow contract re-entry
+   - Tracks state modifications after external calls
+   - Identifies missing reentrancy guards
 
-### source_map.py
+2. **Integer Overflow (`IntegerOverflow`)**:
+   - Detects arithmetic operations that can overflow/underflow
+   - Models 256-bit integer boundaries
+   - Considers SafeMath usage patterns
 
-This is a utility class to map problematic opcodes into the source code
+3. **Timestamp Dependence (`TimestampDependency`)**:
+   - Identifies reliance on block.timestamp
+   - Detects timestamp manipulation vulnerabilities
+   - Tracks temporal ordering assumptions
 
-### Tests
-Testing opcodes in Oyente in order to check if opcodes are implemented correctly based on the final state of the storage and the memory. The tests are based on the [VM tests of Ethereum](http://ethdocs.org/en/latest/contracts-and-transactions/ethereum-tests/vm_tests/index.html).
+4. **Callstack Attack (`CallstackDepthAttack`)**:
+   - Detects calls without proper return value checking
+   - Identifies vulnerable call patterns
+   - Checks for recommended defensive patterns
 
-The flow of testing:
-- Load test data (using the existing EVM tests in [here](https://github.com/ethereum/tests/tree/develop/VMTests))
-- Run oyente with the input was specified in the test data
-- Compare the results (storage, memory and gas) after running oyente with the results being specified in the test data
-- Report bugs
+5. **Concurrency Issues (`ConcurrencyBug`)**:
+   - Tracks value transfers across different execution paths
+   - Identifies transaction ordering dependencies
+   - Detects race conditions in state updates
 
-#### *run_tests.py*
-This is the main entry point to the testing program. The program loads a specific test data file in folder ```test_evm/test_data/``` and start running `oyente.py `with the input being specified in the loaded test data to get an exit code which is returned from `oyente.py.` From this exit code the testing program can report the bug
+6. **Assertion Failures (`AssertionFailure`)**:
+   - Analyzes Solidity assert() statements
+   - Tracks paths leading to INVALID opcodes
+   - Distinguishes assert failures from other INVALID causes
 
-#### *evm_unit_test.py*
-A utility class to extract concerned sections and fields (`code`, `storage`, `out`, `gas` and `gas` in `exec` section) in the test data, run the tests, compare the results and return an exit code
+**Security Analysis Process**:
+```
+For each execution path:
+├── Track external calls and state changes
+├── Analyze arithmetic operations for overflow
+├── Check timestamp dependencies in conditions  
+├── Validate call return values
+├── Detect concurrent access patterns
+└── Verify assertion reachability
+```
 
-#### *symExec.py*
-```compare_storage_and_gas_unit_test(global_state, analysis)``` starts comparing the results and return an exit code after the final opcode is implemented
+### *analysis.py* - Analysis State Management
+
+**Purpose**: Coordinate vulnerability analysis and maintain execution state.
+
+**Key Components**:
+- **Global State Tracking**: Maintain contract state across execution paths
+- **Vulnerability Orchestration**: Coordinate multiple vulnerability detectors
+- **Result Aggregation**: Collect and format analysis results
+- **Performance Monitoring**: Track analysis metrics and timeouts
+
+### *basicblock.py* - Control Flow Graph
+
+**Purpose**: Represent and manage basic blocks in the control flow graph.
+
+**BasicBlock Class**:
+```python
+class BasicBlock:
+    def __init__(self, start_address, end_address):
+        self.start = start_address       # First instruction address
+        self.end = end_address          # Last instruction address  
+        self.instructions = []           # List of opcodes in block
+        self.jump_target = None         # Target for unconditional jumps
+        self.conditional_jump = None    # Target for conditional jumps
+        self.fall_through = None        # Next sequential block
+```
+
+**CFG Construction Process**:
+1. **Identify Block Boundaries**: `JUMPDEST`, `JUMP`, `JUMPI`, `STOP`, `RETURN`, `REVERT`
+2. **Parse Instructions**: Extract opcodes and operands for each block
+3. **Build Edges**: Connect blocks based on jump relationships
+4. **Validate Structure**: Ensure CFG completeness and consistency
+
+## Supporting Modules
+
+### *vargenerator.py* - Symbolic Variable Generation
+
+**Purpose**: Generate unique symbolic variables for Z3 constraint solving.
+
+**Features**:
+- **Unique Naming**: Ensure variable name uniqueness across analysis
+- **Type Management**: Handle different variable types (BitVec, Bool, etc.)
+- **Scope Tracking**: Manage variable scopes and lifetimes
+
+### *source_map.py* - Source Code Mapping
+
+**Purpose**: Map bytecode addresses back to source code locations.
+
+**Capabilities**:
+- **Source Line Mapping**: Connect bytecode to original Solidity lines
+- **Error Reporting**: Provide precise source locations for vulnerabilities
+- **Compiler Integration**: Work with various Solidity compiler versions
+
+### *global_params.py* - Configuration Management
+
+**Purpose**: Centralized configuration and parameter management.
+
+**Configuration Options**:
+- **Analysis Limits**: Timeout values, maximum depth, loop bounds
+- **Solver Settings**: Z3 configuration and optimization settings  
+- **Output Formatting**: Verbose modes, report formats
+- **Debug Options**: Logging levels, intermediate output
+
+## Testing Infrastructure
+
+Oyente+ features a comprehensive testing framework with multiple test categories:
+
+### Modern Test Suite (`tests/` directory)
+
+**Architecture**:
+```
+tests/
+├── unit/           # Fast, isolated unit tests (27+ tests ✅)
+├── integration/    # Component interaction tests
+├── property/       # Hypothesis property-based tests
+├── performance/    # Benchmark tests with pytest-benchmark
+├── fixtures/       # Test data generators and utilities
+└── mocks/          # Mock objects (Z3, filesystem, subprocess)
+```
+
+**Testing Tools**:
+- **pytest**: Modern test runner with extensive plugin ecosystem
+- **Hypothesis**: Property-based testing for edge case discovery
+- **pytest-cov**: Code coverage reporting (90% threshold)
+- **pytest-benchmark**: Performance regression detection
+- **Factory Boy**: Test data generation
+- **pytest-mock**: Advanced mocking capabilities
+
+**Test Categories**:
+- **Unit Tests**: Individual function/class testing with 100% `vulnerability.py` coverage
+- **Integration Tests**: Multi-component interaction testing
+- **Property Tests**: Automated edge case generation with Hypothesis
+- **Performance Tests**: Regression testing for analysis speed
+
+**Test Execution**:
+```bash
+# Modern test suite
+python -m pytest tests/ -v
+
+# Legacy EVM tests  
+python oyente/run_tests.py
+
+# Coverage reporting
+python -m pytest tests/ --cov=oyente --cov-report=html
+```
+
+### Legacy EVM Test Suite
+
+**Purpose**: Validate EVM opcode implementation against Ethereum test vectors.
+
+**Components**:
+- **`run_tests.py`**: Main test orchestrator
+- **`evm_unit_test.py`**: EVM state comparison utilities
+- **`test_evm/test_data/`**: JSON test vectors from Ethereum test suite
+
+**Test Process**:
+1. Load JSON test data with expected EVM states
+2. Execute symbolic analysis on test bytecode
+3. Compare final states (storage, memory, gas consumption)
+4. Report discrepancies and implementation bugs
+
+**Test Data Sources**:
+- [Ethereum VM Tests](https://github.com/ethereum/tests/tree/develop/VMTests)
+- Custom test cases for Oyente-specific functionality
+- Real-world contract samples in `samples/` directory
+
+## Development Status & Roadmap
+
+### ✅ **Completed (Phase 1)**
+- **Comprehensive Unit Testing**: 27+ tests for `vulnerability.py` with 100% coverage
+- **Modern Python Tooling**: Black, Ruff, mypy, pytest configuration
+- **Poetry Integration**: Modern dependency management and packaging
+- **Code Quality Infrastructure**: Makefile automation, pre-commit ready
+- **Type Safety**: Complete type hints for vulnerability detection module
+
+### 🔄 **In Progress (Phase 2)**
+- **Type Annotation Expansion**: Adding type hints to `oyente.py`, `input_helper.py`, `analysis.py`
+- **Linting Resolution**: Fixing 659 remaining linting issues in main codebase
+- **Test Coverage Expansion**: Unit tests for `symExec.py` core functions
+- **Documentation Improvement**: Comprehensive docstring coverage
+
+### 📋 **Planned (Phase 3)**
+- **Architectural Refactoring**: Breaking down monolithic `symExec.py` (5800+ lines)
+- **Plugin Architecture**: Modular vulnerability detector system
+- **Performance Optimization**: 50% analysis speed improvement target
+- **CI/CD Pipeline**: Automated testing and deployment infrastructure
+
+### 🎯 **Success Metrics**
+- **Code Quality**: 90% test coverage, zero critical security issues
+- **Type Safety**: 95% type annotation coverage
+- **Performance**: 50% faster analysis, 30% less memory usage
+- **Developer Experience**: <10 minute setup time, <15 minute CI pipeline
+
+## Key Design Principles
+
+1. **Security First**: All code changes must pass security linting (Bandit)
+2. **Type Safety**: Gradual migration to full type annotation coverage  
+3. **Test-Driven**: New features require corresponding tests
+4. **Performance Aware**: Monitor and optimize analysis bottlenecks
+5. **Modern Python**: Leverage Python 3.8+ features and best practices

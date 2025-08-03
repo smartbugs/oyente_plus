@@ -3,12 +3,13 @@ PYTHON := python3
 SRC_DIRS := oyente/ tests/
 VENV_DIR := venv
 
-# Virtual environment detection
+# Poetry and virtual environment detection
+POETRY := poetry
 VENV_ACTIVE := $(shell echo $$VIRTUAL_ENV)
 ifeq ($(VENV_ACTIVE),)
-    VENV_PYTHON := $(VENV_DIR)/bin/python
+    POETRY_RUN := $(POETRY) run
 else
-    VENV_PYTHON := $(PYTHON)
+    POETRY_RUN := 
 endif
 
 .DEFAULT_GOAL := help
@@ -20,37 +21,45 @@ help: ## Show this help message
 
 ##@ Development Setup
 
-setup: ## Create virtual environment and install dependencies using setup-venv.sh
+setup: ## Create virtual environment and install all dependencies using Poetry
 	@echo "🚀 Setting up development environment..."
-	@./setup-venv.sh && echo "✅ Setup complete" || (echo "❌ Setup failed" && exit 1)
+	@$(POETRY) install --with dev,test,lint && echo "✅ Setup complete" || (echo "❌ Setup failed" && exit 1)
 
-install: ## Install production dependencies (requires existing venv)
-	@echo "Installing production dependencies..."
-	@$(VENV_PYTHON) -m pip install -e . && echo "✅ Installation complete" || (echo "❌ Installation failed" && exit 1)
+install: ## Install production dependencies only
+	@echo "📦 Installing production dependencies..."
+	@$(POETRY) install --only main && echo "✅ Installation complete" || (echo "❌ Installation failed" && exit 1)
 
-install-dev: ## Install development dependencies (requires existing venv)
-	@echo "Installing development dependencies..."
-	@$(VENV_PYTHON) -m pip install -e ".[dev]" && echo "✅ Development installation complete" || (echo "❌ Development installation failed" && exit 1)
+install-dev: ## Install all dependencies including dev/test/lint groups
+	@echo "🔧 Installing all dependencies..."
+	@$(POETRY) install --with dev,test,lint && echo "✅ Development installation complete" || (echo "❌ Development installation failed" && exit 1)
 
 ##@ Code Quality
 
 format: ## Format code with Black
 	@echo "🔧 Formatting code with Black..."
-	@black $(SRC_DIRS) && echo "✅ Code formatting complete" || (echo "❌ Formatting failed" && exit 1)
+	@$(POETRY_RUN) black $(SRC_DIRS) && echo "✅ Code formatting complete" || (echo "❌ Formatting failed" && exit 1)
 
 lint: ## Check code with Ruff
 	@echo "🔍 Linting code with Ruff..."
-	@ruff check $(SRC_DIRS) && echo "✅ Linting complete" || (echo "❌ Linting failed" && exit 1)
+	@$(POETRY_RUN) ruff check $(SRC_DIRS) && echo "✅ Linting complete" || (echo "❌ Linting failed" && exit 1)
 
 type-check: ## Type check with mypy
 	@echo "🔎 Type checking with mypy..."
-	@mypy oyente/ && echo "✅ Type checking complete" || (echo "❌ Type checking failed" && exit 1)
+	@$(POETRY_RUN) mypy oyente/ && echo "✅ Type checking complete" || (echo "❌ Type checking failed" && exit 1)
 
 ##@ Testing
 
-test: ## Run tests
-	@echo "🧪 Running tests..."
-	@$(VENV_PYTHON) oyente/run_tests.py && echo "✅ Tests complete" || (echo "❌ Tests failed" && exit 1)
+test: ## Run pytest tests
+	@echo "🧪 Running pytest tests..."
+	@$(POETRY_RUN) pytest && echo "✅ Tests complete" || (echo "❌ Tests failed" && exit 1)
+
+test-legacy: ## Run legacy EVM tests
+	@echo "🧪 Running legacy EVM tests..."
+	@$(POETRY_RUN) python oyente/run_tests.py && echo "✅ Legacy tests complete" || (echo "❌ Legacy tests failed" && exit 1)
+
+test-cov: ## Run tests with coverage
+	@echo "🧪 Running tests with coverage..."
+	@$(POETRY_RUN) pytest --cov=oyente --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml:coverage.xml && echo "✅ Tests with coverage complete" || (echo "❌ Tests with coverage failed" && exit 1)
 
 ##@ Comprehensive
 

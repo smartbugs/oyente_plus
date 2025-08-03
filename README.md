@@ -1,123 +1,286 @@
-Oyente+
-=======
+# Oyente+
 
 An Analysis Tool for Smart Contracts
 
 [![License: GPL v3][license-badge]][license-badge-url]
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=flat-square)](https://www.python.org/downloads/)
+[![Code style: Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
 *This repository is currently maintained by Thomas Fenninger ([@zariliv](https://github.com/zariliv)). If you encounter any bugs or usage issues, please feel free to create an issue on [our issue tracker](https://github.com/smartbugs/oyente_plus/issues).*
 
-## Quick Start
+**Oyente+** is a modernized version of the original Oyente symbolic execution tool for Ethereum smart contracts. It performs comprehensive security analysis to detect vulnerabilities including reentrancy, integer overflow, timestamp dependence, and more.
 
-A container with required dependencies configured can be found [here](https://hub.docker.com/r/smartbugs/oyente_plus/).
+## ✨ Features
 
-To open the container, install docker and run:
+- **Symbolic Execution**: Deep analysis using Z3 constraint solving
+- **Multi-format Support**: Analyze Solidity source code, EVM bytecode, or remote contracts
+- **Modern Python**: Built for Python 3.8+ with comprehensive type hints
+- **Comprehensive Testing**: 27+ unit tests with property-based testing
+- **Code Quality**: Enforced with Black, Ruff, mypy, and pytest
+- **Latest EVM Support**: Compatible with recent opcodes (PUSH0, TLOAD, TSTORE)
 
-```shell
-docker pull smartbugs/oyente_plus && docker run -i -t smartbugs/oyente_plus
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.8+ (excluding 3.12.0)
+- [Poetry](https://python-poetry.org/) for dependency management
+- [Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)
+- [Go Ethereum (geth)](https://geth.ethereum.org/downloads/) for EVM execution
+
+### Installation
+
+#### Option 1: Using Make (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/smartbugs/oyente_plus.git
+cd oyente_plus
+
+# Setup development environment with all dependencies
+make setup
+
+# Activate virtual environment (if using Poetry outside venv)
+poetry shell
 ```
 
-To evaluate the greeter contract inside the container, run:
+#### Option 2: Manual Setup
 
-```shell
-cd /oyente/oyente && python oyente.py -s greeter.sol
+```bash
+# Install dependencies with Poetry
+poetry install --with dev,test,lint
+
+# Or install only production dependencies
+poetry install --only main
 ```
 
-and you are done!
+#### Option 3: Docker
 
-## Custom Docker image build
-
-```shell
-docker build -t oyente_plus .
-docker run -it -e "OYENTE=/oyente/oyente" oyente_plus:latest
+```bash
+docker pull smartbugs/oyente_plus
+docker run -it smartbugs/oyente_plus
 ```
 
-## Installation
+### System Dependencies
 
-### Quick Setup
+#### Solidity Compiler
 
-Run the setup-venv.sh shell script to create a new python virtualenv and install all dependencies from pyproject.toml:
-
-```shell
-./setup-venv.sh
-```
-
-### Manual Installation
-
-Alternatively, install dependencies manually:
-
-#### solc
-
-```shell
+```bash
+# Ubuntu/Debian
 sudo add-apt-repository ppa:ethereum/ethereum
 sudo apt-get update
 sudo apt-get install solc
+
+# Or use solc-select for version management
+solc-select install latest
+solc-select use latest
 ```
 
-#### evm from [go-ethereum](https://github.com/ethereum/go-ethereum)
+#### Go Ethereum (for EVM execution)
 
-1. https://geth.ethereum.org/downloads/ or
-2. By from PPA if your using Ubuntu
-
-```shell
+```bash
+# Ubuntu/Debian
 sudo apt-get install software-properties-common
 sudo add-apt-repository -y ppa:ethereum/ethereum
 sudo apt-get update
 sudo apt-get install ethereum
+
+# Or download from https://geth.ethereum.org/downloads/
 ```
 
-### Evaluating Ethereum Contracts
+## 🔧 Usage
 
-```shell
-#evaluate a local solidity contract
-python oyente.py -s <contract filename>
+### Command Line Interface
 
-#evaluate a local solidity with option -a to verify assertions in the contract
-python oyente.py -a -s <contract filename>
+```bash
+# Analyze Solidity contract
+python oyente/oyente.py -s contract.sol
 
-#evaluate a local evm contract
-python oyente.py -s <contract filename> -b
+# Analyze with assertion checking
+python oyente/oyente.py -a -s contract.sol
 
-#evaluate a remote contract
-python oyente.py -ru https://gist.githubusercontent.com/loiluu/d0eb34d473e421df12b38c12a7423a61/raw/2415b3fb782f5d286777e0bcebc57812ce3786da/puzzle.sol
+# Analyze EVM bytecode
+python oyente/oyente.py -s bytecode_file -b
 
+# Analyze remote contract
+python oyente/oyente.py -ru https://example.com/contract.sol
+
+# Get help
+python oyente/oyente.py --help
 ```
 
-And that's it! Run ```python oyente.py --help``` for a list of options.
+### Development Workflow
 
-## Paper
+```bash
+# Format, lint, type-check, and test (run before commits)
+make all
 
-The accompanying paper explaining the bugs detected by the tool can be found [here](https://www.comp.nus.edu.sg/~prateeks/papers/Oyente.pdf).
+# Individual commands
+make format      # Format with Black
+make lint        # Check with Ruff
+make type-check  # Verify with mypy
+make test        # Run pytest suite
+make test-cov    # Run tests with coverage
+```
 
-## Miscellaneous Utilities
+## 🧪 Testing
 
-A collection of the utilities that were developed for the paper are in `misc_utils`. Use them at your own risk - they have mostly been disposable.
+The project includes comprehensive testing infrastructure:
 
-1. `generate-graphs.py` - Contains a number of functions to get statistics from contracts.
-2. `get_source.py` - The *get_contract_code* function can be used to retrieve contract source from [EtherScan](https://etherscan.io)
-3. `transaction_scrape.py` - Contains functions to retrieve up-to-date transaction information for a particular contract.
+```bash
+# Run modern pytest suite (27+ tests)
+python -m pytest tests/ -v
 
-## Benchmarks
+# Run with coverage reporting
+python -m pytest tests/ --cov=oyente --cov-report=html
 
-Note: This is an improved version of the tool used for the paper. Benchmarks are not for direct comparison.
+# Run specific test categories
+python -m pytest tests/unit/          # Unit tests
+python -m pytest -m "not slow"       # Skip slow tests
+python -m pytest -m integration       # Integration tests only
 
-To run the benchmarks, it is best to use the docker container as it includes the blockchain snapshot necessary.
-In the container, run `batch_run.py` after activating the virtualenv. Results are in `results.json` once the benchmark completes.
+# Run legacy EVM tests (JSON-based)
+python oyente/run_tests.py
+```
 
-The benchmarks take a long time and a *lot* of RAM in any but the largest of clusters, beware.
+### Test Structure
 
-Some analytics regarding the number of contracts tested, number of contracts analysed etc. is collected when running this benchmark.
+```
+tests/
+├── unit/           # Fast, isolated unit tests
+├── integration/    # Component interaction tests
+├── property/       # Hypothesis property-based tests
+├── performance/    # Benchmark tests
+├── fixtures/       # Test data and utilities
+└── mocks/          # Mock objects for Z3, filesystem, etc.
+```
 
-## Contributing
+## 📊 Architecture Overview
 
-Find a bug, a way to improve the documentation or have a feature request? Open an [issue](https://github.com/smartbugs/oyente_plus/issues/new).
+### Core Components
 
-Or even better, send us a PR :)
+- **`oyente/oyente.py`**: Main CLI entry point and configuration
+- **`oyente/input_helper.py`**: Input handling for Solidity/bytecode using crytic-compile
+- **`oyente/symExec.py`**: Symbolic execution engine with Z3 constraint solving
+- **`oyente/vulnerability.py`**: Vulnerability detection classes (27+ tests ✅)
+- **`oyente/analysis.py`**: Analysis state management and vulnerability reporting
 
-### Before you send PRs
-- Follow the [instructions](https://github.com/smartbugs/oyente_plus#full-install) to get a locally working version of oyente+
-- Make your awesome change
-- Write a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
+### Analysis Flow
+
+1. **Input Processing**: Compile Solidity or parse bytecode
+2. **CFG Construction**: Build control flow graph from EVM opcodes
+3. **Symbolic Execution**: Explore paths with constraint solving
+4. **Vulnerability Detection**: Apply security analysis patterns
+5. **Report Generation**: Output findings with source mapping
+
+### Supported Vulnerabilities
+
+- **Reentrancy**: External call state manipulation
+- **Integer Overflow/Underflow**: Arithmetic boundary violations
+- **Timestamp Dependence**: Block timestamp manipulation
+- **Callstack Attack**: Call depth limitations
+- **Concurrency Issues**: Transaction ordering dependencies
+- **Assertion Failures**: Solidity assert statement violations
+
+## 🛠️ Development
+
+### Project Status
+
+**✅ Completed (Phase 1)**:
+- Modern Python packaging with Poetry
+- Comprehensive test infrastructure (27+ unit tests)
+- Code quality tooling (Black, Ruff, mypy)
+- Type hints for `vulnerability.py` module
+
+**🔄 In Progress**:
+- Type hints for core modules (`oyente.py`, `input_helper.py`)
+- Linting error resolution (659 remaining)
+- Expanded test coverage for `symExec.py`
+
+**📋 Roadmap**:
+- Architectural refactoring of monolithic `symExec.py`
+- Plugin architecture for vulnerability detectors
+- Performance optimizations
+- CI/CD pipeline implementation
+
+### Code Quality Standards
+
+All code must pass these checks before committing:
+
+```bash
+make all  # Runs format, lint, type-check, test
+```
+
+- **Black**: Code formatting (120 char lines)
+- **Ruff**: Linting with security focus (Bandit rules)
+- **mypy**: Static type checking
+- **pytest**: Unit and integration testing
+
+### Contributing Guidelines
+
+1. **Setup Development Environment**:
+   ```bash
+   make setup
+   poetry shell
+   ```
+
+2. **Make Changes**: Follow existing code patterns and conventions
+
+3. **Run Quality Checks**:
+   ```bash
+   make all  # Must pass before committing
+   ```
+
+4. **Add Tests**: All new functionality requires tests
+
+5. **Documentation**: Update docstrings and README as needed
+
+## 📈 Benchmarks & Testing
+
+### Legacy EVM Tests
+
+JSON-based tests from Ethereum VM test suite:
+
+```bash
+python oyente/run_tests.py
+```
+
+### Performance Testing
+
+Benchmark analysis performance:
+
+```bash
+python -m pytest tests/performance/ --benchmark-only
+```
+
+### Sample Contracts
+
+The `samples/` directory contains test contracts including:
+- `SimpleDAO.sol` - Reentrancy vulnerability
+- `EtherLotto.sol` - Randomness issues  
+- `Government.sol` - Access control patterns
+
+## 📚 Resources
+
+- **Original Paper**: [Oyente: Making Smart Contracts Safer](https://www.comp.nus.edu.sg/~prateeks/papers/Oyente.pdf)
+
+## 🤝 Contributing
+
+We welcome contributions! Please:
+
+1. **Open an Issue**: Report bugs or suggest features on our [issue tracker](https://github.com/smartbugs/oyente_plus/issues)
+2. **Submit PRs**: Feel free to send us a PR for changes you want to see!
+3. **Follow Standards**: Ensure all quality checks pass with `make all`
+
+### Development Setup
+
+```bash
+git clone https://github.com/smartbugs/oyente_plus.git
+cd oyente_plus
+make setup
+poetry shell
+make all  # Verify everything works
+```
 
 [license-badge]: https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=flat-square
 [license-badge-url]: ./LICENSE
