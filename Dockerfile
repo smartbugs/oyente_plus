@@ -1,7 +1,6 @@
 FROM ubuntu:jammy
 LABEL maintainer="SmartBugs Project <https://github.com/smartbugs/oyente"
 
-ARG GO_VERSION=1.24.2
 # crytic-compile does not seem to work inside a container
 # so we need to set the solc version manually
 ARG SOLC_VERSION=0.8.29
