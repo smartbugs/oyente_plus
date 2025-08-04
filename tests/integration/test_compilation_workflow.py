@@ -36,10 +36,10 @@ class TestCompilationIntegration:
 
     def test_solidity_file_compilation_with_filesystem(self, temp_dir):
         """Test compilation of real Solidity file from filesystem."""
-        # Create a real Solidity file
-        sol_file = temp_dir / "test_contract.sol"
-        sol_file.write_text(
-            """
+        from tests.helpers import mock_crytic_compile_context
+        from tests.helpers import temp_solidity_file
+
+        contract_code = """
 pragma solidity ^0.8.0;
 
 contract TestContract {
@@ -50,12 +50,10 @@ contract TestContract {
     }
 }
 """
-        )
 
-        # Test compilation with real file
-        with patch("crytic_compile.CryticCompile") as mock_compile:
-            mock_compile.return_value.contracts = ["TestContract"]
-
+        with temp_solidity_file(contract_code, "test_contract.sol") as sol_file, mock_crytic_compile_context(
+            success=True, contracts=["TestContract"]
+        ):
             helper = InputHelper(InputHelper.SOLIDITY, source=str(sol_file), evm=False, root_path=str(temp_dir))
 
             assert helper.source == str(sol_file)
@@ -63,12 +61,12 @@ contract TestContract {
 
     def test_standard_json_compilation_workflow(self, temp_dir):
         """Test standard JSON compilation workflow with file I/O."""
+        from tests.helpers import create_mock_compilation_result
+        from tests.helpers import create_standard_json_input
+        from tests.helpers import temp_json_file
+
         # Create standard JSON input file
-        input_content = {
-            "language": "Solidity",
-            "sources": {
-                "SimpleToken.sol": {
-                    "content": """
+        contract_code = """
 pragma solidity ^0.8.0;
 contract SimpleToken {
     mapping(address => uint256) public balances;
@@ -78,33 +76,16 @@ contract SimpleToken {
     }
 }
 """
-                }
-            },
-            "settings": {"outputSelection": {"*": {"*": ["*"]}}},
-        }
 
-        input_file = temp_dir / "input.json"
-        input_file.write_text(json.dumps(input_content))
+        create_standard_json_input("SimpleToken", contract_code)
 
         # Create expected output
-        output_content = json.dumps(
-            {
-                "contracts": {
-                    "SimpleToken.sol": {
-                        "SimpleToken": {"evm": {"bytecode": {"object": "608060405234801561001057600080fd5b50"}}}
-                    }
-                }
-            }
-        )
+        output_content = create_mock_compilation_result("SimpleToken", "608060405234801561001057600080fd5b50")
 
-        output_file = temp_dir / "output.json"
-        output_file.write_text(output_content)
-
-        # Test with subprocess mocking
-        with MockSubprocessContext({"solc": {"returncode": 0, "stdout": output_content, "stderr": ""}}), patch(
-            "builtins.open", create=True
-        ) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = output_content
+        with temp_json_file(output_content, "output.json") as output_file, MockSubprocessContext(
+            {"solc": {"returncode": 0, "stdout": json.dumps(output_content), "stderr": ""}}
+        ), patch("builtins.open", create=True) as mock_open:
+            mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(output_content)
 
             helper = InputHelper(InputHelper.STANDARD_JSON_OUTPUT, source=str(output_file), evm=False)
 
@@ -113,25 +94,27 @@ contract SimpleToken {
 
     def test_bytecode_file_reading_integration(self, temp_dir):
         """Test reading bytecode from real file."""
+        from tests.helpers import temp_bytecode_file
+
         bytecode_content = "608060405234801561001057600080fd5b50"
-        bytecode_file = temp_dir / "contract.bin"
-        bytecode_file.write_text(bytecode_content)
 
-        helper = InputHelper(InputHelper.BYTECODE, source=str(bytecode_file), evm=False)
+        with temp_bytecode_file(bytecode_content) as bytecode_file:
+            helper = InputHelper(InputHelper.BYTECODE, source=str(bytecode_file), evm=False)
 
-        assert helper.source == str(bytecode_file)
-        assert helper.input_type == InputHelper.BYTECODE
+            assert helper.source == str(bytecode_file)
+            assert helper.input_type == InputHelper.BYTECODE
 
     def test_large_bytecode_file_handling(self, temp_dir):
         """Test handling of large bytecode files."""
+        from tests.helpers import temp_bytecode_file
+
         # Create a large bytecode file
         large_bytecode = "60" + "80" * 10000 + "fd"  # Large but valid bytecode
-        bytecode_file = temp_dir / "large_contract.bin"
-        bytecode_file.write_text(large_bytecode)
 
-        helper = InputHelper(InputHelper.BYTECODE, source=str(bytecode_file), evm=False)
+        with temp_bytecode_file(large_bytecode, "large_contract.bin") as bytecode_file:
+            helper = InputHelper(InputHelper.BYTECODE, source=str(bytecode_file), evm=False)
 
-        assert helper.source == str(bytecode_file)
+            assert helper.source == str(bytecode_file)
 
 
 @pytest.mark.integration
@@ -147,6 +130,7 @@ class TestCompilationErrorHandling:
 
     def test_malformed_json_error_handling(self, temp_dir):
         """Test handling of malformed JSON files."""
+
         json_file = temp_dir / "malformed.json"
         json_file.write_text("{invalid json content")
 
