@@ -52,6 +52,7 @@ bytecode*
 !tests/fixtures/bytecode/*
 !tests/integration/fixtures/bytecode
 !tests/integration/fixtures/bytecode/*
+!tests/integration/fixtures/contracts/*.sol
 
 # Keep test contracts
 !oyente/tests/contracts/*/*
