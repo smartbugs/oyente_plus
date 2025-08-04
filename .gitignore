@@ -50,6 +50,8 @@ contract_data/
 bytecode*
 !tests/fixtures/bytecode
 !tests/fixtures/bytecode/*
+!tests/integration/fixtures/bytecode
+!tests/integration/fixtures/bytecode/*
 
 # Keep test contracts
 !oyente/tests/contracts/*/*
