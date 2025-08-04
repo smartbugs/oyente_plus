@@ -27,6 +27,7 @@ An Analysis Tool for Smart Contracts
 - **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management  
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
 - **[Go Ethereum (geth)](https://geth.ethereum.org/downloads/)** - EVM execution engine
+- **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
 
 ### Installation
 
@@ -40,8 +41,7 @@ cd oyente_plus
 # Setup development environment with all dependencies
 make setup
 
-# Activate virtual environment (if using Poetry outside venv)
-poetry shell
+# Virtual environment is automatically activated by the setup script
 ```
 
 #### Option 2: Manual Setup
@@ -60,6 +60,8 @@ poetry install --only main
 ```
 
 #### Option 3: Docker
+
+For users who prefer containerized deployment, ensure you have [Docker installed](https://docs.docker.com/get-docker/).
 
 ```bash
 docker pull smartbugs/oyente_plus
@@ -216,7 +218,7 @@ make all  # Runs format, lint, type-check, test
 1. **Setup Development Environment**:
    ```bash
    make setup
-   poetry shell
+   source venv/bin/activate
    ```
 
 2. **Make Changes**: Follow existing code patterns and conventions
@@ -275,7 +277,7 @@ We welcome contributions! Please:
 git clone https://github.com/smartbugs/oyente_plus.git
 cd oyente_plus
 make setup
-poetry shell
+source venv/bin/activate
 make all  # Verify everything works
 ```
 
