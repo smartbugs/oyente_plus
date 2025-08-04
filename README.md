@@ -31,20 +31,30 @@ An Analysis Tool for Smart Contracts
 
 ### Installation
 
-#### Option 1: Using Make (Recommended)
+#### Option 1: Using Setup Script (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/smartbugs/oyente_plus.git
 cd oyente_plus
 
-# Setup development environment with all dependencies
-make setup
+# Setup development environment with virtual environment and all dependencies
+./setup-venv.sh
 
-# Virtual environment is automatically activated by the setup script
+# Activate the environment
+source venv/bin/activate
 ```
 
-#### Option 2: Manual Setup
+#### Option 2: Using Make (Poetry Required)
+
+```bash
+# If you already have Poetry installed
+make setup
+
+# Virtual environment detection is automatic
+```
+
+#### Option 3: Manual Setup
 
 ```bash
 # Install all dependencies (development, testing, linting)
@@ -59,7 +69,7 @@ poetry install --with lint   # Linting tools only
 poetry install --only main
 ```
 
-#### Option 3: Docker
+#### Option 4: Docker
 
 For users who prefer containerized deployment, ensure you have [Docker installed](https://docs.docker.com/get-docker/).
 
@@ -217,7 +227,7 @@ make all  # Runs format, lint, type-check, test
 
 1. **Setup Development Environment**:
    ```bash
-   make setup
+   ./setup-venv.sh
    source venv/bin/activate
    ```
 
@@ -276,7 +286,7 @@ We welcome contributions! Please:
 ```bash
 git clone https://github.com/smartbugs/oyente_plus.git
 cd oyente_plus
-make setup
+./setup-venv.sh
 source venv/bin/activate
 make all  # Verify everything works
 ```
