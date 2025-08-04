@@ -150,6 +150,14 @@ make test          # Run all tests
 make test-unit     # Unit tests only
 make test-cov      # Tests with coverage
 make all          # Format, lint, type-check, test
+
+# Running single tests
+make test TEST=tests/unit/test_vulnerability.py           # Single test file
+make test TEST=tests/unit/test_vulnerability.py::TestReentrancy  # Single test class
+make test TEST=tests/unit/test_vulnerability.py::TestReentrancy::test_basic_detection  # Single test method
+
+# Running single tests with coverage
+make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with coverage
 ```
 
 **📋 For detailed testing guide**: See `docs/testing.md`
