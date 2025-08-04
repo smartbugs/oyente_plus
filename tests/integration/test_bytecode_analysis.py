@@ -61,7 +61,7 @@ class TestDisassemblyWorkflow:
         assert bytecode_file.exists()
         assert bytecode_file.suffix == ".bin"
 
-    def test_evm_execution_mode(self, integration_fixtures):
+    def test_bytecode_execution_mode(self, integration_fixtures):
         """Test EVM execution mode for bytecode."""
         bytecode_file = integration_fixtures["bytecode"] / "simple_contract.bin"
 

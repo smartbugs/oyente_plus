@@ -275,7 +275,7 @@ def assert_no_vulnerabilities(output: str) -> None:
     assert not found_vulns, f"Unexpected vulnerabilities found: {found_vulns}"
 
 
-def create_test_evm_bytecode(opcodes: List[str], with_metadata: bool = False) -> str:
+def create_test_bytecode(opcodes: List[str], with_metadata: bool = False) -> str:
     """Create test EVM bytecode from opcode list.
 
     Args:
@@ -286,7 +286,7 @@ def create_test_evm_bytecode(opcodes: List[str], with_metadata: bool = False) ->
         Hex-encoded bytecode string
 
     Example:
-        bytecode = create_test_evm_bytecode(["PUSH1", "0x00", "DUP1", "REVERT"])
+        bytecode = create_test_bytecode(["PUSH1", "0x00", "DUP1", "REVERT"])
     """
     # Convert opcodes to their hex representations
     opcode_map = {

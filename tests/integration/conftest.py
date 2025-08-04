@@ -281,11 +281,6 @@ def setup_mock_modules():
     mock_ethereum_data = MagicMock()
     mock_vargenerator = MagicMock()
     mock_vulnerability = MagicMock()
-    mock_test_evm = MagicMock()
-    mock_test_evm.global_test_params = MagicMock()
-    mock_test_evm.global_test_params.EXCEPTION = Exception
-    mock_test_evm.global_test_params.PICKLE_PATH = "/tmp"  # noqa: S108
-    mock_test_evm.global_test_params.UNKNOWN_INSTRUCTION = "UNKNOWN"
 
     # Patch all modules in sys.modules
     modules_to_mock = {
@@ -296,8 +291,6 @@ def setup_mock_modules():
         "ethereum_data": mock_ethereum_data,
         "vargenerator": mock_vargenerator,
         "vulnerability": mock_vulnerability,
-        "test_evm": mock_test_evm,
-        "test_evm.global_test_params": mock_test_evm.global_test_params,
         "six": MagicMock(),  # For Python 2/3 compatibility
     }
 

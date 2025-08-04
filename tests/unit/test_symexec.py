@@ -28,7 +28,6 @@ def mock_oyente_modules():
         "analysis": Mock(),
         "basicblock": Mock(),
         "ethereum_data": Mock(),
-        "test_evm.global_test_params": Mock(),
         "vargenerator": Mock(),
         "vulnerability": Mock(),
         "utils": Mock(),

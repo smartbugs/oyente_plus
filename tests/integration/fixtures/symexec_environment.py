@@ -156,7 +156,6 @@ def patch_symexec_globals():
         func_patches = [
             patch("oyente.symExec.check_unit_test_file"),
             patch("oyente.symExec.check_sat"),
-            patch("oyente.symExec.compare_storage_and_gas_unit_test"),
         ]
 
         for p in func_patches:

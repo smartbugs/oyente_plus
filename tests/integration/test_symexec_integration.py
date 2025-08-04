@@ -313,21 +313,20 @@ class TestSymbolicExecutionWorkflows:
                     block.get_start_address.return_value = pc
                     block.get_instructions.return_value = [f"{pc}: PUSH1 0x01", f"{pc+2}: ADD", f"{pc+3}: STOP"]
 
-                with patch.object(oyente.symExec, "blocks", mock_blocks):  # noqa: SIM117
-                    with patch.object(oyente.symExec, "compare_storage_and_gas_unit_test"):
-                        # Mock other required globals
-                        with patch.object(oyente.symExec, "vertices", {}):
-                            with patch.object(oyente.symExec, "edges", {}):
-                                with patch.object(oyente.symExec, "visited_pcs", set()):
-                                    with patch.object(oyente.symExec, "results", {"evm_code_coverage": ""}):
-                                        with patch.object(oyente.symExec, "g_disasm_file", temp_path):
-                                            # Mock the full_sym_exec function since the deep Z3 integration is complex
-                                            with patch.object(oyente.symExec, "full_sym_exec") as mock_full_exec:
-                                                # Run symbolic execution (mocked)
-                                                oyente.symExec.full_sym_exec()
+                with patch.object(oyente.symExec, "blocks", mock_blocks):
+                    # Mock other required globals
+                    with patch.object(oyente.symExec, "vertices", {}):
+                        with patch.object(oyente.symExec, "edges", {}):
+                            with patch.object(oyente.symExec, "visited_pcs", set()):
+                                with patch.object(oyente.symExec, "results", {"evm_code_coverage": ""}):
+                                    with patch.object(oyente.symExec, "g_disasm_file", temp_path):
+                                        # Mock the full_sym_exec function since the deep Z3 integration is complex
+                                        with patch.object(oyente.symExec, "full_sym_exec") as mock_full_exec:
+                                            # Run symbolic execution (mocked)
+                                            oyente.symExec.full_sym_exec()
 
-                                                # Verify it was called
-                                                mock_full_exec.assert_called_once()
+                                            # Verify it was called
+                                            mock_full_exec.assert_called_once()
 
         finally:
             if os.path.exists(temp_path):
@@ -497,7 +496,7 @@ class TestSymbolicExecutionWorkflows:
                     mock_build.assert_called_once()
                     mock_init.assert_called_once()
 
-    def test_evm_testing_workflow(self, mock_z3_environment, temp_disasm_file):
+    def test_bytecode_testing_workflow(self, mock_z3_environment, temp_disasm_file):
         """Test EVM testing workflow."""
         import oyente.symExec
 
@@ -509,18 +508,17 @@ class TestSymbolicExecutionWorkflows:
         mock_params.UNIT_TEST = True
         mock_params.DISASM_CONTENT = None
 
-        with patch.object(oyente.symExec, "global_params", mock_params):  # noqa: SIM117
+        with patch.object(oyente.symExec, "global_params", mock_params):
             # Mock EVM testing components
-            with patch.object(oyente.symExec, "compare_storage_and_gas_unit_test"):
-                with patch.object(oyente.symExec, "detect_vulnerabilities"):
-                    with patch.object(oyente.symExec, "closing_message"):
-                        with patch.object(oyente.symExec, "initGlobalVars"):
-                            with patch.object(oyente.symExec, "build_cfg_and_analyze"):
-                                # Run in EVM testing mode
-                                oyente.symExec.run(disasm_file=temp_disasm_file)
+            with patch.object(oyente.symExec, "detect_vulnerabilities"):
+                with patch.object(oyente.symExec, "closing_message"):
+                    with patch.object(oyente.symExec, "initGlobalVars"):
+                        with patch.object(oyente.symExec, "build_cfg_and_analyze"):
+                            # Run in EVM testing mode
+                            oyente.symExec.run(disasm_file=temp_disasm_file)
 
-                                # Verify EVM testing components were used
-                                # Note: compare_storage_and_gas_unit_test is called during symbolic execution
+                            # Verify EVM testing components were used
+                            # Note: Symbolic execution mocked to avoid Z3 complexity
 
 
 @pytest.mark.integration
@@ -756,18 +754,17 @@ contract MultiFunction {
             mock_params.UNIT_TEST = True  # Enable unit testing mode
             mock_params.DISASM_CONTENT = None
 
-            with patch.object(oyente.symExec, "global_params", mock_params):  # noqa: SIM117
+            with patch.object(oyente.symExec, "global_params", mock_params):
                 # Mock gas analysis
-                with patch.object(oyente.symExec, "compare_storage_and_gas_unit_test"):
-                    with patch.object(oyente.symExec, "detect_vulnerabilities"):
-                        with patch.object(oyente.symExec, "closing_message"):
-                            with patch.object(oyente.symExec, "initGlobalVars"):
-                                with patch.object(oyente.symExec, "build_cfg_and_analyze"):
-                                    # Run with gas analysis
-                                    oyente.symExec.run(disasm_file=temp_disasm_path)
+                with patch.object(oyente.symExec, "detect_vulnerabilities"):
+                    with patch.object(oyente.symExec, "closing_message"):
+                        with patch.object(oyente.symExec, "initGlobalVars"):
+                            with patch.object(oyente.symExec, "build_cfg_and_analyze"):
+                                # Run with gas analysis
+                                oyente.symExec.run(disasm_file=temp_disasm_path)
 
-                                    # Gas analysis should be called during execution
-                                    # Note: This depends on the execution path through sym_exec
+                                # Gas analysis should be called during execution
+                                # Note: This depends on the execution path through sym_exec
         finally:
             # Cleanup temporary file
             if os.path.exists(temp_disasm_path):
@@ -851,21 +848,20 @@ class TestEdgeCases:
             recursive_blocks[10].get_instructions.return_value = ["10: PUSH1 0x00", "12: JUMP"]
             recursive_blocks[10].get_start_address.return_value = 10
 
-            with patch.object(oyente.symExec, "blocks", recursive_blocks):  # noqa: SIM117
-                with patch.object(oyente.symExec, "compare_storage_and_gas_unit_test"):
-                    # Mock other required globals
-                    with patch.object(oyente.symExec, "vertices", {}):
-                        with patch.object(oyente.symExec, "edges", {}):
-                            with patch.object(oyente.symExec, "visited_pcs", set()):
-                                with patch.object(oyente.symExec, "results", {"evm_code_coverage": ""}):
-                                    with patch.object(oyente.symExec, "g_disasm_file", "test.disasm"):
-                                        # Mock the full_sym_exec function since the deep Z3 integration is complex
-                                        with patch.object(oyente.symExec, "full_sym_exec") as mock_full_exec:
-                                            # Should handle recursion limits (mocked)
-                                            oyente.symExec.full_sym_exec()
+            with patch.object(oyente.symExec, "blocks", recursive_blocks):
+                # Mock other required globals
+                with patch.object(oyente.symExec, "vertices", {}):
+                    with patch.object(oyente.symExec, "edges", {}):
+                        with patch.object(oyente.symExec, "visited_pcs", set()):
+                            with patch.object(oyente.symExec, "results", {"evm_code_coverage": ""}):
+                                with patch.object(oyente.symExec, "g_disasm_file", "test.disasm"):
+                                    # Mock the full_sym_exec function since the deep Z3 integration is complex
+                                    with patch.object(oyente.symExec, "full_sym_exec") as mock_full_exec:
+                                        # Should handle recursion limits (mocked)
+                                        oyente.symExec.full_sym_exec()
 
-                                            # Verify it was called
-                                            mock_full_exec.assert_called_once()
+                                        # Verify it was called
+                                        mock_full_exec.assert_called_once()
 
     def test_memory_intensive_analysis(self, setup_mock_modules):
         """Test memory-intensive analysis scenarios."""

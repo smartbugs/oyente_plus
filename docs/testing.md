@@ -4,10 +4,10 @@ This document explains the testing structure and workflows for Oyente+, covering
 
 ## Current Status
 
-- **Total Tests**: 384+ test functions (341 passing, 1 skipped)
-- **Pass Rate**: 99.7%
+- **Total Tests**: 406+ test functions (342 unit + 64 integration) (405 passing, 1 skipped)
+- **Pass Rate**: 99.8%
 - **Test Files**: 14 comprehensive test files
-- **Test Categories**: Unit (250+), Integration (90+), Property, Performance
+- **Test Categories**: Unit (342), Integration (64), Property, Performance
 - **Coverage**: Measurement currently blocked by technical issue, but all core modules have test coverage
 
 ## Test Organization
@@ -16,8 +16,8 @@ Following industry best practices, our tests are organized into distinct categor
 
 ```
 tests/
-├── unit/           # Fast, isolated tests (10 test files, 250+ tests)
-├── integration/    # Component interaction tests (6 test files)
+├── unit/           # Fast, isolated tests (10 test files, 342 tests)
+├── integration/    # Component interaction tests (6 test files, 64 tests)
 ├── property/       # Hypothesis property-based tests
 ├── performance/    # Benchmark tests (pytest-benchmark)
 ├── fixtures/       # Test data and utilities
@@ -29,7 +29,7 @@ tests/
 ### Unit Tests (`tests/unit/`)
 
 **Purpose**: Test individual functions and classes in isolation
-**Test Count**: 250+ test functions across 10 test files
+**Test Count**: 342 test functions across 10 test files
 **Execution Time**: < 10 seconds total
 **Dependencies**: No external tools, filesystem, or network
 

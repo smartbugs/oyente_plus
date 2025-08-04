@@ -15,7 +15,7 @@ An Analysis Tool for Smart Contracts
 - **Symbolic Execution**: Deep analysis using Z3 constraint solving
 - **Multi-format Support**: Analyze Solidity source code, EVM bytecode, or remote contracts
 - **Modern Python**: Built for Python 3.8+ with comprehensive type hints
-- **Comprehensive Testing**: 384+ test functions with property-based testing
+- **Comprehensive Testing**: 406+ test functions (342 unit + 64 integration) with property-based testing
 - **Code Quality**: Enforced with Black, Ruff, mypy, and pytest
 - **Latest EVM Support**: Compatible with recent opcodes (PUSH0, TLOAD, TSTORE)
 
@@ -130,7 +130,7 @@ make test-cov    # Run tests with coverage
 
 ## 🧪 Testing
 
-**Status**: 384+ test functions across comprehensive test infrastructure (99.7% pass rate)
+**Status**: 406+ test functions (342 unit + 64 integration) across comprehensive test infrastructure (99% pass rate)
 
 ```bash
 # Quick commands
@@ -178,7 +178,7 @@ make all          # Format, lint, type-check, test
 - **PEP 621 compliant packaging** with Poetry integration
 - **Comprehensive pyproject.toml configuration** for all tools
 - **Organized dependency groups** (dev, test, lint)
-- **Comprehensive test infrastructure** (384+ test functions, 99.7% pass rate)
+- **Comprehensive test infrastructure** (406+ test functions, 99% pass rate)
 - **Security-first code quality tooling** (Black, Ruff, mypy)
 - **Complete test coverage** for all core modules: `vulnerability.py`, `analysis.py`, `input_helper.py`, `ast_helper.py`
 - **Initial test coverage** for `symExec.py` (25+ tests) with ongoing expansion
@@ -232,12 +232,14 @@ make all  # Runs format, lint, type-check, test
 
 ## 📈 Benchmarks & Testing
 
-### Legacy EVM Tests
+### Modern Test Infrastructure
 
-JSON-based tests from Ethereum VM test suite:
+Comprehensive testing with pytest:
 
 ```bash
-python oyente/run_tests.py
+make test           # Run all tests (406+ functions)
+make test-unit      # Unit tests only (342 functions)
+make test-integration  # Integration tests only (64 functions)
 ```
 
 ### Performance Testing

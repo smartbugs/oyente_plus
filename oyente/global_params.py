@@ -29,18 +29,11 @@ CHECK_CONCURRENCY_FP: int = 0
 TIMEOUT: int = 100
 """Timeout for Z3 solver operations in milliseconds."""
 
-# Set this flag to 2 if we want to do evm real value unit test
-# Set this flag to 3 if we want to do evm symbolic unit test
-UNIT_TEST: int = 0
-"""Unit test mode (0=disabled, 2=real value test, 3=symbolic test)."""
 
 # timeout to run symbolic execution (in secs)
 GLOBAL_TIMEOUT: int = 50
 """Global timeout for symbolic execution in seconds."""
 
-# timeout to run symbolic execution (in secs) for testing
-GLOBAL_TIMEOUT_TEST: int = 2
-"""Reduced timeout for testing scenarios in seconds."""
 
 # print path conditions
 PRINT_PATHS: int = 0
