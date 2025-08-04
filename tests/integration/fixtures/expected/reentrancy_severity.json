@@ -1,0 +1,20 @@
+{
+  "vulnerabilities": {
+    "reentrancy": [
+      {
+        "type": "reentrancy",
+        "description": "Critical reentrancy vulnerability",
+        "severity": "critical",
+        "function": "criticalVuln"
+      },
+      {
+        "type": "reentrancy", 
+        "description": "Medium reentrancy vulnerability",
+        "severity": "medium",
+        "function": "mediumVuln"
+      }
+    ]
+  },
+  "analysis_time": 1.8,
+  "success": true
+}

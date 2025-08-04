@@ -2,34 +2,40 @@ import json
 import os
 import re
 import subprocess
+from typing import List
+from typing import Tuple
 
 from tqdm import tqdm
 
 
-def get_contract_code(cadd):
+def get_contract_code(cadd: str) -> Tuple[List[str], List[str]]:
     sourcepattern = r"style='max-height: 250px; margin-top: 5px;'>([\s\S]+?)<\/pre>"
     namepattern = r"<td>Contract Name:[\n.]<\/td>[\n.]<td>[.\n]([\s\S]+?)[\n.]<\/td>"
-    command = "wget -S -O - 'https://etherscan.io/address/%s#code'" % cadd
-    DEVNULL = open(os.devnull, "wb")
-    wget = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=DEVNULL)
-    outp = wget.stdout.read()
-    return (re.findall(namepattern, outp), re.findall(sourcepattern, outp))
+    command = f"wget -S -O - 'https://etherscan.io/address/{cadd}#code'"
+    with open(os.devnull, "wb") as devnull:
+        wget = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=devnull)  # noqa: S602
+        if wget.stdout:
+            outp = wget.stdout.read()
+            return (re.findall(namepattern, outp.decode()), re.findall(sourcepattern, outp.decode()))
+        return ([], [])
 
 
-savedcontracts = []
+savedcontracts: List[Tuple[str, str, float]] = []
 
 
-def save_callstack_source(dirname):
+def save_callstack_source(dirname: str) -> None:
     if not dirname.endswith("/"):
         dirname += "/"
     print("Loading callstack file...")
-    cstkfile = json.load(open("callstack_stats.json"))
-    cstbfile = json.load(open("cterror_balances.json"))
+    with open("callstack_stats.json") as f:
+        cstkfile = json.load(f)
+    with open("cterror_balances.json") as f:
+        cstbfile = json.load(f)
     for contract in tqdm(cstkfile):
         name, source = get_contract_code(contract)
         if len(source) <= 0:
             continue
-        source = source[0]
+        source_text = source[0]
         fname = name[0] if len(name) > 0 else contract
         # print("Saved contract %s to %s.sol" % (contract, fname))
         if os.path.isfile(dirname + fname + ".sol"):
@@ -38,12 +44,11 @@ def save_callstack_source(dirname):
                 i += 1
             fname += str(i)
         fname += ".sol"
-        savedcontracts.append((contract, fname, cstbfile[cstkfile.index(contract)] / 1000000000000000000.0))
+        balance = cstbfile[cstkfile.index(contract)] / 1000000000000000000.0
+        savedcontracts.append((contract, fname, balance))
         with open(dirname + fname, "w") as of:
-            of.write(
-                "// " + contract + "\n// " + str(cstbfile[cstkfile.index(contract)] / 1000000000000000000.0) + "\n"
-            )
-            of.write(source)
+            of.write(f"// {contract}\n// {balance}\n")
+            of.write(source_text)
             of.flush()
             of.close()
 

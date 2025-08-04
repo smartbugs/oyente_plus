@@ -3,7 +3,7 @@ import errno
 import json
 import logging
 import math
-import pickle
+import os
 import re
 import signal
 import time
@@ -16,9 +16,6 @@ import six
 from analysis import *
 from basicblock import BasicBlock
 from ethereum_data import *
-from test_evm.global_test_params import EXCEPTION
-from test_evm.global_test_params import PICKLE_PATH
-from test_evm.global_test_params import UNKNOWN_INSTRUCTION
 from vargenerator import *
 from vulnerability import AssertionFailure
 from vulnerability import CallStack
@@ -28,8 +25,47 @@ from vulnerability import MoneyConcurrency
 from vulnerability import ParityMultisigBug2
 from vulnerability import Reentrancy
 from vulnerability import TimeDependency
-from z3 import *
+from z3 import *  # type: ignore
 
+# Global variables
+g_disasm_file = None
+g_src_map = None
+g_source_file = None
+solver = None
+results = {}
+visited_pcs = set()
+vertices = {}
+edges = {}
+blocks = {}
+instructions = {}
+callstack = []
+money_concurrency = []
+time_dependency = []
+reentrancy = []
+assertion_failure = []
+integer_overflow = []
+integer_underflow = []
+parity_multisig_bug_2 = []
+recipients = []
+data_source = []
+jump_type = {}
+MSIZE = False
+g_timeout = None
+revertible_overflow_pcs = []
+start_block_to_func_sig = {}
+calls_affect_state = {}
+end_ins_dict = {}
+visited_edges = set()
+money_flow_all_paths = []
+reentrancy_all_paths = []
+path_conditions = []
+global_problematic_pcs = []
+all_gs = []
+begin = 0
+gen = None
+no_of_test_cases = 0
+total_no_of_paths = 0
+rfile = None
 
 log = logging.getLogger(__name__)
 
@@ -192,16 +228,6 @@ def initGlobalVars():
     global rfile
     if global_params.REPORT_MODE:
         rfile = open(g_disasm_file + ".report", "w")
-
-
-def is_testing_evm():
-    return global_params.UNIT_TEST != 0
-
-
-def compare_storage_and_gas_unit_test(global_state, analysis):
-    unit_test = pickle.load(open(PICKLE_PATH, "rb"))
-    test_status = unit_test.compare_with_symExec_result(global_state, analysis)
-    exit(test_status)
 
 
 def build_cfg_and_analyze():
@@ -714,8 +740,6 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
 
         log.debug("TERMINATING A PATH ...")
         display_analysis(analysis)
-        if is_testing_evm():
-            compare_storage_and_gas_unit_test(global_state, analysis)
 
     elif jump_type[block] == "unconditional":  # executing "JUMP"
         successor = vertices[block].get_jump_target()
@@ -2037,8 +2061,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         global_state["pc"] = global_state["pc"] + 1 + position
         pushed_value = int(instr_parts[1], 16)
         stack.insert(0, pushed_value)
-        if global_params.UNIT_TEST == 3:  # test evm symbolic
-            stack[0] = BitVecVal(stack[0], 256)
     #
     #  80s: Duplication Operations
     #
@@ -2279,9 +2301,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
 
     else:
         log.debug("UNKNOWN INSTRUCTION: " + opcode)
-        if global_params.UNIT_TEST == 2 or global_params.UNIT_TEST == 3:
-            log.critical("Unknown instruction: %s" % opcode)
-            exit(UNKNOWN_INSTRUCTION)
         raise Exception("UNKNOWN INSTRUCTION: " + opcode)
 
 
@@ -2691,16 +2710,6 @@ def get_recipients(disasm_file, contract_address):
     return {"addrs": list(recipients), "evm_code_coverage": evm_code_coverage, "timeout": g_timeout}
 
 
-def test():
-    global_params.GLOBAL_TIMEOUT = global_params.GLOBAL_TIMEOUT_TEST
-
-    def timeout_cb():
-        traceback.print_exc()
-        exit(EXCEPTION)
-
-    run_build_cfg_and_analyze(timeout_cb=timeout_cb)
-
-
 def analyze():
     def timeout_cb():
         if global_params.DEBUG_MODE:
@@ -2719,12 +2728,8 @@ def run(disasm_file=None, source_file=None, source_map=None):
     g_source_file = source_file
     g_src_map = source_map
 
-    if is_testing_evm():
-        test()
-    else:
-        begin = time.time()
-        log.info("\t============ Results ===========")
-        analyze()
-        ret = detect_vulnerabilities()
-        closing_message()
-        return ret
+    log.info("\t============ Results ===========")
+    analyze()
+    ret = detect_vulnerabilities()
+    closing_message()
+    return ret

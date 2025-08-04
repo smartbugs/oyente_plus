@@ -31,27 +31,57 @@ def temp_dir() -> Generator[Path, None, None]:
     shutil.rmtree(temp_path)
 
 
+@pytest.fixture(params=["sat", "unsat", "unknown"])
+def mock_z3_solver_parametrized(request):
+    """Parametrized mock Z3 solver for testing all solver states."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
+    with patch("z3.Solver") as mock_solver_class:
+        mock_instance = MockZ3Solver(result=request.param)
+        mock_solver_class.return_value = mock_instance
+        yield mock_instance
+
+
 @pytest.fixture
 def mock_z3_solver():
-    """Mock Z3 solver for fast unit tests."""
+    """Mock Z3 solver for fast unit tests (defaults to SAT)."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = Mock()
-        mock_instance.check.return_value = "sat"  # Default to satisfiable
-        mock_instance.model.return_value = Mock()
-        mock_instance.push = Mock()
-        mock_instance.pop = Mock()
-        mock_instance.add = Mock()
-        mock_instance.assertions.return_value = []
+        mock_instance = MockZ3Solver(result="sat")
+        mock_solver_class.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
+def mock_z3_sat_solver():
+    """Mock Z3 solver that always returns SAT."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
+    with patch("z3.Solver") as mock_solver_class:
+        mock_instance = MockZ3Solver(result="sat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
 
 
 @pytest.fixture
 def mock_z3_unsat_solver():
-    """Mock Z3 solver that always returns unsat."""
+    """Mock Z3 solver that always returns UNSAT."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = Mock()
-        mock_instance.check.return_value = "unsat"
+        mock_instance = MockZ3Solver(result="unsat")
+        mock_solver_class.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
+def mock_z3_unknown_solver():
+    """Mock Z3 solver that always returns UNKNOWN."""
+    from tests.mocks.mock_z3 import MockZ3Solver
+
+    with patch("z3.Solver") as mock_solver_class:
+        mock_instance = MockZ3Solver(result="unknown")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
 

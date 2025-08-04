@@ -9,51 +9,58 @@ import os
 import re
 import shlex
 import subprocess
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 
 import six
-from z3 import *
+from z3 import BitVec
+from z3 import BitVecVal
+from z3 import Z3Exception
+from z3 import is_expr
+from z3 import substitute
+from z3 import unknown
 from z3.z3util import get_vars
 
 
-def ceil32(x):
+def ceil32(x: int) -> int:
     return x if x % 32 == 0 else x + 32 - (x % 32)
 
 
-def isSymbolic(value):
+def isSymbolic(value: Any) -> bool:  # noqa: N802
     return not isinstance(value, six.integer_types)
 
 
-def isReal(value):
+def isReal(value: Any) -> bool:  # noqa: N802
     return isinstance(value, six.integer_types)
 
 
-def isAllReal(*args):
-    for element in args:
-        if isSymbolic(element):
-            return False
-    return True
+def isAllReal(*args: Any) -> bool:  # noqa: N802
+    return all(not isSymbolic(element) for element in args)
 
 
-def to_symbolic(number):
+def to_symbolic(number: Any) -> Any:
     if isReal(number):
         return BitVecVal(number, 256)
     return number
 
 
-def to_unsigned(number):
+def to_unsigned(number: int) -> int:
     if number < 0:
         return number + 2**256
     return number
 
 
-def to_signed(number):
+def to_signed(number: int) -> int:
     if number > 2 ** (256 - 1):
         return (2 ** (256) - number) * (-1)
     else:
         return number
 
 
-def check_sat(solver, pop_if_exception=True):
+def check_sat(solver: Any, pop_if_exception: bool = True) -> Any:
     try:
         ret = solver.check()
         if ret == unknown:
@@ -65,8 +72,8 @@ def check_sat(solver, pop_if_exception=True):
     return ret
 
 
-def custom_deepcopy(input):
-    output = {}
+def custom_deepcopy(input: Dict[str, Any]) -> Dict[str, Any]:
+    output: Dict[str, Any] = {}
     for key in input:
         if isinstance(input[key], list):
             output[key] = list(input[key])
@@ -77,35 +84,31 @@ def custom_deepcopy(input):
     return output
 
 
-def is_storage_var(var):
-    if not isinstance(var, str):
-        var = var.decl().name()
-    return var.startswith("Ia_store")
+def is_storage_var(var: Any) -> bool:
+    var_name = var.decl().name() if not isinstance(var, str) else var
+    return var_name.startswith("Ia_store")
 
 
 # copy only storage values/ variables from a given global state
 # TODO: add balance in the future
-def copy_global_values(global_state):
+def copy_global_values(global_state: Dict[str, Any]) -> Any:
     return global_state["Ia"]
 
 
 # check if a variable is in an expression
-def is_in_expr(var, expr):
+def is_in_expr(var: str, expr: Any) -> bool:
     list_vars = get_vars(expr)
-    set_vars = set(i.decl().name() for i in list_vars)
+    set_vars = {i.decl().name() for i in list_vars}
     return var in set_vars
 
 
 # check if an expression has any storage variables
-def has_storage_vars(expr, storage_vars):
+def has_storage_vars(expr: Any, storage_vars: List[Any]) -> bool:
     list_vars = get_vars(expr)
-    for var in list_vars:
-        if var in storage_vars:
-            return True
-    return False
+    return any(var in storage_vars for var in list_vars)
 
 
-def get_all_vars(exprs):
+def get_all_vars(exprs: List[Any]) -> List[Any]:
     ret_vars = []
     for expr in exprs:
         if is_expr(expr):
@@ -113,22 +116,21 @@ def get_all_vars(exprs):
     return ret_vars
 
 
-def get_storage_position(var):
-    if not isinstance(var, str):
-        var = var.decl().name()
-    pos = var.split("-")[1]
+def get_storage_position(var: Any) -> Union[int, str]:
+    var_name = var.decl().name() if not isinstance(var, str) else var
+    pos = var_name.split("-")[1]
     try:
         return int(pos)
-    except:
+    except Exception:
         return pos
 
 
 # Rename variables to distinguish variables in two different paths.
 # e.g. Ia_store_0 in path i becomes Ia_store_0_old if Ia_store_0 is modified
 # else we must keep Ia_store_0 if its not modified
-def rename_vars(pcs, global_states):
+def rename_vars(pcs: List[Any], global_states: Dict[Any, Any]) -> Tuple[List[Any], Dict[Any, Any]]:
     ret_pcs = []
-    vars_mapping = {}
+    vars_mapping: Dict[Any, Any] = {}
 
     for expr in pcs:
         if is_expr(expr):
@@ -180,12 +182,12 @@ def rename_vars(pcs, global_states):
 
 
 # split a file into smaller files
-def split_dicts(filename, nsub=500):
+def split_dicts(filename: str, nsub: int = 500) -> None:
     with open(filename) as json_file:
         c = json.load(json_file)
         current_file = {}
         file_index = 1
-        for u, v in c.iteritems():
+        for u, v in c.items():
             current_file[u] = v
             if len(current_file) == nsub:
                 with open(filename.split(".")[0] + "_" + str(file_index) + ".json", "w") as outfile:
@@ -198,26 +200,26 @@ def split_dicts(filename, nsub=500):
                 current_file.clear()
 
 
-def do_split_dicts():
+def do_split_dicts() -> None:
     for i in range(11):
         split_dicts("contract" + str(i) + ".json")
         os.remove("contract" + str(i) + ".json")
 
 
-def run_re_file(re_str, fn):
+def run_re_file(re_str: str, fn: str) -> List[Any]:
     size = os.stat(fn).st_size
-    with open(fn) as tf:
+    with open(fn, "rb") as tf:
         data = mmap.mmap(tf.fileno(), size, access=mmap.ACCESS_READ)
-        return re.findall(re_str, data)
+        return re.findall(re_str.encode(), data)
 
 
-def get_contract_info(contract_addr):
+def get_contract_info(contract_addr: str) -> Tuple[Union[str, List[Any]], Union[str, List[Any]]]:
     six.print_("Getting info for contracts... " + contract_addr)
     file_name1 = "tmp/" + contract_addr + "_txs.html"
     file_name2 = "tmp/" + contract_addr + ".html"
     # get number of txs
-    txs = "unknown"
-    value = "unknown"
+    txs: Union[str, List[Any]] = "unknown"
+    value: Union[str, List[Any]] = "unknown"
     re_txs_value = r"<span>A total of (.+?) transactions found for address</span>"
     re_str_value = r"<td>ETH Balance:\n<\/td>\n<td>\n(.+?)\n<\/td>"
     try:
@@ -225,20 +227,21 @@ def get_contract_info(contract_addr):
         value = run_re_file(re_str_value, file_name2)
     except Exception:
         try:
-            os.system("wget -O %s http://etherscan.io/txs?a=%s" % (file_name1, contract_addr))
+            os.system(f"wget -O {file_name1} http://etherscan.io/txs?a={contract_addr}")  # noqa: S605
             re_txs_value = r"<span>A total of (.+?) transactions found for address</span>"
             txs = run_re_file(re_txs_value, file_name1)
 
             # get balance
             re_str_value = r"<td>ETH Balance:\n<\/td>\n<td>\n(.+?)\n<\/td>"
-            os.system("wget -O %s https://etherscan.io/address/%s" % (file_name2, contract_addr))
+            os.system(f"wget -O {file_name2} https://etherscan.io/address/{contract_addr}")  # noqa: S605
             value = run_re_file(re_str_value, file_name2)
-        except Exception:
+        except Exception:  # noqa: S110
+            # Ignore errors when fetching contract info from external source
             pass
     return txs, value
 
 
-def get_contract_stats(list_of_contracts):
+def get_contract_stats(list_of_contracts: str) -> None:
     with open("concurr.csv", "w") as stats_file:
         fp = csv.writer(stats_file, delimiter=",")
         fp.writerow(["Contract address", "No. of paths", "No. of concurrency pairs", "Balance", "No. of TXs", "Note"])
@@ -249,7 +252,7 @@ def get_contract_stats(list_of_contracts):
                 fp.writerow([contract_addr, contract.split()[1], contract.split()[2], value, txs, contract.split()[3:]])
 
 
-def get_time_dependant_contracts(list_of_contracts):
+def get_time_dependant_contracts(list_of_contracts: str) -> None:
     with open("time.csv", "w") as stats_file:
         fp = csv.writer(stats_file, delimiter=",")
         fp.writerow(["Contract address", "Balance", "No. of TXs", "Note"])
@@ -262,7 +265,7 @@ def get_time_dependant_contracts(list_of_contracts):
                 fp.writerow([contract_addr, value, txs])
 
 
-def get_distinct_contracts(list_of_contracts="concurr.csv"):
+def get_distinct_contracts(list_of_contracts: str = "concurr.csv") -> None:
     flag = []
     with open(list_of_contracts, "rb") as csvfile:
         contracts = csvfile.readlines()[1:]
@@ -272,17 +275,17 @@ def get_distinct_contracts(list_of_contracts="concurr.csv"):
         for i in range(n):
             if flag[i] != i:
                 continue
-            contract_i = contracts[i].split(",")[0]
-            npath_i = int(contracts[i].split(",")[1])
-            npair_i = int(contracts[i].split(",")[2])
+            contract_i = contracts[i].decode().split(",")[0]
+            npath_i = int(contracts[i].decode().split(",")[1])
+            npair_i = int(contracts[i].decode().split(",")[2])
             file_i = "stats/tmp_" + contract_i + ".evm"
             six.print_(" reading file " + file_i)
             for j in range(i + 1, n):
                 if flag[j] != j:
                     continue
-                contract_j = contracts[j].split(",")[0]
-                npath_j = int(contracts[j].split(",")[1])
-                npair_j = int(contracts[j].split(",")[2])
+                contract_j = contracts[j].decode().split(",")[0]
+                npath_j = int(contracts[j].decode().split(",")[1])
+                npair_j = int(contracts[j].decode().split(",")[2])
                 if (npath_i == npath_j) and (npair_i == npair_j):
                     file_j = "stats/tmp_" + contract_j + ".evm"
 
@@ -301,16 +304,16 @@ def get_distinct_contracts(list_of_contracts="concurr.csv"):
     six.print_(flag)
 
 
-def run_command(cmd):
-    FNULL = open(os.devnull, "w")
-    solc_p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=FNULL)
-    return solc_p.communicate()[0].decode("utf-8", "strict")
+def run_command(cmd: str) -> str:
+    with open(os.devnull, "w") as fnull:
+        solc_p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=fnull)  # noqa: S603
+        result = solc_p.communicate()[0]
+        return result.decode("utf-8", "strict")
 
 
-def run_command_with_err(cmd):
-    FNULL = open(os.devnull, "w")
-    solc_p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = solc_p.communicate()
-    out = out.decode("utf-8", "strict")
-    err = err.decode("utf-8", "strict")
+def run_command_with_err(cmd: str) -> Tuple[str, str]:
+    solc_p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # noqa: S603
+    out_bytes, err_bytes = solc_p.communicate()
+    out = out_bytes.decode("utf-8", "strict")
+    err = err_bytes.decode("utf-8", "strict")
     return out, err

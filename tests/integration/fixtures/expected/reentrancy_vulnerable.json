@@ -1,0 +1,15 @@
+{
+  "vulnerabilities": {
+    "reentrancy": [
+      {
+        "line": 8,
+        "column": 8,
+        "severity": "high",
+        "description": "Potential reentrancy vulnerability detected",
+        "recommendation": "Move state changes before external calls"
+      }
+    ]
+  },
+  "analysis_time": 2.45,
+  "contract_name": "ReentrancyVulnerable"
+}

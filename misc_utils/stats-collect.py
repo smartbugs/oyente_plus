@@ -1,15 +1,19 @@
 import json
 import os
 import re
-from subprocess import Popen, PIPE
+from subprocess import PIPE
+from subprocess import Popen
+from typing import Any
+from typing import Dict
+from typing import List
 
 from tqdm import tqdm
 
 
-contracts = {}
-opcodes = {}
-callstack_error_contracts = []
-cterror_balances = []
+contracts: Dict[str, Any] = {}
+opcodes: Dict[str, Any] = {}
+callstack_error_contracts: List[str] = []
+cterror_balances: List[float] = []
 
 with open("../contracts/contract_data/contract_balance.json") as f:
     cbalancefile = json.load(f)
@@ -18,13 +22,14 @@ write_out = False
 
 
 # Disassemble individual contracts - disasm is the disassembly tool from go-ethereum/build/bin
-def get_contract_disasm(inp):
-    process = Popen("disasm", stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    process.stdin.write(inp + "\n")
+def get_contract_disasm(inp: str) -> bytes:
+    process = Popen("disasm", stdin=PIPE, stdout=PIPE, stderr=PIPE)  # noqa: S607
+    if process.stdin:
+        process.stdin.write((inp + "\n").encode())
     return process.communicate()[0]
 
 
-def check_callstack_attack(disasm):
+def check_callstack_attack(disasm: List[List[str]]) -> bool:
     problematic_instructions = ["CALL", "CALLCODE"]
     for i in range(0, len(disasm)):
         instruction = disasm[i]
@@ -36,16 +41,16 @@ def check_callstack_attack(disasm):
                 if disasm[j][1] == "ISZERO":
                     error = False
                     break
-            if error == True:
+            if error:
                 return True
     return False
 
 
-def update_stats_from_disasm(chash, ctx, inpinit, inpmain):
+def update_stats_from_disasm(chash: str, ctx: Any, inpinit: bytes, inpmain: bytes) -> None:
     jump_instructions = ["JUMP", "JUMPI", "CALL", "CALLCODE"]
     pattern = r"([\d]+) +([A-Z]+)([\d]?){1}(?: +(?:=> )?(\d+)?)?"
-    imain = re.findall(pattern, inpmain)
-    iinit = re.findall(pattern, inpinit)
+    imain = re.findall(pattern, inpmain.decode())
+    iinit = re.findall(pattern, inpinit.decode())
     ifull = imain + iinit
 
     # Check for callstack attack
@@ -97,7 +102,7 @@ def update_stats_from_disasm(chash, ctx, inpinit, inpmain):
             copcodes[opcode]["freq"] += 1
 
 
-def load_contract_file(path):
+def load_contract_file(path: str) -> None:
     try:
         with open(path) as f:
             cfile = json.loads(f.read())
@@ -109,15 +114,15 @@ def load_contract_file(path):
             cmaindisasm = get_contract_disasm(cmain[2:])
             cinitdisasm = get_contract_disasm(cinit[2:])
             update_stats_from_disasm(contract, ctx, cinitdisasm, cmaindisasm)
-    except:
+    except Exception:
         return
 
 
-def load_contracts_dir(path):
+def load_contracts_dir(path: str) -> None:
     files = os.listdir(path)
     if path[-1] != "/":
         path += "/"
-    print("Files loaded from path %s" % path)
+    print(f"Files loaded from path {path}")
     for i in tqdm(range(0, len(files))):
         if files[i].endswith(".json"):
             load_contract_file(path + files[i])
@@ -128,7 +133,7 @@ def load_contracts_dir(path):
     save_json(cterror_balances, "cterror_balances.json")
 
 
-def save_json(inp, filename):
+def save_json(inp: Any, filename: str) -> None:
     with open(filename, "w") as outfile:
         json.dump(inp, outfile)
 
