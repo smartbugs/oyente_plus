@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import subprocess
 import sys
 
 from tqdm import tqdm
@@ -15,7 +16,8 @@ cjson = {}
 print("Loading contracts...")
 
 for cfile in tqdm(cfiles):
-    cjson.update(json.loads(open(cfile).read()))
+    with open(cfile) as f:
+        cjson.update(json.loads(f.read()))
 
 results = {}
 missed = []
@@ -25,7 +27,8 @@ print("Running analysis...")
 contracts = cjson.keys()
 
 if os.path.isfile("results.json"):
-    old_res = json.loads(open("results.json").read())
+    with open("results.json") as f:
+        old_res = json.loads(f.read())
     old_res = list(old_res.keys())
     contracts = [c for c in contracts if c not in old_res]
 
@@ -36,15 +39,16 @@ if len(sys.argv) >= 3:
     cores = int(sys.argv[1])
     job = int(sys.argv[2])
     contracts = contracts[(len(contracts) // cores) * job : (len(contracts) // cores) * (job + 1)]
-    print("Job %d: Running on %d contracts..." % (job, len(contracts)))
+    print(f"Job {job}: Running on {len(contracts)} contracts...")
 
 for c in tqdm(contracts):
     with open("tmp.evm", "w") as of:
         of.write(cjson[c][1][2:])
-    os.system("python oyente.py -ll 30 -s tmp.evm -j -b")
+    subprocess.run([sys.executable, "oyente.py", "-ll", "30", "-s", "tmp.evm", "-j", "-b"], check=False)  # noqa: S603
     try:
-        results[c] = json.loads(open("tmp.evm.json").read())
-    except:
+        with open("tmp.evm.json") as f:
+            results[c] = json.loads(f.read())
+    except (FileNotFoundError, json.JSONDecodeError):
         missed.append(c)
     with open("results.json", "w") as of:
         of.write(json.dumps(results, indent=1))

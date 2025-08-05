@@ -11,8 +11,8 @@ class EthereumData:
         self.port = "8545"
         self.web3 = Web3(KeepAliveRPCProvider(host=self.host, port=self.port))
 
-    def getBalance(self, address):
+    def getBalance(self, address):  # noqa: N802
         return self.web3.eth.getBalance(address)
 
-    def getCode(self, address):
+    def getCode(self, address):  # noqa: N802
         return self.web3.eth.getCode(address)

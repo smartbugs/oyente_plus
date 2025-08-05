@@ -10,7 +10,7 @@ import argparse
 import json
 import logging
 import re
-import subprocess
+import shutil
 from typing import Any
 from typing import Dict
 from typing import List
@@ -33,12 +33,8 @@ def cmd_exists(cmd: str) -> bool:
     Returns:
         True if the command exists, False otherwise
     """
-    # Use 'which' command for better security (avoid shell=True)
-    try:
-        result = subprocess.run(["which", cmd], capture_output=True, check=False)
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
+    # Use shutil.which() for better security and portability
+    return shutil.which(cmd) is not None
 
 
 def compare_versions(version1: str, version2: str) -> int:

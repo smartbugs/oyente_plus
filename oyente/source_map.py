@@ -1,5 +1,6 @@
 import ast
 import json
+from typing import ClassVar
 
 import six
 from ast_helper import AstHelper
@@ -22,13 +23,13 @@ class Source:
 
 
 class SourceMap:
-    parent_filename = ""
-    position_groups = {}
-    sources = {}
-    ast_helper = None
-    func_to_sig_by_contract = {}
-    remap = ""
-    allow_paths = ""
+    parent_filename: ClassVar[str] = ""
+    position_groups: ClassVar[dict] = {}
+    sources: ClassVar[dict] = {}
+    ast_helper: ClassVar = None
+    func_to_sig_by_contract: ClassVar[dict] = {}
+    remap: ClassVar[str] = ""
+    allow_paths: ClassVar[str] = ""
 
     def __init__(self, cname, parent_filename, input_type, root_path="", remap="", allow_paths=""):
         self.root_path = root_path
@@ -60,7 +61,7 @@ class SourceMap:
     def get_source_code(self, pc):
         try:
             pos = self.instr_positions[pc]
-        except:
+        except KeyError:
             return ""
         begin = pos["begin"]
         end = pos["end"]
@@ -75,7 +76,7 @@ class SourceMap:
     def get_buggy_line(self, pc):
         try:
             pos = self.instr_positions[pc]
-        except:
+        except KeyError:
             return ""
         location = self.get_location(pc)
         # Guard against 'begin' or 'line' being None.
@@ -106,7 +107,7 @@ class SourceMap:
             names = [node.id for node in ast.walk(ast.parse(var_name)) if isinstance(node, ast.Name)]
             if names[0] in self.var_names:
                 return var_name
-        except:
+        except (IndexError, AttributeError, SyntaxError):
             return None
         return None
 
@@ -120,7 +121,7 @@ class SourceMap:
 
     def _get_sig_to_func(self):
         func_to_sig = SourceMap.func_to_sig_by_contract[self.cname]["hashes"]
-        return dict((sig, func) for func, sig in six.iteritems(func_to_sig))
+        return {sig: func for func, sig in six.iteritems(func_to_sig)}
 
     def _get_func_name_to_params(self):
         func_name_to_params = SourceMap.ast_helper.get_func_name_to_params(self.cname)
@@ -160,13 +161,9 @@ class SourceMap:
     @classmethod
     def _get_sig_to_func_by_contract(cls):
         if cls.allow_paths:
-            cmd = "solc --combined-json hashes %s %s --allow-paths %s" % (
-                cls.remap,
-                cls.parent_filename,
-                cls.allow_paths,
-            )
+            cmd = f"solc --combined-json hashes {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
         else:
-            cmd = "solc --combined-json hashes %s %s" % (cls.remap, cls.parent_filename)
+            cmd = f"solc --combined-json hashes {cls.remap} {cls.parent_filename}"
         out = run_command(cmd)
         out = json.loads(out)
         return out["contracts"]
@@ -181,9 +178,9 @@ class SourceMap:
     @classmethod
     def _load_position_groups(cls):
         if cls.allow_paths:
-            cmd = "solc --combined-json asm %s %s --allow-paths %s" % (cls.remap, cls.parent_filename, cls.allow_paths)
+            cmd = f"solc --combined-json asm {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
         else:
-            cmd = "solc --combined-json asm %s %s" % (cls.remap, cls.parent_filename)
+            cmd = f"solc --combined-json asm {cls.remap} {cls.parent_filename}"
         out = run_command(cmd)
         out = json.loads(out)
         return out["contracts"]
@@ -200,7 +197,7 @@ class SourceMap:
                 positions.append(None)
                 positions += asm[".data"]["0"][".code"]
                 asm = asm[".data"]["0"]
-            except:
+            except (KeyError, TypeError):
                 break
         return positions
 
