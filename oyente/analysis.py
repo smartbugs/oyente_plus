@@ -21,6 +21,7 @@ Example:
     >>> is_vulnerable = check_reentrancy_bug(path_conditions, stack, state)
 """
 
+import contextlib
 import logging
 import math
 from typing import Any
@@ -32,8 +33,13 @@ from typing import Tuple
 import global_params
 from opcodes import GCOST
 from opcodes import get_ins_cost
-from utils import *  # noqa: F403
-from vargenerator import *  # noqa: F403
+from utils import check_sat
+from utils import get_all_vars
+from utils import get_storage_position
+from utils import is_storage_var
+from utils import isReal
+from utils import isSymbolic
+from utils import rename_vars
 from z3 import And
 from z3 import BitVec
 from z3 import Not
@@ -43,6 +49,7 @@ from z3 import is_expr
 from z3 import sat
 from z3 import simplify
 from z3 import unsat
+from z3.z3util import get_vars
 
 
 log = logging.getLogger(__name__)
@@ -56,7 +63,12 @@ def set_cur_file(c_file: str) -> None:
 
     Args:
         c_file: Path to the contract file being analyzed
+
+    Raises:
+        ValueError: If c_file is empty or None
     """
+    if not c_file:
+        raise ValueError("Contract file path cannot be empty")
     global cur_file
     cur_file = c_file
 
@@ -117,10 +129,20 @@ def check_reentrancy_bug(
     Returns:
         True if reentrancy vulnerability detected, False otherwise
 
+    Raises:
+        ValueError: If required parameters are missing or invalid
+
     Note:
         Uses Z3 constraint solving to determine if vulnerable execution paths exist.
         Timeout is configured via global_params.TIMEOUT.
     """
+    if not path_conditions_and_vars or "path_condition" not in path_conditions_and_vars:
+        raise ValueError("path_conditions_and_vars must contain 'path_condition'")
+    if not stack or len(stack) < 3:
+        raise ValueError("Stack must contain at least 3 elements for CALL analysis")
+    if not global_state:
+        raise ValueError("global_state cannot be None")
+
     path_condition = path_conditions_and_vars["path_condition"]
     new_path_condition = []
     for expr in path_condition:
@@ -131,12 +153,12 @@ def check_reentrancy_bug(
             # check if a var is global
             if is_storage_var(var):
                 pos = get_storage_position(var)
-                if pos in global_state["Ia"]:
+                if "Ia" in global_state and pos in global_state["Ia"]:
                     new_path_condition.append(var == global_state["Ia"][pos])
     transfer_amount = stack[2]
     if isSymbolic(transfer_amount) and is_storage_var(transfer_amount):
         pos = get_storage_position(transfer_amount)
-        if pos in global_state["Ia"]:
+        if "Ia" in global_state and pos in global_state["Ia"]:
             new_path_condition.append(global_state["Ia"][pos] != 0)
     if global_params.DEBUG_MODE:
         log.info("=>>>>>> New PC: " + str(new_path_condition))
@@ -159,8 +181,8 @@ def check_reentrancy_bug(
 
 def calculate_gas(
     opcode: str,
-    stack: List[Any],
-    mem: Dict[Any, Any],
+    stack: Optional[List[Any]],
+    mem: Optional[Dict[Any, Any]],
     global_state: Dict[str, Any],
     analysis: Dict[str, Any],
     solver: Any,
@@ -183,12 +205,24 @@ def calculate_gas(
         - gas_increment: Additional gas cost for this operation
         - new_gas_memory: Updated memory gas cost
 
+    Raises:
+        ValueError: If required parameters are invalid
+
     Note:
         For symbolic values, only base costs are added for simplicity.
         Complex opcodes like SSTORE have state-dependent costs.
     """
+    if not opcode:
+        raise ValueError("Opcode cannot be empty")
+    if stack is None:
+        stack = []
+    if mem is None:
+        mem = {}
+    if not analysis or "gas_mem" not in analysis:
+        raise ValueError("Analysis must contain 'gas_mem' field")
+
     gas_increment = get_ins_cost(opcode)  # base cost
-    gas_memory = analysis["gas_mem"]
+    gas_memory = analysis.get("gas_mem", 0)
     # In some opcodes, gas cost is not only depend on opcode itself but also current state of evm
     # For symbolic variables, we only add base cost part for simplicity
     if opcode in ("LOG0", "LOG1", "LOG2", "LOG3", "LOG4") and len(stack) > 1:
@@ -206,26 +240,27 @@ def calculate_gas(
     elif opcode == "SSTORE" and len(stack) > 1:
         if isReal(stack[1]):
             try:
-                try:
-                    storage_value = global_state["Ia"][int(stack[0])]
-                except (KeyError, TypeError):
-                    storage_value = global_state["Ia"][str(stack[0])]
-                # when we change storage value from zero to non-zero
+                # Try to get storage value with different key formats
+                storage_key = int(stack[0]) if isReal(stack[0]) else str(stack[0])
+                storage_value = global_state.get("Ia", {}).get(storage_key, 0)
+
+                # Calculate gas based on storage state change
                 if storage_value == 0 and stack[1] != 0:
+                    gas_increment += GCOST["Gsset"]  # Zero to non-zero
+                else:
+                    gas_increment += GCOST["Gsreset"]  # Non-zero to any
+            except (KeyError, TypeError, ValueError):
+                # Default to Gsset for new storage slots
+                if stack[1] != 0:
                     gas_increment += GCOST["Gsset"]
                 else:
                     gas_increment += GCOST["Gsreset"]
-            except (KeyError, TypeError):  # when storage address at considered key is empty
-                if stack[1] != 0:
-                    gas_increment += GCOST["Gsset"]
-                elif stack[1] == 0:
-                    gas_increment += GCOST["Gsreset"]
         else:
+            # Symbolic value handling
             try:
-                try:
-                    storage_value = global_state["Ia"][int(stack[0])]
-                except (KeyError, TypeError):
-                    storage_value = global_state["Ia"][str(stack[0])]
+                storage_key = int(stack[0]) if isReal(stack[0]) else str(stack[0])
+                storage_value = global_state.get("Ia", {}).get(storage_key, 0)
+
                 solver.push()
                 solver.add(Not(And(storage_value == 0, stack[1] != 0)))
                 if solver.check() == unsat:
@@ -234,15 +269,22 @@ def calculate_gas(
                     gas_increment += GCOST["Gsreset"]
                 solver.pop()
             except Exception as e:
-                if str(e) == "canceled":
+                # Handle solver exceptions gracefully
+                if str(e) == "canceled" and solver:
+                    with contextlib.suppress(Exception):
+                        solver.pop()
+                # Default case for symbolic values
+                try:
+                    solver.push()
+                    solver.add(Not(stack[1] != 0))
+                    if solver.check() == unsat:
+                        gas_increment += GCOST["Gsset"]
+                    else:
+                        gas_increment += GCOST["Gsreset"]
                     solver.pop()
-                solver.push()
-                solver.add(Not(stack[1] != 0))
-                if solver.check() == unsat:
-                    gas_increment += GCOST["Gsset"]
-                else:
+                except Exception:
+                    # Fallback to reset cost if solver fails
                     gas_increment += GCOST["Gsreset"]
-                solver.pop()
     elif opcode == "SUICIDE" and len(stack) > 1:
         if isReal(stack[1]):
             address = stack[1] % 2**160
@@ -306,9 +348,19 @@ def update_analysis(
         - Tracks money flow for CALL and SUICIDE opcodes
         - Detects and records reentrancy vulnerabilities
         - Records potential concurrency issues
+
+    Raises:
+        ValueError: If required parameters are invalid
     """
+    if not analysis:
+        raise ValueError("Analysis dictionary cannot be None")
+    if not opcode:
+        raise ValueError("Opcode cannot be empty")
+    if not global_state:
+        raise ValueError("global_state cannot be None")
+
     gas_increment, gas_memory = calculate_gas(opcode, stack, mem, global_state, analysis, solver)
-    analysis["gas"] += gas_increment
+    analysis["gas"] = analysis.get("gas", 0) + gas_increment
     analysis["gas_mem"] = gas_memory
 
     if opcode == "CALL":
@@ -322,17 +374,17 @@ def update_analysis(
         reentrancy_result = check_reentrancy_bug(path_conditions_and_vars, stack, global_state)
         analysis["reentrancy_bug"].append(reentrancy_result)
 
-        analysis["money_concurrency_bug"].append(global_state["pc"])
+        analysis["money_concurrency_bug"].append(global_state.get("pc", 0))
         analysis["money_flow"].append(("Ia", str(recipient), str(transfer_amount)))
     elif opcode == "SUICIDE":
         recipient = stack[0]
         if isSymbolic(recipient):
             recipient = simplify(recipient)
-        analysis["money_concurrency_bug"].append(global_state["pc"])
+        analysis["money_concurrency_bug"].append(global_state.get("pc", 0))
         analysis["money_flow"].append(("Ia", str(recipient), "all_remaining"))
 
 
-def is_feasible(prev_pc: List[Any], gstate: Dict[Any, Any], curr_pc: List[Any]) -> bool:
+def is_feasible(prev_pc: List[Any], gstate: Optional[Dict[Any, Any]], curr_pc: List[Any]) -> bool:
     """Check if execution path is feasible after a previous path.
 
     Determines whether it's possible to execute a current path after
@@ -346,23 +398,43 @@ def is_feasible(prev_pc: List[Any], gstate: Dict[Any, Any], curr_pc: List[Any]) 
     Returns:
         True if current path is feasible after previous path, False otherwise
 
+    Raises:
+        ValueError: If input parameters are invalid
+
     Note:
         Uses Z3 constraint solving to check satisfiability of combined conditions.
         Timeout is configured via global_params.TIMEOUT.
     """
+    if prev_pc is None or curr_pc is None:
+        raise ValueError("Path conditions cannot be None")
+    if gstate is None:
+        gstate = {}
+
+    # Create a copy to avoid modifying the original
     curr_pc = list(curr_pc)
     new_pc = []
+
+    # Add storage constraints from global state
     for var in get_all_vars(curr_pc):
         if is_storage_var(var):
             pos = get_storage_position(var)
             if pos in gstate:
                 new_pc.append(var == gstate[pos])
-    curr_pc += new_pc
-    curr_pc += prev_pc
+
+    # Combine all constraints
+    combined_pc = curr_pc + new_pc + prev_pc
+
+    # Check feasibility
     solver = Solver()
     solver.set("timeout", global_params.TIMEOUT)
-    solver.add(curr_pc)
-    result: bool = solver.check() != unsat
+    solver.add(combined_pc)
+
+    try:
+        result: bool = solver.check() != unsat
+    except Exception as e:
+        log.warning(f"Solver check failed in is_feasible: {e}")
+        result = False
+
     return result
 
 

@@ -60,7 +60,9 @@ with patch.dict(
             Or=mock_z3.Or,
             is_expr=mock_z3.is_expr,
             simplify=mock_z3.simplify,
+            z3util=Mock(get_vars=Mock(return_value=[])),
         ),
+        "z3.z3util": Mock(get_vars=Mock(return_value=[])),
     },
 ):
     import oyente.analysis
