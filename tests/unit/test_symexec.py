@@ -104,23 +104,23 @@ class TestParameter:
 
     def test_parameter_copy(self, mock_oyente_modules):
         """Test Parameter copy method."""
+        from unittest.mock import patch
+
         from oyente.symExec import Parameter
 
-        # Configure the mock custom_deepcopy from the fixture (comes via analysis module)
-        mock_custom_deepcopy = mock_oyente_modules["analysis"].custom_deepcopy
+        # Mock custom_deepcopy from symExec module (not analysis module)
         original_dict = {"stack": [1, 2], "mem": {"test": "data"}}
-        mock_custom_deepcopy.return_value = original_dict
+        with patch("oyente.symExec.custom_deepcopy", return_value=original_dict) as mock_custom_deepcopy:
+            param = Parameter(stack=[1, 2], mem={"test": "data"})
+            param_copy = param.copy()
 
-        param = Parameter(stack=[1, 2], mem={"test": "data"})
-        param_copy = param.copy()
+            # Verify deepcopy was called with the parameter's __dict__
+            mock_custom_deepcopy.assert_called_once_with(param.__dict__)
 
-        # Verify deepcopy was called with the parameter's __dict__
-        mock_custom_deepcopy.assert_called_once_with(param.__dict__)
-
-        # Verify new Parameter was created with copied data
-        assert isinstance(param_copy, Parameter)
-        assert param_copy.stack == [1, 2]
-        assert param_copy.mem == {"test": "data"}
+            # Verify new Parameter was created with copied data
+            assert isinstance(param_copy, Parameter)
+            assert param_copy.stack == [1, 2]
+            assert param_copy.mem == {"test": "data"}
 
 
 class TestGlobalVariableManagement:

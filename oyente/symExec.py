@@ -1,5 +1,6 @@
-# ruff: noqa: F405
+# ruff: noqa: F405, N999
 import base64
+import copy
 import errno
 import json
 import logging
@@ -11,12 +12,19 @@ import time
 import traceback
 import zlib
 from collections import namedtuple
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
 
 import global_params
 import six
 from analysis import *  # noqa: F403  # TODO: Replace star imports with explicit imports
 from basicblock import BasicBlock
 from ethereum_data import *  # noqa: F403  # TODO: Replace star imports with explicit imports
+from utils import check_sat
 from vargenerator import *  # noqa: F403  # TODO: Replace star imports with explicit imports
 from vulnerability import AssertionFailure
 from vulnerability import CallStack
@@ -26,53 +34,75 @@ from vulnerability import MoneyConcurrency
 from vulnerability import ParityMultisigBug2
 from vulnerability import Reentrancy
 from vulnerability import TimeDependency
-from z3 import *  # type: ignore # noqa: F403  # TODO: Replace star imports with explicit imports
+from z3 import UGT
+from z3 import ULT
+from z3 import And
+
+# Z3 explicit imports to replace star import
+from z3 import BitVec
+from z3 import BitVecVal
+from z3 import Extract
+from z3 import If
+from z3 import LShR
+from z3 import Not
+from z3 import Or
+from z3 import OrElse
+from z3 import ParThen
+from z3 import Solver
+from z3 import Then
+from z3 import UDiv
+from z3 import URem
+from z3 import ZeroExt
+from z3 import is_expr
+from z3 import sat
+from z3 import simplify
+from z3 import unsat
 
 
-# Global variables
-g_disasm_file = None
-g_src_map = None
-g_source_file = None
-solver = None
-results = {}
-visited_pcs = set()
-vertices = {}
-edges = {}
-blocks = {}
-instructions = {}
-callstack = []
-money_concurrency = []
-time_dependency = []
-reentrancy = []
-assertion_failure = []
-integer_overflow = []
-integer_underflow = []
-parity_multisig_bug_2 = []
-recipients = []
-data_source = []
-jump_type = {}
-MSIZE = False
-g_timeout = None
-revertible_overflow_pcs = []
-start_block_to_func_sig = {}
-calls_affect_state = {}
-end_ins_dict = {}
-visited_edges = set()
-money_flow_all_paths = []
-reentrancy_all_paths = []
-path_conditions = []
-global_problematic_pcs = []
-all_gs = []
-begin = 0
-gen = None
-no_of_test_cases = 0
-total_no_of_paths = 0
-rfile = None
+# Global variables with type annotations
+g_disasm_file: Optional[str] = None
+g_src_map: Optional[Any] = None  # SourceMap type from ast_helper
+g_source_file: Optional[str] = None
+solver: Optional[Any] = None  # Z3 Solver type
+results: Dict[str, Any] = {}
+visited_pcs: Set[int] = set()
+vertices: Dict[int, BasicBlock] = {}
+edges: Dict[int, List[int]] = {}
+blocks: Dict[int, BasicBlock] = {}
+instructions: Dict[int, str] = {}
+callstack: List[Any] = []
+money_concurrency: List[Any] = []
+time_dependency: List[Any] = []
+reentrancy: List[Any] = []
+assertion_failure: List[Any] = []
+integer_overflow: List[Any] = []
+integer_underflow: List[Any] = []
+parity_multisig_bug_2: List[Any] = []
+recipients: List[str] = []
+data_source: List[Any] = []
+jump_type: Dict[int, str] = {}
+MSIZE: bool = False
+g_timeout: Optional[bool] = None
+revertible_overflow_pcs: Set[int] = set()
+start_block_to_func_sig: Dict[int, str] = {}
+calls_affect_state: Dict[str, bool] = {}
+end_ins_dict: Dict[int, int] = {}
+visited_edges: Set[Any] = set()  # Could be tuples or other edge representations
+money_flow_all_paths: List[List[Any]] = []
+reentrancy_all_paths: List[List[Any]] = []
+path_conditions: List[Any] = []
+global_problematic_pcs: Dict[str, List[Any]] = {}
+all_gs: List[Dict[str, Any]] = []
+begin: int = 0
+gen: Optional[Any] = None  # Generator type from vargenerator
+no_of_test_cases: int = 0
+total_no_of_paths: int = 0
+rfile: Optional[Any] = None  # File handle
 
 log = logging.getLogger(__name__)
 
-UNSIGNED_BOUND_NUMBER = 2**256 - 1
-CONSTANT_ONES_159 = BitVecVal((1 << 160) - 1, 256)
+UNSIGNED_BOUND_NUMBER: int = 2**256 - 1
+CONSTANT_ONES_159: Any = BitVecVal((1 << 160) - 1, 256)  # Z3 BitVecVal type
 
 Assertion = namedtuple("Assertion", ["pc", "model"])
 Underflow = namedtuple("Underflow", ["pc", "model"])
@@ -80,8 +110,8 @@ Overflow = namedtuple("Overflow", ["pc", "model"])
 
 
 class Parameter:
-    def __init__(self, **kwargs):
-        attr_defaults = {
+    def __init__(self, **kwargs: Any) -> None:
+        attr_defaults: Dict[str, Any] = {
             "stack": [],
             "calls": [],
             "memory": [],
@@ -96,12 +126,17 @@ class Parameter:
         for attr, default in six.iteritems(attr_defaults):
             setattr(self, attr, kwargs.get(attr, default))
 
-    def copy(self):
+    def copy(self) -> "Parameter":
         _kwargs = custom_deepcopy(self.__dict__)
         return Parameter(**_kwargs)
 
 
-def init_global_vars():
+def custom_deepcopy(obj: Any) -> Any:
+    """Custom deepcopy function to handle complex object copying."""
+    return copy.deepcopy(obj)
+
+
+def init_global_vars() -> None:
     global g_src_map
     global solver
     # Z3 solver
@@ -229,10 +264,10 @@ def init_global_vars():
 
     global rfile
     if global_params.REPORT_MODE:
-        rfile = open(g_disasm_file + ".report", "w")
+        rfile = open(g_disasm_file + ".report", "w")  # noqa: SIM115
 
 
-def build_cfg_and_analyze():
+def build_cfg_and_analyze() -> None:
     with open(g_disasm_file) as disasm_file:
         lines = disasm_file.read().splitlines()
     collect_vertices(lines)
@@ -241,7 +276,7 @@ def build_cfg_and_analyze():
     full_sym_exec()  # jump targets are constructed on the fly
 
 
-def print_cfg():
+def print_cfg() -> None:
     for block in vertices.values():
         block.display()
     log.debug(str(edges))
@@ -336,7 +371,7 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
 # 1. Parse the disassembled file
 # 2. Then identify each basic block (i.e. one-in, one-out)
 # 3. Store them in vertices
-def collect_vertices(lines):
+def collect_vertices(lines: List[str]) -> None:
     global g_src_map
     if g_src_map:
         idx = 0
@@ -431,7 +466,7 @@ def collect_vertices(lines):
             logging.debug("Setting jump type for block %05x to falls_to", key)
 
 
-def construct_bb():
+def construct_bb() -> None:
     global vertices
     global edges
     sorted_addresses = sorted(instructions.keys())
@@ -471,7 +506,7 @@ def add_falls_to():
             vertices[key].set_falls_to(target)
 
 
-def get_init_global_state(path_conditions_and_vars):
+def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str, Any]:
     global_state = {"balance": {}, "pc": 0, "It": {}}
     init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = current_coinbase = (
         current_number
@@ -2530,7 +2565,7 @@ def detect_vulnerabilities():
     return results, vulnerability_found()
 
 
-def log_info():
+def log_info() -> None:
     global g_src_map
     global time_dependency
     global callstack
@@ -2551,7 +2586,7 @@ def log_info():
             log.info(s)
 
 
-def vulnerability_found():
+def vulnerability_found() -> int:
     global g_src_map
     global time_dependency
     global callstack
@@ -2571,7 +2606,7 @@ def vulnerability_found():
     return 0
 
 
-def closing_message():
+def closing_message() -> None:
     global g_disasm_file
     global results
 
@@ -2590,26 +2625,27 @@ class TimeoutError(Exception):
 class Timeout:
     """Timeout class using ALARM signal."""
 
-    def __init__(self, sec=10, error_message=os.strerror(errno.ETIME)):
+    def __init__(self, sec: int = 10, error_message: str = os.strerror(errno.ETIME)) -> None:
         self.sec = sec
         self.error_message = error_message
 
-    def __enter__(self):
+    def __enter__(self) -> "Timeout":
         signal.signal(signal.SIGALRM, self._handle_timeout)
         signal.alarm(self.sec)
+        return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         signal.alarm(0)  # disable alarm
 
-    def _handle_timeout(self, signum, frame):
+    def _handle_timeout(self, signum: int, frame: Any) -> None:
         raise TimeoutError(self.error_message)
 
 
-def do_nothing():
+def do_nothing() -> None:
     pass
 
 
-def run_build_cfg_and_analyze(timeout_cb=do_nothing):
+def run_build_cfg_and_analyze(timeout_cb: Callable[[], None] = do_nothing) -> None:
     init_global_vars()
     global g_timeout
 
@@ -2622,7 +2658,7 @@ def run_build_cfg_and_analyze(timeout_cb=do_nothing):
         timeout_cb()
 
 
-def get_recipients(disasm_file, contract_address):
+def get_recipients(disasm_file: str, contract_address: str) -> Dict[str, Any]:
     global recipients
     global data_source
     global g_src_map
@@ -2642,15 +2678,17 @@ def get_recipients(disasm_file, contract_address):
     return {"addrs": list(recipients), "evm_code_coverage": evm_code_coverage, "timeout": g_timeout}
 
 
-def analyze():
-    def timeout_cb():
+def analyze() -> None:
+    def timeout_cb() -> None:
         if global_params.DEBUG_MODE:
             traceback.print_exc()
 
     run_build_cfg_and_analyze(timeout_cb=timeout_cb)
 
 
-def run(disasm_file=None, source_file=None, source_map=None):
+def run(
+    disasm_file: Optional[str] = None, source_file: Optional[str] = None, source_map: Optional[str] = None
+) -> Dict[str, Any]:
     global g_disasm_file
     global g_source_file
     global g_src_map
