@@ -82,7 +82,7 @@ class TestSymbolicExecutionWorkflows:
 
         # Mock vulnerability detectors and helper functions
         with patch.object(symExec, "detect_vulnerabilities"), patch.object(symExec, "closing_message"), patch.object(
-            symExec, "initGlobalVars"
+            symExec, "init_global_vars"
         ), patch.object(symExec, "build_cfg_and_analyze"):
             # Run the analysis
             symExec.run(disasm_file=temp_disasm_file)
@@ -101,7 +101,7 @@ class TestSymbolicExecutionWorkflows:
             with patch.object(oyente.symExec, "g_disasm_file", temp_complex_disasm_file):
                 with patch.object(oyente.symExec, "g_src_map", None):
                     # Mock the initialization
-                    with patch.object(oyente.symExec, "initGlobalVars"):
+                    with patch.object(oyente.symExec, "init_global_vars"):
                         # Mock analysis components
                         mock_funcs = setup_mock_analysis_functions()
 
@@ -270,7 +270,7 @@ class TestSymbolicExecutionWorkflows:
             with patch.object(oyente.symExec, "get_start_block_to_func_sig") as mock_func_sig:
                 with patch.object(oyente.symExec, "detect_vulnerabilities"):
                     with patch.object(oyente.symExec, "closing_message"):
-                        with patch.object(oyente.symExec, "initGlobalVars"):
+                        with patch.object(oyente.symExec, "init_global_vars"):
                             with patch.object(oyente.symExec, "build_cfg_and_analyze"):
                                 mock_func_sig.return_value = {}
 
@@ -435,7 +435,7 @@ class TestSymbolicExecutionWorkflows:
                 with patch.object(oyente.symExec, "full_sym_exec"):
                     with patch.object(oyente.symExec, "detect_vulnerabilities"):
                         with patch.object(oyente.symExec, "closing_message"):
-                            with patch.object(oyente.symExec, "initGlobalVars"):
+                            with patch.object(oyente.symExec, "init_global_vars"):
                                 with patch.object(oyente.symExec, "build_cfg_and_analyze") as mock_build:
                                     start_time = time.time()
 
@@ -470,7 +470,7 @@ class TestSymbolicExecutionWorkflows:
 
                 with patch.object(oyente.symExec, "detect_vulnerabilities"):  # noqa: SIM117
                     with patch.object(oyente.symExec, "closing_message"):
-                        with patch.object(oyente.symExec, "initGlobalVars"):
+                        with patch.object(oyente.symExec, "init_global_vars"):
                             # Should handle exception gracefully
                             with pytest.raises(Exception, match="Symbolic execution failed"):
                                 oyente.symExec.run(disasm_file=temp_disasm_file)
@@ -486,7 +486,7 @@ class TestSymbolicExecutionWorkflows:
 
         # Mock the main analysis to simulate long running
         with patch.object(oyente.symExec, "build_cfg_and_analyze") as mock_build:  # noqa: SIM117
-            with patch.object(oyente.symExec, "initGlobalVars") as mock_init:
+            with patch.object(oyente.symExec, "init_global_vars") as mock_init:
                 with patch("signal.signal") as mock_signal:
                     # Run with timeout callback
                     oyente.symExec.run_build_cfg_and_analyze(timeout_callback)
@@ -512,7 +512,7 @@ class TestSymbolicExecutionWorkflows:
             # Mock EVM testing components
             with patch.object(oyente.symExec, "detect_vulnerabilities"):
                 with patch.object(oyente.symExec, "closing_message"):
-                    with patch.object(oyente.symExec, "initGlobalVars"):
+                    with patch.object(oyente.symExec, "init_global_vars"):
                         with patch.object(oyente.symExec, "build_cfg_and_analyze"):
                             # Run in EVM testing mode
                             oyente.symExec.run(disasm_file=temp_disasm_file)
@@ -690,7 +690,7 @@ class TestComplexScenarios:
 
                     with patch.object(oyente.symExec, "detect_vulnerabilities"):  # noqa: SIM117
                         with patch.object(oyente.symExec, "closing_message"):
-                            with patch.object(oyente.symExec, "initGlobalVars"):
+                            with patch.object(oyente.symExec, "init_global_vars"):
                                 with patch.object(oyente.symExec, "build_cfg_and_analyze"):
                                     # Run analysis on DeFi contract
                                     oyente.symExec.run(disasm_file=temp_path)
@@ -758,7 +758,7 @@ contract MultiFunction {
                 # Mock gas analysis
                 with patch.object(oyente.symExec, "detect_vulnerabilities"):
                     with patch.object(oyente.symExec, "closing_message"):
-                        with patch.object(oyente.symExec, "initGlobalVars"):
+                        with patch.object(oyente.symExec, "init_global_vars"):
                             with patch.object(oyente.symExec, "build_cfg_and_analyze"):
                                 # Run with gas analysis
                                 oyente.symExec.run(disasm_file=temp_disasm_path)
@@ -796,7 +796,7 @@ class TestEdgeCases:
             with patch.object(oyente.symExec, "global_params", mock_params):  # noqa: SIM117
                 with patch.object(oyente.symExec, "detect_vulnerabilities"):
                     with patch.object(oyente.symExec, "closing_message"):
-                        with patch.object(oyente.symExec, "initGlobalVars"):
+                        with patch.object(oyente.symExec, "init_global_vars"):
                             with patch.object(oyente.symExec, "build_cfg_and_analyze"):
                                 # Should handle empty contract gracefully
                                 oyente.symExec.run(disasm_file=temp_path)
@@ -901,7 +901,7 @@ class TestEdgeCases:
                 with patch.object(oyente.symExec, "full_sym_exec"):
                     with patch.object(oyente.symExec, "detect_vulnerabilities"):
                         with patch.object(oyente.symExec, "closing_message"):
-                            with patch.object(oyente.symExec, "initGlobalVars"):
+                            with patch.object(oyente.symExec, "init_global_vars"):
                                 with patch.object(oyente.symExec, "build_cfg_and_analyze"):
                                     # Should handle memory-intensive operations
                                     oyente.symExec.run(disasm_file=temp_path)

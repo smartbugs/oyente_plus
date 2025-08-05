@@ -127,7 +127,7 @@ class TestGlobalVariableManagement:
     """Test global variable initialization and management."""
 
     def test_init_global_vars_basic_solver(self, mock_oyente_modules):
-        """Test basic global parameter access from initGlobalVars."""
+        """Test basic global parameter access from init_global_vars."""
         # This is a simplified test focusing on what can be unit tested
         # Complex global state initialization is better tested in integration tests
 
@@ -502,7 +502,7 @@ class TestMainAnalysisFunctions:
         # Test the logic that can be isolated from global state dependencies
 
         # Test that analyze function would orchestrate the expected components
-        expected_workflow = ["initGlobalVars", "run_build_cfg_and_analyze"]
+        expected_workflow = ["init_global_vars", "run_build_cfg_and_analyze"]
 
         # Verify workflow steps are defined
         for step in expected_workflow:
