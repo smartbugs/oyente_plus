@@ -313,7 +313,7 @@ class TestSymbolicExecutionWorkflows:
                     block.get_start_address.return_value = pc
                     block.get_instructions.return_value = [f"{pc}: PUSH1 0x01", f"{pc+2}: ADD", f"{pc+3}: STOP"]
 
-                with patch.object(oyente.symExec, "blocks", mock_blocks):
+                with patch.object(oyente.symExec, "blocks", mock_blocks):  # noqa: SIM117
                     # Mock other required globals
                     with patch.object(oyente.symExec, "vertices", {}):
                         with patch.object(oyente.symExec, "edges", {}):
@@ -508,7 +508,7 @@ class TestSymbolicExecutionWorkflows:
         mock_params.UNIT_TEST = True
         mock_params.DISASM_CONTENT = None
 
-        with patch.object(oyente.symExec, "global_params", mock_params):
+        with patch.object(oyente.symExec, "global_params", mock_params):  # noqa: SIM117
             # Mock EVM testing components
             with patch.object(oyente.symExec, "detect_vulnerabilities"):
                 with patch.object(oyente.symExec, "closing_message"):
@@ -754,7 +754,7 @@ contract MultiFunction {
             mock_params.UNIT_TEST = True  # Enable unit testing mode
             mock_params.DISASM_CONTENT = None
 
-            with patch.object(oyente.symExec, "global_params", mock_params):
+            with patch.object(oyente.symExec, "global_params", mock_params):  # noqa: SIM117
                 # Mock gas analysis
                 with patch.object(oyente.symExec, "detect_vulnerabilities"):
                     with patch.object(oyente.symExec, "closing_message"):
@@ -848,7 +848,7 @@ class TestEdgeCases:
             recursive_blocks[10].get_instructions.return_value = ["10: PUSH1 0x00", "12: JUMP"]
             recursive_blocks[10].get_start_address.return_value = 10
 
-            with patch.object(oyente.symExec, "blocks", recursive_blocks):
+            with patch.object(oyente.symExec, "blocks", recursive_blocks):  # noqa: SIM117
                 # Mock other required globals
                 with patch.object(oyente.symExec, "vertices", {}):
                     with patch.object(oyente.symExec, "edges", {}):
