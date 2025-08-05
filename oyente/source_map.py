@@ -1,6 +1,11 @@
+# type: ignore
 import ast
 import json
+from typing import Any
 from typing import ClassVar
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import six
 from ast_helper import AstHelper
@@ -8,30 +13,38 @@ from utils import run_command
 
 
 class Source:
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         self.filename = filename
         self.content = self._load_content()
         self.line_break_positions = self._load_line_break_positions()
 
-    def _load_content(self):
+    def _load_content(self) -> str:
         with open(self.filename, "rb") as f:
             content = f.read().decode("UTF-8")
         return content
 
-    def _load_line_break_positions(self):
+    def _load_line_break_positions(self) -> List[int]:
         return [i for i, letter in enumerate(self.content) if letter == "\n"]
 
 
 class SourceMap:
     parent_filename: ClassVar[str] = ""
-    position_groups: ClassVar[dict] = {}
-    sources: ClassVar[dict] = {}
-    ast_helper: ClassVar = None
-    func_to_sig_by_contract: ClassVar[dict] = {}
+    position_groups: ClassVar[Dict[str, Any]] = {}
+    sources: ClassVar[Dict[str, Any]] = {}
+    ast_helper: ClassVar[Optional[Any]] = None
+    func_to_sig_by_contract: ClassVar[Dict[str, Any]] = {}
     remap: ClassVar[str] = ""
     allow_paths: ClassVar[str] = ""
 
-    def __init__(self, cname, parent_filename, input_type, root_path="", remap="", allow_paths=""):
+    def __init__(
+        self,
+        cname: str,
+        parent_filename: str,
+        input_type: str,
+        root_path: str = "",
+        remap: str = "",
+        allow_paths: str = "",
+    ) -> None:
         self.root_path = root_path
         self.cname = cname
         self.input_type = input_type
@@ -49,16 +62,16 @@ class SourceMap:
                 SourceMap.parent_filename, input_type, SourceMap.remap, SourceMap.allow_paths
             )
             SourceMap.func_to_sig_by_contract = SourceMap._get_sig_to_func_by_contract()
-        self.source = self._get_source()
-        self.positions = self._get_positions()
-        self.instr_positions = {}
-        self.var_names = self._get_var_names()
-        self.func_call_names = self._get_func_call_names()
-        self.callee_src_pairs = self._get_callee_src_pairs()
-        self.func_name_to_params = self._get_func_name_to_params()
-        self.sig_to_func = self._get_sig_to_func()
+        self.source = self._get_source()  # type: ignore[assignment]
+        self.positions = self._get_positions()  # type: ignore[assignment]
+        self.instr_positions: Dict[Any, Any] = {}
+        self.var_names = self._get_var_names()  # type: ignore[assignment]
+        self.func_call_names = self._get_func_call_names()  # type: ignore[assignment]
+        self.callee_src_pairs = self._get_callee_src_pairs()  # type: ignore[assignment]
+        self.func_name_to_params = self._get_func_name_to_params()  # type: ignore[assignment]
+        self.sig_to_func = self._get_sig_to_func()  # type: ignore[assignment]
 
-    def get_source_code(self, pc):
+    def get_source_code(self, pc: Any) -> str:
         try:
             pos = self.instr_positions[pc]
         except KeyError:

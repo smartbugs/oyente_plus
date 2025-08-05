@@ -24,7 +24,7 @@ missed = []
 
 print("Running analysis...")
 
-contracts = cjson.keys()
+contracts = list(cjson.keys())
 
 if os.path.isfile("results.json"):
     with open("results.json") as f:
