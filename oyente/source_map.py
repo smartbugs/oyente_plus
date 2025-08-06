@@ -48,6 +48,7 @@ class SourceMap:
         self.root_path = root_path
         self.cname = cname
         self.input_type = input_type
+        self.parent_filename = parent_filename
         if not SourceMap.parent_filename:
             SourceMap.remap = remap
             SourceMap.allow_paths = allow_paths
@@ -125,12 +126,25 @@ class SourceMap:
         return None
 
     def _convert_src_to_pos(self, src):
-        pos = {}
-        src = src.split(":")
-        pos["begin"] = int(src[0])
-        length = int(src[1])
-        pos["end"] = pos["begin"] + length - 1
-        return pos
+        """Convert source mapping string to position dictionary.
+
+        Args:
+            src: Source mapping string in format "start:length:file_id"
+
+        Returns:
+            Dictionary with begin and end positions, or safe defaults if parsing fails
+        """
+        try:
+            src = src.split(":")
+            if len(src) != 3:  # Expect exactly 3 parts: start:length:file_id
+                return {"begin": 0, "end": 0}
+            pos = {}
+            pos["begin"] = int(src[0])
+            length = int(src[1])
+            pos["end"] = pos["begin"] + length - 1
+            return pos
+        except (ValueError, IndexError):
+            return {"begin": 0, "end": 0}
 
     def _get_sig_to_func(self):
         func_to_sig = SourceMap.func_to_sig_by_contract[self.cname]["hashes"]
@@ -245,4 +259,19 @@ class SourceMap:
         return start - 1
 
     def get_filename(self):
-        return self.cname.split(":")[0]
+        """Get the full filename path.
+
+        Returns:
+            The full path to the source file, constructed from root_path and parent_filename.
+            For standard JSON input, uses the contract name as the file path.
+        """
+        if self.input_type == "standard json":
+            return self.cname.split(":")[0]
+        else:
+            # For Solidity input, construct the full path
+            if self.root_path:
+                import os.path
+
+                return os.path.join(self.root_path, self.parent_filename)
+            else:
+                return self.parent_filename

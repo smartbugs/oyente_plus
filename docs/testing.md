@@ -416,6 +416,34 @@ Both skipped tests are marked as temporary and are planned for implementation:
 1. **SystemExit Testing**: Research and implement proper patterns for testing `sys.exit()` calls without terminating the test runner
 2. **Crytic-Compile Mocking**: Refactor the integration test to use a different approach that doesn't conflict with module imports, possibly using fixture-based error injection
 
+## Manual Integration Testing
+
+Manual testing with sample contracts verifies functionality after changes to core modules:
+
+### Test Collections
+- `samples/` - Main contracts with expected results (`.hex` bytecode)
+- `bytecode_cgt/` - 3000+ real-world contracts (`.hex` and `.sol`)
+
+### Key Test Commands
+```bash
+# Bytecode analysis
+python oyente/oyente.py -s samples/SimpleDAO.hex -b
+python oyente/oyente.py -s samples/EtherLotto.hex -b -j  # JSON output
+
+# Solidity analysis (requires matching solc version)
+solc-select use 0.6.2
+python oyente/oyente.py -s bytecode_cgt/SimpleDAO/SimpleDAO.sol
+
+# Error condition testing
+echo "invalid_hex" > invalid.hex
+python oyente/oyente.py -s invalid.hex -b
+```
+
+### After Module Changes
+- **source_map.py**: Test with `-j` flag for JSON source references
+- **symExec.py**: Test with `-v` flag on various contract types  
+- **analysis.py**: Verify vulnerability detection accuracy
+
 ## Best Practices Summary
 
 1. **Fast Unit Tests**: Keep unit tests under 1 second total
@@ -424,5 +452,7 @@ Both skipped tests are marked as temporary and are planned for implementation:
 4. **Meaningful Names**: Use descriptive test names and docstrings
 5. **Test Categories**: Use markers to organize and run specific test types
 6. **CI Integration**: Structure tests for fast feedback in development workflow
+7. **Manual Verification**: Use sample contracts to verify functionality after major changes
+8. **Version Management**: Use solc-select to test compatibility across Solidity versions
 
 This testing structure provides fast development cycles with comprehensive coverage while maintaining clear separation between different test types.

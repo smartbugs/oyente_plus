@@ -1,5 +1,5 @@
 # Oyente+ Product Requirements Document (PRD)
-# Version: 2.1
+# Version: 2.2
 # Last Updated: 2025-08-06
 
 metadata:
@@ -17,17 +17,17 @@ project_overview:
     production-ready, maintainable, and extensible security analysis platform.
   
   current_state:
-    - Research prototype with sophisticated symbolic execution capabilities
+    - Research prototype with sophisticated symbolic execution capabilities  
     - Updated for Python 3, latest Solidity versions, and new EVM opcodes
     - ✅ COMPLETED: Comprehensive test infrastructure (406+ tests, 99.8% pass rate)
-    - ✅ COMPLETED: Testing gap analysis and implementation plan documented
-    - ✅ COMPLETED: Code quality tooling configured and working (Black, Ruff, mypy)
-    - ✅ COMPLETED: 100% test coverage for 9 core modules
+    - ✅ COMPLETED: Code quality tooling configured (Black, Ruff, mypy)
+    - ✅ COMPLETED: 100% test coverage for 9 core modules with advanced testing features
     - ✅ COMPLETED: symExec.py code quality transformation (0 Ruff errors, 72% MyPy improvement)
     - ✅ COMPLETED: Type hints and docstrings for core modules
-    - ❌ TESTING GAPS: 5 key modules lack test files (oyente.py, source_map.py, opcodes.py, ethereum_data.py, batch_run.py)
-    - ❌ COVERAGE: Measurement blocked by configuration issue
-    - ❌ TODO: Remaining modules need code quality improvements
+    - ❌ CRITICAL ISSUES: 16 known bugs identified (5 critical, 8 medium, 3 low)
+    - ❌ TESTING GAPS: 5 key modules lack test files
+    - ❌ SOURCE MAP BUG: Tool effectively broken for Solidity source analysis
+    - ❌ STACK UNDERFLOW: Systematic vulnerability in opcode handlers
   
   vision: |
     Transform Oyente+ into a best-in-class smart contract security analysis tool with:
@@ -45,7 +45,7 @@ phase_1_foundation:
   title: "Foundation Strengthening"
   timeline: "4-6 weeks"
   priority: "Critical"
-  status: "90% Complete"
+  status: "75% Complete (Critical bugs block production use)"
   
   current_progress:
     completed:
@@ -64,17 +64,17 @@ phase_1_foundation:
       - "🔄 Fixing coverage measurement configuration issue"
     
     remaining_work:
-      - "❌ PRIORITY: Missing test files for 5 key modules (oyente.py, source_map.py, opcodes.py, ethereum_data.py, batch_run.py)"
-      - "❌ PRIORITY: Coverage measurement blocked by pytest-cov configuration"
-      - "❌ MEDIUM: Remaining modules need code quality improvements"
-      - "❌ MEDIUM: symExec.py MyPy refinement (178 advanced typing issues)"
-      - "❌ LOW: Pre-commit hooks setup"
-      - "❌ LOW: CI/CD pipeline implementation"
+      - "❌ CRITICAL: Fix 5 critical bugs (source map KeyError, Z3 exception, stack underflows)"
+      - "❌ CRITICAL: Address systematic stack validation issues (30+ locations)"
+      - "❌ HIGH: Missing test files for 5 key modules"
+      - "❌ MEDIUM: Fix 8 medium-severity bugs (security, compatibility issues)"
+      - "❌ MEDIUM: Complete type coverage and code quality improvements"
+      - "❌ LOW: Pre-commit hooks and CI/CD setup"
     
     next_phase_focus:
-      - "Testing gap closure: Implement missing test files following documented plan"
-      - "Coverage measurement: Debug and fix pytest-cov configuration"
-      - "Code quality completion: Address remaining modules following symExec.py pattern"
+      - "Critical bug fixes: Source map processing, Z3 integration, stack validation"
+      - "Security hardening: Fix API key exposure, input validation, exception handling"
+      - "Testing gap closure: Implement missing test files for untested modules"
   
   objectives:
     primary: "Establish modern development practices and code quality standards"
@@ -1236,13 +1236,25 @@ implementation_guidelines:
         - "✅ Type coverage: 5 modules fully typed with docstrings"
         - "✅ Security focus: S-codes enabled in Ruff configuration"
         - "✅ Zero errors in test infrastructure (14 test files)"
+      
+      critical_issues_discovered:
+        - "❌ 16 bugs identified through comprehensive testing"
+        - "❌ 5 critical bugs cause complete tool failures"
+        - "❌ Tool ~25% success rate on real contracts"
+        - "❌ Source map processing effectively broken"
     
     immediate_targets:
-      critical_quality_gates:
+      critical_bug_resolution:
+        - "Fix source map KeyError affecting all .sol files"
+        - "Resolve Z3 exception crashes"
+        - "Add stack validation to 30+ opcode handlers"
+        - "Move API key to environment variable"
+      
+      code_quality_gates:
+        - "Zero critical bugs blocking tool usage"
         - "Zero Ruff linting errors (currently 483)"
-        - "Zero mypy type checking errors"
         - "Zero security vulnerabilities (S-codes)"
-        - "Type coverage > 95% for all modules"
+        - "Tool success rate >80% on standard contracts"
       
       development_workflow:
         - "Pre-commit hooks prevent quality regressions"
@@ -1387,19 +1399,19 @@ conclusion:
     - Efficient development environment setup (./setup-venv.sh)
   
   current_status: |
-    PROJECT PHASE: Code Quality Completion (85% of Phase 1 complete)
-    IMMEDIATE PRIORITY: Fix remaining 483 linting errors and complete type coverage
-    TIMELINE: 2-3 weeks to achieve zero errors and production-ready status
-    CONFIDENCE LEVEL: High - patterns identified, tools configured, testing infrastructure provides safety net
+    PROJECT PHASE: Critical Bug Resolution (75% of Phase 1 complete)
+    IMMEDIATE PRIORITY: Fix 5 critical bugs blocking production use
+    TIMELINE: 2-3 weeks to resolve critical issues and restore tool functionality
+    CONFIDENCE LEVEL: Medium - bugs identified and documented, but fixes require significant work
   
   immediate_next_steps:
     phase_1_completion_focus:
       critical_p0_tasks:
-        1. "Fix 348 F405 errors (undefined-local-with-import-star-usage) - highest priority"
-        2. "Eliminate 7 E722 bare except clauses - SECURITY CRITICAL"
-        3. "Resolve security S-codes (S607, S603, S605, S110)"
-        4. "Complete mypy error resolution in analysis.py, batch_run.py"
-        5. "Add type hints to remaining modules (analysis.py, source_map.py)"
+        1. "Fix source map KeyError in oyente/source_map.py:203,254 - blocks .sol analysis"
+        2. "Fix Z3 expression exception in oyente/symExec.py:2004 - causes crashes"
+        3. "Add stack validation to 30+ opcode handlers - systematic crash vulnerability" 
+        4. "Move hardcoded API key to environment variable - security issue"
+        5. "Fix 348 F405 linting errors and 7 E722 bare except clauses"
       
       phase_2_preparation:
         6. "Set up pre-commit hooks configuration"
