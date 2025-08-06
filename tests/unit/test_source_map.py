@@ -770,17 +770,17 @@ contract Test {
 
                 # Test that the methods work without errors
                 try:
-                    buggy_line = sourcemap.get_buggy_line(100)
+                    sourcemap.get_buggy_line(100)
                     assert True  # Method completed successfully
-                except Exception:
-                    assert False  # Method should not raise exceptions
+                except Exception as e:
+                    raise AssertionError("Method should not raise exceptions") from e
 
                 # Test location extraction
                 try:
                     location = sourcemap.get_location(100)
                     assert location is not None  # Should return some location data
-                except Exception:
-                    assert False  # Method should not raise exceptions
+                except Exception as e:
+                    raise AssertionError("Method should not raise exceptions") from e
 
     def test_multiple_contract_source_mapping(self):
         """Test source mapping with multiple contracts."""
