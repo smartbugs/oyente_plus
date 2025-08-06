@@ -241,8 +241,8 @@ omit = [
     "setup.py",
     "*/__init__.py",
 ]
-parallel = true
-branch = true
+parallel = false
+branch = false
 
 [tool.coverage.report]
 exclude_lines = [
