@@ -1,4 +1,4 @@
-# ruff: noqa: F405, N999
+# ruff: noqa: N999
 import base64
 import copy
 import errno
@@ -17,15 +17,38 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+
+# Type aliases for complex types
+from typing import Protocol
 from typing import Set
+from typing import TypedDict
+from typing import Union
+from typing import cast
 
 import global_params
 import six
-from analysis import *  # noqa: F403  # TODO: Replace star imports with explicit imports
+
+# Import specific functions from analysis
+from analysis import display_analysis
+from analysis import init_analysis
+from analysis import is_diff
+from analysis import is_false_positive
+from analysis import update_analysis
 from basicblock import BasicBlock
-from ethereum_data import *  # noqa: F403  # TODO: Replace star imports with explicit imports
+from ethereum_data import EthereumData
+
+# Import TypeAlias from typing_extensions for mypy compatibility
+from typing_extensions import TypeAlias
+from utils import ceil32
 from utils import check_sat
-from vargenerator import *  # noqa: F403  # TODO: Replace star imports with explicit imports
+from utils import copy_global_values
+from utils import isAllReal
+from utils import isReal
+from utils import isSymbolic
+from utils import to_signed
+from utils import to_symbolic
+from utils import to_unsigned
+from vargenerator import Generator
 from vulnerability import AssertionFailure
 from vulnerability import CallStack
 from vulnerability import IntegerOverflow
@@ -59,6 +82,38 @@ from z3 import simplify
 from z3 import unsat
 
 
+# Z3 type definitions
+Z3Expr: TypeAlias = Any  # Until Z3 stubs are available
+Z3Model: TypeAlias = Any
+Z3Solver: TypeAlias = Any
+Stack: TypeAlias = List[Union[int, str, Z3Expr]]
+PathConditions: TypeAlias = List[Z3Expr]
+GlobalState: TypeAlias = Dict[str, Any]
+
+
+# Protocol for Z3 Solver interface
+class SolverProtocol(Protocol):
+    def check(self) -> Any: ...
+    def model(self) -> Any: ...
+    def push(self) -> None: ...
+    def pop(self) -> None: ...
+    def add(self, *args: Any) -> None: ...
+
+
+# TypedDict for structured dictionaries
+class BalanceState(TypedDict):
+    Is: Union[int, Z3Expr]
+    Ia: Union[int, Z3Expr]
+
+
+class GlobalStateDict(TypedDict, total=False):
+    balance: BalanceState
+    pc: int
+    stack: Stack
+    memory: Dict[int, Union[int, str, Z3Expr]]
+    storage: Dict[Union[int, Z3Expr], Union[int, Z3Expr]]
+
+
 # Global variables with type annotations
 g_disasm_file: Optional[str] = None
 g_src_map: Optional[Any] = None  # SourceMap type from ast_helper
@@ -87,7 +142,7 @@ revertible_overflow_pcs: Set[int] = set()
 start_block_to_func_sig: Dict[int, str] = {}
 calls_affect_state: Dict[str, bool] = {}
 end_ins_dict: Dict[int, int] = {}
-visited_edges: Set[Any] = set()  # Could be tuples or other edge representations
+visited_edges: Dict[Any, int] = {}  # Maps edge representations to visit counts
 money_flow_all_paths: List[List[Any]] = []
 reentrancy_all_paths: List[List[Any]] = []
 path_conditions: List[Any] = []
@@ -158,6 +213,8 @@ def init_global_vars() -> None:
     revertible_overflow_pcs = set()
 
     global g_disasm_file
+    if g_disasm_file is None:
+        raise ValueError("g_disasm_file is not set")
     with open(g_disasm_file) as f:
         disasm = f.read()
     if "MSIZE" in disasm:
@@ -264,10 +321,14 @@ def init_global_vars() -> None:
 
     global rfile
     if global_params.REPORT_MODE:
+        if g_disasm_file is None:
+            raise ValueError("g_disasm_file is not set")
         rfile = open(g_disasm_file + ".report", "w")  # noqa: SIM115
 
 
 def build_cfg_and_analyze() -> None:
+    if g_disasm_file is None:
+        raise ValueError("g_disasm_file is not set")
     with open(g_disasm_file) as disasm_file:
         lines = disasm_file.read().splitlines()
     collect_vertices(lines)
@@ -282,7 +343,9 @@ def print_cfg() -> None:
     log.debug(str(edges))
 
 
-def mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length):
+def mapping_push_instruction(
+    current_line_content: str, current_ins_address: int, idx: int, positions: List[Any], length: int
+) -> Optional[int]:
     global g_src_map
 
     while idx < length:
@@ -301,7 +364,8 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
                     if int(map_val, 16) != int(imm_text, 16):
                         raise Exception(f"Source map PUSH mismatch: {imm_text} != {map_val}")
                 # for all the numbered pushes (PUSH0, PUSH1…PUSH32), accept the mapping
-                g_src_map.instr_positions[current_ins_address] = positions[idx]
+                if g_src_map is not None:
+                    g_src_map.instr_positions[current_ins_address] = positions[idx]
                 idx += 1
                 break
             else:
@@ -309,7 +373,9 @@ def mapping_push_instruction(current_line_content, current_ins_address, idx, pos
     return idx
 
 
-def mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length):
+def mapping_non_push_instruction(
+    current_line_content: str, current_ins_address: int, idx: int, positions: List[Any], length: int
+) -> Optional[int]:
     global g_src_map
 
     while idx < length:
@@ -360,7 +426,8 @@ def mapping_non_push_instruction(current_line_content, current_ins_address, idx,
                 or (name_alias.startswith("DUP") and instr_name_alias.startswith("DUP"))
                 or (name_alias.startswith("SWAP") and instr_name_alias.startswith("SWAP"))
             ):
-                g_src_map.instr_positions[current_ins_address] = positions[idx]
+                if g_src_map is not None:
+                    g_src_map.instr_positions[current_ins_address] = positions[idx]
                 idx += 1
                 break
             else:
@@ -432,17 +499,17 @@ def collect_vertices(lines: List[str]) -> None:
             logging.debug("JUMPI: block %05x ends at %05x", current_block, current_ins_address)
             is_new_block = True
         if instruction.startswith("PUSH"):
-            idx = (
-                mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length)
-                if g_src_map
-                else None
-            )
+            if g_src_map:
+                idx_result = mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length)
+                if idx_result is not None:
+                    idx = idx_result
         else:
-            idx = (
-                mapping_non_push_instruction(current_line_content, current_ins_address, idx, positions, length)
-                if g_src_map
-                else None
-            )
+            if g_src_map:
+                idx_result = mapping_non_push_instruction(
+                    current_line_content, current_ins_address, idx, positions, length
+                )
+                if idx_result is not None:
+                    idx = idx_result
         logging.debug(
             "After processing line: current_block=%05x, current_ins_address=%05x", current_block, current_ins_address
         )
@@ -490,11 +557,11 @@ def construct_bb() -> None:
     logging.debug("Jump types: %s", sorted(jump_type.keys()))
 
 
-def construct_static_edges():
+def construct_static_edges() -> None:
     add_falls_to()  # these edges are static
 
 
-def add_falls_to():
+def add_falls_to() -> None:
     global vertices
     global edges
     key_list = sorted(jump_type.keys())
@@ -558,24 +625,31 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
     path_conditions_and_vars["Ia"] = receiver_address
     path_conditions_and_vars["Iv"] = deposited_value
 
-    constraint = deposited_value >= BitVecVal(0, 256)
-    path_conditions_and_vars["path_condition"].append(constraint)
-    constraint = init_is >= deposited_value
-    path_conditions_and_vars["path_condition"].append(constraint)
-    constraint = init_ia >= BitVecVal(0, 256)
-    path_conditions_and_vars["path_condition"].append(constraint)
+    if deposited_value is not None:
+        constraint = deposited_value >= BitVecVal(0, 256)
+        path_conditions_and_vars["path_condition"].append(constraint)
+
+    if init_is is not None and deposited_value is not None:
+        constraint = init_is >= deposited_value
+        path_conditions_and_vars["path_condition"].append(constraint)
+
+    if init_ia is not None:
+        constraint = init_ia >= BitVecVal(0, 256)
+        path_conditions_and_vars["path_condition"].append(constraint)
 
     # update the balances of the "caller" and "callee"
+    balance_state = cast(Dict[str, Union[int, Z3Expr]], global_state["balance"])
+    if init_is is not None and deposited_value is not None:
+        balance_state["Is"] = init_is - deposited_value
+    if init_ia is not None and deposited_value is not None:
+        balance_state["Ia"] = init_ia + deposited_value
 
-    global_state["balance"]["Is"] = init_is - deposited_value
-    global_state["balance"]["Ia"] = init_ia + deposited_value
-
-    if not gas_price:
+    if not gas_price and gen is not None:
         new_var_name = gen.gen_gas_price_var()
         gas_price = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = gas_price
 
-    if not origin:
+    if not origin and gen is not None:
         new_var_name = gen.gen_origin_var()
         origin = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = origin
@@ -648,10 +722,10 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
     return global_state
 
 
-def get_start_block_to_func_sig():
+def get_start_block_to_func_sig() -> Dict[int, str]:
     state = 0
     func_sig = None
-    for pc, instr in six.iteritems(instructions):
+    for _pc, instr in six.iteritems(instructions):
         if state == 0 and instr.startswith("PUSH4"):
             state += 1
             func_sig = instr.split(" ")[1][2:]
@@ -659,17 +733,18 @@ def get_start_block_to_func_sig():
             state += 1
         elif state == 2 and instr.startswith("PUSH"):
             state = 0
-            pc = instr.split(" ")[1]
-            pc = int(pc, 16)
-            start_block_to_func_sig[pc] = func_sig
+            pc_str = instr.split(" ")[1]
+            pc_int = int(pc_str, 16)
+            if func_sig is not None:
+                start_block_to_func_sig[pc_int] = func_sig
         else:
             state = 0
     return start_block_to_func_sig
 
 
-def full_sym_exec():
+def full_sym_exec() -> Any:
     # executing, starting from beginning
-    path_conditions_and_vars = {"path_condition": []}
+    path_conditions_and_vars: Dict[str, Any] = {"path_condition": []}
     global_state = get_init_global_state(path_conditions_and_vars)
     analysis = init_analysis()
     params = Parameter(path_conditions_and_vars=path_conditions_and_vars, global_state=global_state, analysis=analysis)
@@ -679,7 +754,9 @@ def full_sym_exec():
 
 
 # Symbolically executing a block from the start address
-def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name):
+def sym_exec_block(
+    params: Any, block: int, pre_block: int, depth: int, func_call: int, current_func_name: str
+) -> Union[List[str], Stack]:
     global solver
     global visited_edges
     global money_flow_all_paths
@@ -688,6 +765,9 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
     global all_gs
     global results
     global g_src_map
+
+    # Ensure solver is initialized
+    assert solver is not None, "Solver must be initialized before symbolic execution"
 
     visited = params.visited
     stack = params.stack
@@ -755,7 +835,7 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
 
         total_no_of_paths += 1
 
-        if global_params.GENERATE_TEST_CASES:
+        if global_params.GENERATE_TEST_CASES and solver is not None:
             try:
                 model = solver.model()
                 no_of_test_cases += 1
@@ -848,9 +928,12 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
         visited_edges.update({current_edge: updated_count_number})
         raise Exception("Unknown Jump-Type")
 
+    # Default return if no other path is taken
+    return stack
+
 
 # Symbolically executing an instruction
-def sym_exec_ins(params, block, instr, func_call, current_func_name):
+def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_func_name: str) -> Optional[Any]:
     global MSIZE
     global visited_pcs
     global solver
@@ -1576,10 +1659,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             current_miu_i = global_state["miu_i"]
 
             if isAllReal(mem_location, current_miu_i, code_from, no_bytes):
-                if six.PY2:
-                    temp = long(math.ceil((mem_location + no_bytes) / float(32)))
-                else:
-                    temp = math.ceil((mem_location + no_bytes) / float(32))
+                temp = math.ceil((mem_location + no_bytes) / float(32))
 
                 if temp > current_miu_i:
                     current_miu_i = temp
@@ -1655,11 +1735,11 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             no_bytes = stack.pop(0)
             current_miu_i = global_state["miu_i"]
 
-            if isAllReal(address, mem_location, current_miu_i, code_from, no_bytes) and USE_GLOBAL_BLOCKCHAIN:
-                if six.PY2:
-                    temp = long(math.ceil((mem_location + no_bytes) / float(32)))
-                else:
-                    temp = math.ceil((mem_location + no_bytes) / float(32))
+            if (
+                isAllReal(address, mem_location, current_miu_i, code_from, no_bytes)
+                and global_params.USE_GLOBAL_BLOCKCHAIN
+            ):
+                temp = math.ceil((mem_location + no_bytes) / float(32))
                 if temp > current_miu_i:
                     current_miu_i = temp
 
@@ -1751,7 +1831,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             address = stack.pop(0)
             current_miu_i = global_state["miu_i"]
             if isAllReal(address, current_miu_i) and address in mem:
-                temp = long(math.ceil((address + 32) / float(32))) if six.PY2 else math.ceil((address + 32) / float(32))
+                temp = math.ceil((address + 32) / float(32))
                 if temp > current_miu_i:
                     current_miu_i = temp
                 value = mem[address]
@@ -1811,10 +1891,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                     memory[stored_address + i] = value % 256
                     value /= 256
             if isAllReal(stored_address, current_miu_i):
-                if six.PY2:
-                    temp = long(math.ceil((stored_address + 32) / float(32)))
-                else:
-                    temp = math.ceil((stored_address + 32) / float(32))
+                temp = math.ceil((stored_address + 32) / float(32))
                 if temp > current_miu_i:
                     current_miu_i = temp
                 mem[stored_address] = stored_value  # note that the stored_value could be symbolic
@@ -1840,10 +1917,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             stored_value = temp_value % 256  # get the least byte
             current_miu_i = global_state["miu_i"]
             if isAllReal(stored_address, current_miu_i):
-                if six.PY2:
-                    temp = long(math.ceil((stored_address + 1) / float(32)))
-                else:
-                    temp = math.ceil((stored_address + 1) / float(32))
+                temp = math.ceil((stored_address + 1) / float(32))
                 if temp > current_miu_i:
                     current_miu_i = temp
                 mem[stored_address] = stored_value  # note that the stored_value could be symbolic
@@ -2272,7 +2346,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
 
 
 # Detect if a money flow depends on the timestamp
-def detect_time_dependency():
+def detect_time_dependency() -> None:
     global results
     global g_src_map
     global time_dependency
@@ -2299,7 +2373,7 @@ def detect_time_dependency():
         results["vulnerabilities"]["time_dependency"] = time_dependency.is_vulnerable()
     log.info("\t  Timestamp Dependency: \t\t %s", time_dependency.is_vulnerable())
 
-    if global_params.REPORT_MODE:
+    if global_params.REPORT_MODE and g_disasm_file is not None:
         file_name = g_disasm_file.split("/")[len(g_disasm_file.split("/")) - 1].split(".")[0]
         report_file = file_name + ".report"
         with open(report_file, "w") as rfile:
@@ -2310,7 +2384,7 @@ def detect_time_dependency():
 
 
 # detect if two paths send money to different people
-def detect_money_concurrency():
+def detect_money_concurrency() -> None:
     global results
     global g_src_map
     global money_concurrency
@@ -2366,7 +2440,7 @@ def detect_money_concurrency():
         rfile.write(str(concurrency_paths) + "\n")
 
 
-def detect_parity_multisig_bug_2():
+def detect_parity_multisig_bug_2() -> None:
     global g_src_map
     global results
     global parity_multisig_bug_2
@@ -2414,7 +2488,7 @@ def check_callstack_attack(disasm):
     return pcs
 
 
-def detect_callstack_attack():
+def detect_callstack_attack() -> None:
     global results
     global g_src_map
     global calls_affect_state
@@ -2438,7 +2512,7 @@ def detect_callstack_attack():
     log.info("\t  Callstack Depth Attack Vulnerability:  %s", callstack.is_vulnerable())
 
 
-def detect_reentrancy():
+def detect_reentrancy() -> None:
     global g_src_map
     global results
     global reentrancy
@@ -2453,7 +2527,7 @@ def detect_reentrancy():
     log.info("\t  Re-Entrancy Vulnerability: \t\t %s", reentrancy.is_vulnerable())
 
 
-def detect_integer_underflow():
+def detect_integer_underflow() -> None:
     global integer_underflow
 
     integer_underflow = IntegerUnderflow(g_src_map, global_problematic_pcs["integer_underflow"])
@@ -2465,7 +2539,7 @@ def detect_integer_underflow():
     log.info("\t  Integer Underflow: \t\t\t %s", integer_underflow.is_vulnerable())
 
 
-def detect_integer_overflow():
+def detect_integer_overflow() -> None:
     global integer_overflow
 
     overflows = []
@@ -2481,7 +2555,7 @@ def detect_integer_overflow():
     log.info("\t  Integer Overflow: \t\t\t %s", integer_overflow.is_vulnerable())
 
 
-def detect_assertion_failure():
+def detect_assertion_failure() -> None:
     global g_src_map
     global results
     global assertion_failure
@@ -2493,7 +2567,7 @@ def detect_assertion_failure():
     log.info(s)
 
 
-def detect_vulnerabilities():
+def detect_vulnerabilities() -> Dict[str, Any]:
     global results
     global g_src_map
     global visited_pcs
@@ -2611,7 +2685,7 @@ def closing_message() -> None:
     global results
 
     log.info("\t====== Analysis Completed ======")
-    if global_params.STORE_RESULT:
+    if global_params.STORE_RESULT and g_disasm_file is not None:
         result_file = g_disasm_file.split(".evm.disasm")[0] + ".json"
         with open(result_file, "w") as of:
             of.write(json.dumps(results, indent=1))
@@ -2669,7 +2743,7 @@ def get_recipients(disasm_file: str, contract_address: str) -> Dict[str, Any]:
     g_disasm_file = disasm_file
     g_source_file = None
     data_source = EthereumData(contract_address)
-    recipients = set()
+    recipients = []  # type: List[str]
 
     evm_code_coverage = float(len(visited_pcs)) / len(instructions.keys())
 
