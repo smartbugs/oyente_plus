@@ -150,8 +150,30 @@ class TestCompilationErrorHandling:
 
     def test_compilation_failure_with_crytic_compile(self, temp_dir):
         """Test handling of crytic-compile compilation failures."""
-        # Skip this test as it requires complex mocking that conflicts with module imports
-        pytest.skip("Test requires complex mocking that conflicts with module imports")
+        # Create a malformed Solidity file that will cause compilation to fail
+        invalid_sol_file = temp_dir / "invalid.sol"
+        invalid_sol_file.write_text("contract { invalid syntax }")
+
+        helper = InputHelper(
+            InputHelper.SOLIDITY,
+            source=str(invalid_sol_file),
+            evm=False,
+            root_path=str(temp_dir),
+            compiled_contracts=[],
+            compilation_err=False,
+            remap="",
+            allow_paths="",
+        )
+
+        # Mock the MockCryticCompile to raise an error when called and mock exit to prevent actual termination
+        with patch.object(
+            MockCryticCompile, "__init__", side_effect=MockInvalidCompilationError("Syntax error")
+        ), patch("builtins.exit") as mock_exit:
+            # This should handle the compilation error and call exit(1)
+            helper._compile_solidity()
+
+            # Verify exit was called with code 1
+            mock_exit.assert_called_once_with(1)
 
 
 @pytest.mark.integration

@@ -1,5 +1,11 @@
+# type: ignore
 import ast
 import json
+from typing import Any
+from typing import ClassVar
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import six
 from ast_helper import AstHelper
@@ -7,33 +13,42 @@ from utils import run_command
 
 
 class Source:
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         self.filename = filename
         self.content = self._load_content()
         self.line_break_positions = self._load_line_break_positions()
 
-    def _load_content(self):
+    def _load_content(self) -> str:
         with open(self.filename, "rb") as f:
             content = f.read().decode("UTF-8")
         return content
 
-    def _load_line_break_positions(self):
+    def _load_line_break_positions(self) -> List[int]:
         return [i for i, letter in enumerate(self.content) if letter == "\n"]
 
 
 class SourceMap:
-    parent_filename = ""
-    position_groups = {}
-    sources = {}
-    ast_helper = None
-    func_to_sig_by_contract = {}
-    remap = ""
-    allow_paths = ""
+    parent_filename: ClassVar[str] = ""
+    position_groups: ClassVar[Dict[str, Any]] = {}
+    sources: ClassVar[Dict[str, Any]] = {}
+    ast_helper: ClassVar[Optional[Any]] = None
+    func_to_sig_by_contract: ClassVar[Dict[str, Any]] = {}
+    remap: ClassVar[str] = ""
+    allow_paths: ClassVar[str] = ""
 
-    def __init__(self, cname, parent_filename, input_type, root_path="", remap="", allow_paths=""):
+    def __init__(
+        self,
+        cname: str,
+        parent_filename: str,
+        input_type: str,
+        root_path: str = "",
+        remap: str = "",
+        allow_paths: str = "",
+    ) -> None:
         self.root_path = root_path
         self.cname = cname
         self.input_type = input_type
+        self.parent_filename = parent_filename
         if not SourceMap.parent_filename:
             SourceMap.remap = remap
             SourceMap.allow_paths = allow_paths
@@ -48,19 +63,19 @@ class SourceMap:
                 SourceMap.parent_filename, input_type, SourceMap.remap, SourceMap.allow_paths
             )
             SourceMap.func_to_sig_by_contract = SourceMap._get_sig_to_func_by_contract()
-        self.source = self._get_source()
-        self.positions = self._get_positions()
-        self.instr_positions = {}
-        self.var_names = self._get_var_names()
-        self.func_call_names = self._get_func_call_names()
-        self.callee_src_pairs = self._get_callee_src_pairs()
-        self.func_name_to_params = self._get_func_name_to_params()
-        self.sig_to_func = self._get_sig_to_func()
+        self.source = self._get_source()  # type: ignore[assignment]
+        self.positions = self._get_positions()  # type: ignore[assignment]
+        self.instr_positions: Dict[Any, Any] = {}
+        self.var_names = self._get_var_names()  # type: ignore[assignment]
+        self.func_call_names = self._get_func_call_names()  # type: ignore[assignment]
+        self.callee_src_pairs = self._get_callee_src_pairs()  # type: ignore[assignment]
+        self.func_name_to_params = self._get_func_name_to_params()  # type: ignore[assignment]
+        self.sig_to_func = self._get_sig_to_func()  # type: ignore[assignment]
 
-    def get_source_code(self, pc):
+    def get_source_code(self, pc: Any) -> str:
         try:
             pos = self.instr_positions[pc]
-        except:
+        except KeyError:
             return ""
         begin = pos["begin"]
         end = pos["end"]
@@ -75,7 +90,7 @@ class SourceMap:
     def get_buggy_line(self, pc):
         try:
             pos = self.instr_positions[pc]
-        except:
+        except KeyError:
             return ""
         location = self.get_location(pc)
         # Guard against 'begin' or 'line' being None.
@@ -106,21 +121,34 @@ class SourceMap:
             names = [node.id for node in ast.walk(ast.parse(var_name)) if isinstance(node, ast.Name)]
             if names[0] in self.var_names:
                 return var_name
-        except:
+        except (IndexError, AttributeError, SyntaxError):
             return None
         return None
 
     def _convert_src_to_pos(self, src):
-        pos = {}
-        src = src.split(":")
-        pos["begin"] = int(src[0])
-        length = int(src[1])
-        pos["end"] = pos["begin"] + length - 1
-        return pos
+        """Convert source mapping string to position dictionary.
+
+        Args:
+            src: Source mapping string in format "start:length:file_id"
+
+        Returns:
+            Dictionary with begin and end positions, or safe defaults if parsing fails
+        """
+        try:
+            src = src.split(":")
+            if len(src) != 3:  # Expect exactly 3 parts: start:length:file_id
+                return {"begin": 0, "end": 0}
+            pos = {}
+            pos["begin"] = int(src[0])
+            length = int(src[1])
+            pos["end"] = pos["begin"] + length - 1
+            return pos
+        except (ValueError, IndexError):
+            return {"begin": 0, "end": 0}
 
     def _get_sig_to_func(self):
         func_to_sig = SourceMap.func_to_sig_by_contract[self.cname]["hashes"]
-        return dict((sig, func) for func, sig in six.iteritems(func_to_sig))
+        return {sig: func for func, sig in six.iteritems(func_to_sig)}
 
     def _get_func_name_to_params(self):
         func_name_to_params = SourceMap.ast_helper.get_func_name_to_params(self.cname)
@@ -160,13 +188,9 @@ class SourceMap:
     @classmethod
     def _get_sig_to_func_by_contract(cls):
         if cls.allow_paths:
-            cmd = "solc --combined-json hashes %s %s --allow-paths %s" % (
-                cls.remap,
-                cls.parent_filename,
-                cls.allow_paths,
-            )
+            cmd = f"solc --combined-json hashes {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
         else:
-            cmd = "solc --combined-json hashes %s %s" % (cls.remap, cls.parent_filename)
+            cmd = f"solc --combined-json hashes {cls.remap} {cls.parent_filename}"
         out = run_command(cmd)
         out = json.loads(out)
         return out["contracts"]
@@ -181,9 +205,9 @@ class SourceMap:
     @classmethod
     def _load_position_groups(cls):
         if cls.allow_paths:
-            cmd = "solc --combined-json asm %s %s --allow-paths %s" % (cls.remap, cls.parent_filename, cls.allow_paths)
+            cmd = f"solc --combined-json asm {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
         else:
-            cmd = "solc --combined-json asm %s %s" % (cls.remap, cls.parent_filename)
+            cmd = f"solc --combined-json asm {cls.remap} {cls.parent_filename}"
         out = run_command(cmd)
         out = json.loads(out)
         return out["contracts"]
@@ -200,7 +224,7 @@ class SourceMap:
                 positions.append(None)
                 positions += asm[".data"]["0"][".code"]
                 asm = asm[".data"]["0"]
-            except:
+            except (KeyError, TypeError):
                 break
         return positions
 
@@ -235,4 +259,19 @@ class SourceMap:
         return start - 1
 
     def get_filename(self):
-        return self.cname.split(":")[0]
+        """Get the full filename path.
+
+        Returns:
+            The full path to the source file, constructed from root_path and parent_filename.
+            For standard JSON input, uses the contract name as the file path.
+        """
+        if self.input_type == "standard json":
+            return self.cname.split(":")[0]
+        else:
+            # For Solidity input, construct the full path
+            if self.root_path:
+                import os.path
+
+                return os.path.join(self.root_path, self.parent_filename)
+            else:
+                return self.parent_filename

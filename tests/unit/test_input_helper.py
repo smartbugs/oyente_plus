@@ -410,11 +410,8 @@ class TestInputHelperSolidityCompilation:
         assert result[0][0] == "test.sol:SimpleToken"
         assert result[0][1] == CommonBytecodes.SIMPLE_STORAGE
 
-    @pytest.mark.skip(reason="SystemExit test needs more work - temporarily skipped")
     def test_compile_solidity_failure_exits(self):
         """Test that compilation failure calls exit(1)."""
-        from crytic_compile import InvalidCompilation
-
         helper = InputHelper(
             InputHelper.SOLIDITY,
             source="invalid.sol",
@@ -426,18 +423,17 @@ class TestInputHelperSolidityCompilation:
             allow_paths="",
         )
 
-        # Mock CryticCompile to raise InvalidCompilation and mock exit
-        with patch("crytic_compile.CryticCompile") as mock_crytic_class, patch("builtins.exit") as mock_exit:
+        # Mock CryticCompile to raise InvalidCompilation (MockInvalidCompilationError)
+        with patch.object(MockCryticCompile, "__init__") as mock_init:
+            mock_init.side_effect = MockInvalidCompilationError("Compilation failed")
 
-            mock_crytic_class.side_effect = InvalidCompilation("Compilation failed")
-            mock_exit.side_effect = SystemExit(1)
-
-            # Test that compilation failure raises SystemExit with code 1
-            with pytest.raises(SystemExit) as excinfo:
+            # Mock exit to verify it's called
+            with patch("builtins.exit") as mock_exit:
+                # Call the method, which should call exit(1)
                 helper._compile_solidity()
 
-            assert excinfo.value.code == 1
-            mock_exit.assert_called_once_with(1)
+                # Verify exit was called with code 1
+                mock_exit.assert_called_once_with(1)
 
     def test_compile_solidity_with_libraries(self):
         """Test Solidity compilation with library linking."""

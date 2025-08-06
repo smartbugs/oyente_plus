@@ -104,30 +104,30 @@ class TestParameter:
 
     def test_parameter_copy(self, mock_oyente_modules):
         """Test Parameter copy method."""
+        from unittest.mock import patch
+
         from oyente.symExec import Parameter
 
-        # Configure the mock custom_deepcopy from the fixture (comes via analysis module)
-        mock_custom_deepcopy = mock_oyente_modules["analysis"].custom_deepcopy
+        # Mock custom_deepcopy from symExec module (not analysis module)
         original_dict = {"stack": [1, 2], "mem": {"test": "data"}}
-        mock_custom_deepcopy.return_value = original_dict
+        with patch("oyente.symExec.custom_deepcopy", return_value=original_dict) as mock_custom_deepcopy:
+            param = Parameter(stack=[1, 2], mem={"test": "data"})
+            param_copy = param.copy()
 
-        param = Parameter(stack=[1, 2], mem={"test": "data"})
-        param_copy = param.copy()
+            # Verify deepcopy was called with the parameter's __dict__
+            mock_custom_deepcopy.assert_called_once_with(param.__dict__)
 
-        # Verify deepcopy was called with the parameter's __dict__
-        mock_custom_deepcopy.assert_called_once_with(param.__dict__)
-
-        # Verify new Parameter was created with copied data
-        assert isinstance(param_copy, Parameter)
-        assert param_copy.stack == [1, 2]
-        assert param_copy.mem == {"test": "data"}
+            # Verify new Parameter was created with copied data
+            assert isinstance(param_copy, Parameter)
+            assert param_copy.stack == [1, 2]
+            assert param_copy.mem == {"test": "data"}
 
 
 class TestGlobalVariableManagement:
     """Test global variable initialization and management."""
 
     def test_init_global_vars_basic_solver(self, mock_oyente_modules):
-        """Test basic global parameter access from initGlobalVars."""
+        """Test basic global parameter access from init_global_vars."""
         # This is a simplified test focusing on what can be unit tested
         # Complex global state initialization is better tested in integration tests
 
@@ -502,7 +502,7 @@ class TestMainAnalysisFunctions:
         # Test the logic that can be isolated from global state dependencies
 
         # Test that analyze function would orchestrate the expected components
-        expected_workflow = ["initGlobalVars", "run_build_cfg_and_analyze"]
+        expected_workflow = ["init_global_vars", "run_build_cfg_and_analyze"]
 
         # Verify workflow steps are defined
         for step in expected_workflow:

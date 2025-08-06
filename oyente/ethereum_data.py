@@ -2,6 +2,7 @@
 # this class pings etherscan to get the latest code and balance information
 
 import logging
+from typing import Any
 
 import requests
 
@@ -10,57 +11,48 @@ log = logging.getLogger(__name__)
 
 
 class EthereumData:
-    def __init__(self, contract_address):
+    def __init__(self, contract_address: str) -> None:
         self.apiDomain = "https://api.etherscan.io/api"
         self.apikey = "VT4IW6VK7VES1Q9NYFI74YKH8U7QW9XRHN"
         self.contract_addr = contract_address
 
-    def getBalance(self, address):
+    def getBalance(self, address: str) -> Any:  # noqa: N802
         try:
-            apiEndPoint = "%s?module=account&action=balance&address=%s&tag=latest&apikey=%s" % (
-                self.apiDomain,
-                address,
-                self.apikey,
+            api_endpoint = (
+                f"{self.apiDomain}?module=account&action=balance&address={address}&tag=latest&apikey={self.apikey}"
             )
-            r = requests.get(apiEndPoint, timeout=30)
+            r = requests.get(api_endpoint, timeout=30)
             result = r.json()
             status = result["message"]
             if status == "OK":
                 result = result["result"]
         except Exception as e:
-            log.exception("Error at: contract address: %s" % address)
+            log.exception(f"Error at: contract address: {address}")
             raise e
         return result
 
-    def getCode(self, address):
+    def getCode(self, address: str) -> Any:  # noqa: N802
         try:
-            apiEndPoint = "%s?module=proxy&action=eth_getCode&address=%s&tag=latest&apikey=%s" % (
-                self.apiDomain,
-                address,
-                self.apikey,
+            api_endpoint = (
+                f"{self.apiDomain}?module=proxy&action=eth_getCode&address={address}&tag=latest&apikey={self.apikey}"
             )
-            r = requests.get(apiEndPoint, timeout=30)
+            r = requests.get(api_endpoint, timeout=30)
             result = r.json()["result"]
         except Exception as e:
-            log.exception("Error at: contract address: %s" % address)
+            log.exception(f"Error at: contract address: {address}")
             raise e
         return result
 
-    def getStorageAt(self, position):
+    def getStorageAt(self, position: int) -> int:  # noqa: N802
         try:
-            position = hex(position)
-            if position[-1] == "L":
-                position = position[:-1]
-            apiEndPoint = "%s?module=proxy&action=eth_getStorageAt&address=%s&position=%s&tag=latest&apikey=%s" % (
-                self.apiDomain,
-                self.contract_addr,
-                position,
-                self.apikey,
-            )
-            r = requests.get(apiEndPoint, timeout=30)
+            position_hex = hex(position)
+            if position_hex[-1] == "L":
+                position_hex = position_hex[:-1]
+            api_endpoint = f"{self.apiDomain}?module=proxy&action=eth_getStorageAt&address={self.contract_addr}&position={position_hex}&tag=latest&apikey={self.apikey}"
+            r = requests.get(api_endpoint, timeout=30)
             result = r.json()["result"]
         except Exception as e:
             if str(e) != "timeout":
-                log.exception("Error at: contract address: %s, position: %s" % (self.contract_addr, position))
+                log.exception(f"Error at: contract address: {self.contract_addr}, position: {position_hex}")
             raise
         return int(result, 16)
