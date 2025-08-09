@@ -150,7 +150,6 @@ def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
     """
     if disasm_file_path is None:
         raise ValueError("disasm_file_path cannot be None")
-
     if disasm_file_path.endswith(".evm.disasm"):
         evm_file_name = disasm_file_path.replace(".evm.disasm", "")
     elif disasm_file_path.endswith(".disasm"):
@@ -161,7 +160,7 @@ def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
     # Verify the file exists before returning it
     if not os.path.exists(evm_file_name):
         raise FileNotFoundError(
-            f"EVM bytecode file not found: {evm_file_name}. " f"Expected file for disasm: {disasm_file_path}"
+            f"EVM bytecode file not found: {evm_file_name}. Expected file for disasm: {disasm_file_path}"
         )
 
     return evm_file_name
