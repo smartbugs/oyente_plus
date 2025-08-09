@@ -17,13 +17,40 @@ Guidance for Claude Code when working with this repository.
 ## ⚠️ Recent Breaking Changes
 - `vuln.name` changed from `"AssertionFailure"` to `"Assertion Failure"`
 
-## Essential Commands
-```bash
-# Development workflow (ALWAYS run before commits)
-make all          # Format, lint, type-check, test
+## Development Workflow
 
-# Quick analysis
-python oyente/oyente.py -s <contract.sol>
+### Complete Development Cycle
+```bash
+# 1. DEVELOP: Implement feature/fix
+#    - Add type hints and docstrings
+#    - Follow naming conventions
+
+# 2. CODE QUALITY & FORMATTING
+make format       # Auto-format with Black
+make lint         # Check with Ruff (fix any issues)
+make type-check   # Verify with mypy (fix type errors)
+
+# 3. TESTING
+make test         # Run all unit & integration tests
+#    - Add tests for new functionality
+#    - Ensure 100% pass rate maintained
+
+# 4. INTEGRATION VERIFICATION
+make all          # Complete check: format + lint + type + test
+python oyente/oyente.py -s tests/contracts/sample.sol  # Manual verification
+
+# 5. DOCUMENTATION UPDATE (if needed)
+#    - Update docs/*.md for user-facing changes
+#    - Update docstrings for API changes
+
+# 6. FINAL VALIDATION
+make all          # Must pass 100% before commit
+```
+
+### Quick Commands
+```bash
+make all          # Complete workflow (MANDATORY before commits)
+python oyente/oyente.py -s <contract.sol>  # Quick analysis
 ```
 
 📋 **Details**: See `README.md` for setup/usage, `docs/testing.md` for testing
