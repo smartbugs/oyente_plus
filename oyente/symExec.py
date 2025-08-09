@@ -150,7 +150,7 @@ def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
     """
     if disasm_file_path is None:
         raise ValueError("disasm_file_path cannot be None")
-        
+
     if disasm_file_path.endswith(".evm.disasm"):
         evm_file_name = disasm_file_path.replace(".evm.disasm", "")
     elif disasm_file_path.endswith(".disasm"):
@@ -2361,24 +2361,27 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
         else:
             raise ValueError("STACK underflow")
     elif opcode == "SELFDESTRUCT":
-        global_state["pc"] = global_state["pc"] + 1
-        recipient = stack.pop(0)
-        transfer_amount = global_state["balance"]["Ia"]
-        global_state["balance"]["Ia"] = 0
-        if isReal(recipient):
-            new_address_name = "concrete_address_" + str(recipient)
+        if len(stack) > 0:
+            global_state["pc"] = global_state["pc"] + 1
+            recipient = stack.pop(0)
+            transfer_amount = global_state["balance"]["Ia"]
+            global_state["balance"]["Ia"] = 0
+            if isReal(recipient):
+                new_address_name = "concrete_address_" + str(recipient)
+            else:
+                new_address_name = gen.gen_arbitrary_address_var()
+            old_balance_name = gen.gen_arbitrary_var()
+            old_balance = BitVec(old_balance_name, 256)
+            path_conditions_and_vars[old_balance_name] = old_balance
+            constraint = old_balance >= 0
+            solver.add(constraint)
+            path_conditions_and_vars["path_condition"].append(constraint)
+            new_balance = old_balance + transfer_amount
+            global_state["balance"][new_address_name] = new_balance
+            # TODO
+            return
         else:
-            new_address_name = gen.gen_arbitrary_address_var()
-        old_balance_name = gen.gen_arbitrary_var()
-        old_balance = BitVec(old_balance_name, 256)
-        path_conditions_and_vars[old_balance_name] = old_balance
-        constraint = old_balance >= 0
-        solver.add(constraint)
-        path_conditions_and_vars["path_condition"].append(constraint)
-        new_balance = old_balance + transfer_amount
-        global_state["balance"][new_address_name] = new_balance
-        # TODO
-        return
+            raise ValueError("STACK underflow")
 
     else:
         log.debug("UNKNOWN INSTRUCTION: " + opcode)
