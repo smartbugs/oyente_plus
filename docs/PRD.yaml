@@ -72,7 +72,7 @@ current_phase:
       - "Workaround: Use -j flag for JSON output to bypass human-readable warning generation"
       - "Issue: Manifests as TypeError rather than KeyError in vulnerability warning generation"
       - "Impact: Prevents human-readable vulnerability reports for affected contracts"
-      
+
     json_parsing_error:
       - "Location: oyente/source_map.py:195"
       - "Issue: json.loads() called on empty string from compiler output"
