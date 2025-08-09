@@ -90,7 +90,7 @@ def has_dependencies_installed() -> bool:
         cmd = "evm --version"
         out = run_command(cmd).strip()
         evm_version = re.findall(r"evm version (\d*.\d*.\d*)", out)[0]
-        tested_evm_version = "1.16.1"
+        tested_evm_version = "1.16.2"
         if compare_versions(evm_version, tested_evm_version) > 0:
             logging.warning(f"You are using evm version {evm_version}. The supported version is {tested_evm_version}")
 
