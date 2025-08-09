@@ -8,9 +8,11 @@ Guidance for Claude Code when working with this repository.
 - **`docs/testing.md`** - Testing guide (406+ tests)
 
 ## Project Status
-- ✅ **Testing**: 406 tests (342 unit + 64 integration) - COMPLETED
-- 🔄 **Code Quality**: 483 linting errors remaining - IN PROGRESS  
-- 🔄 **Type Safety**: 5 modules typed, others TODO - IN PROGRESS
+- ✅ **Testing**: 425+ tests executed, 100% pass rate - COMPLETED
+- ✅ **Code Quality**: 0 linting errors - COMPLETED  
+- 🔄 **Type Safety**: 15/17 modules typed, 178 mypy errors remain - IN PROGRESS
+- ❌ **Critical Bugs**: 5 critical bugs blocking production use - URGENT
+- ❌ **CI/CD**: Not configured - TODO
 
 ## ⚠️ Recent Breaking Changes
 - `vuln.name` changed from `"AssertionFailure"` to `"Assertion Failure"`
@@ -45,10 +47,11 @@ mypy oyente/file_to_edit.py
 ```
 
 ### Key Standards
-- **Type hints**: All new code must have type annotations
-- **Security**: Never use `shell=True`, validate all inputs
+- **Type hints**: All new code must have type annotations (178 mypy errors to fix)
+- **Security**: Never use `shell=True`, validate all inputs, fix hardcoded API key
 - **Testing**: Add tests for all new functionality  
 - **Documentation**: Google-style docstrings for public APIs
+- **Critical Bugs**: Must fix source map, Z3, and stack validation issues first
 
 ## Essential Patterns
 

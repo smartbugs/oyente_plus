@@ -1,6 +1,12 @@
 # Known Issues in Oyente+
 
-This document tracks known bugs and issues in the Oyente+ codebase discovered through analysis of sample contracts.
+This document tracks known bugs and issues in the Oyente+ codebase discovered through comprehensive analysis of sample contracts.
+
+## Status Update (Current)
+
+**Verification Status**: All critical bugs listed below have been verified to still exist in the current codebase (as of latest verification). These bugs make the tool unreliable for production use with approximately 25% success rate on real contracts.
+
+**Priority**: Fix the 5 critical bugs first (estimated 1 week effort), then address medium and low priority issues.
 
 ## Critical Issues
 
