@@ -1995,17 +1995,30 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 else:
                     if is_expr(position):
                         position = simplify(position)
+                        # After simplification, if position is still a Z3 expression,
+                        # we need a safe string representation for variable naming
+                        if is_expr(position):
+                            try:
+                                position_str = str(position)
+                            except Exception:
+                                # Fallback if Z3 expression string conversion fails
+                                position_str = f"expr_{hash(position) % 10000}"
+                        else:
+                            position_str = position
+                    else:
+                        position_str = position
+
                     if g_src_map:
                         new_var_name = g_src_map.get_source_code(global_state["pc"] - 1)
                         operators = "[-+*/%|&^!><=]"
                         new_var_name = re.compile(operators).split(new_var_name)[0].strip()
                         new_var_name = g_src_map.get_parameter_or_state_var(new_var_name)
                         if new_var_name:
-                            new_var_name = gen.gen_owner_store_var(position, new_var_name)
+                            new_var_name = gen.gen_owner_store_var(position_str, new_var_name)
                         else:
-                            new_var_name = gen.gen_owner_store_var(position)
+                            new_var_name = gen.gen_owner_store_var(position_str)
                     else:
-                        new_var_name = gen.gen_owner_store_var(position)
+                        new_var_name = gen.gen_owner_store_var(position_str)
 
                     if new_var_name in path_conditions_and_vars:
                         new_var = path_conditions_and_vars[new_var_name]

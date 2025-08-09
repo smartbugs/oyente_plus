@@ -11,7 +11,7 @@ Guidance for Claude Code when working with this repository.
 - ✅ **Testing**: 425+ tests executed, 100% pass rate - COMPLETED
 - ✅ **Code Quality**: 0 linting errors - COMPLETED  
 - 🔄 **Type Safety**: 15/17 modules typed, 178 mypy errors remain - IN PROGRESS
-- 🔄 **Critical Bugs**: 2 of 5 critical bugs FIXED, 3 remaining - IN PROGRESS
+- 🔄 **Critical Bugs**: 3 of 5 critical bugs FIXED, 2 remaining - IN PROGRESS
 - ❌ **CI/CD**: Not configured - TODO
 
 ## ⚠️ Recent Breaking Changes
