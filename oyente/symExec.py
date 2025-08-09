@@ -127,6 +127,46 @@ blocks: Dict[int, BasicBlock] = {}
 instructions: Dict[int, str] = {}
 callstack: List[Any] = []
 money_concurrency: List[Any] = []
+
+
+def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
+    """Resolve the correct EVM bytecode file path from disassembly file path.
+
+    Args:
+        disasm_file_path: Path to the disassembly file (e.g., "file.hex.evm.disasm")
+
+    Returns:
+        Path to the corresponding EVM bytecode file
+
+    Raises:
+        FileNotFoundError: If the corresponding EVM bytecode file cannot be found
+        ValueError: If disasm_file_path is None
+
+    Note:
+        Handles different naming patterns:
+        - "file.hex.evm.disasm" -> "file.hex"
+        - "file.evm.disasm" -> "file.evm"
+        - Other patterns fallback to removing ".disasm" suffix
+    """
+    if disasm_file_path is None:
+        raise ValueError("disasm_file_path cannot be None")
+        
+    if disasm_file_path.endswith(".evm.disasm"):
+        evm_file_name = disasm_file_path.replace(".evm.disasm", "")
+    elif disasm_file_path.endswith(".disasm"):
+        evm_file_name = disasm_file_path.replace(".disasm", "")
+    else:
+        evm_file_name = disasm_file_path
+
+    # Verify the file exists before returning it
+    if not os.path.exists(evm_file_name):
+        raise FileNotFoundError(
+            f"EVM bytecode file not found: {evm_file_name}. " f"Expected file for disasm: {disasm_file_path}"
+        )
+
+    return evm_file_name
+
+
 time_dependency: List[Any] = []
 reentrancy: List[Any] = []
 assertion_failure: List[Any] = []
@@ -1645,7 +1685,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             raise ValueError("STACK underflow")
     elif opcode == "CODESIZE":
         global_state["pc"] = global_state["pc"] + 1
-        evm_file_name = g_disasm_file[:-7] if g_disasm_file.endswith(".disasm") else g_disasm_file
+        evm_file_name = resolve_evm_bytecode_file(g_disasm_file)
         with open(evm_file_name) as evm_file:
             evm = evm_file.read()[:-1]
             code_size = len(evm) / 2
@@ -1664,7 +1704,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 if temp > current_miu_i:
                     current_miu_i = temp
 
-                evm_file_name = g_disasm_file[:-7] if g_disasm_file.endswith(".disasm") else g_disasm_file
+                evm_file_name = resolve_evm_bytecode_file(g_disasm_file)
                 with open(evm_file_name) as evm_file:
                     evm = evm_file.read()[:-1]
                     start = code_from * 2
