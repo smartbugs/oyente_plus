@@ -62,6 +62,10 @@ solc-select use <version>  # Switch to required version (e.g., 0.8.19)
 
 **Version Compatibility Issues**: If a Solidity contract cannot be analyzed due to wrong compiler version, use `solc-select use <version>` to switch to the required version (e.g., `solc-select use 0.8.19`).
 
+### Troubleshooting
+
+**Version Compatibility Issues**: If a Solidity contract cannot be analyzed due to wrong compiler version, use `solc-select use <version>` to switch to the required version (e.g., `solc-select use 0.8.19`).
+
 ## Development Standards
 
 ### Code Quality Requirements
