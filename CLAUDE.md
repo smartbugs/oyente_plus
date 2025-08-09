@@ -51,9 +51,16 @@ make all          # Must pass 100% before commit
 ```bash
 make all          # Complete workflow (MANDATORY before commits)
 python oyente/oyente.py -s <contract.sol>  # Quick analysis
+
+# If contract fails due to Solidity version mismatch:
+solc-select use <version>  # Switch to required version (e.g., 0.8.19)
 ```
 
 📋 **Details**: See `README.md` for setup/usage, `docs/testing.md` for testing
+
+### Troubleshooting
+
+**Version Compatibility Issues**: If a Solidity contract cannot be analyzed due to wrong compiler version, use `solc-select use <version>` to switch to the required version (e.g., `solc-select use 0.8.19`).
 
 ## Development Standards
 
