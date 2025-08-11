@@ -118,7 +118,7 @@ class GlobalStateDict(TypedDict, total=False):
 g_disasm_file: Optional[str] = None
 g_src_map: Optional[Any] = None  # SourceMap type from ast_helper
 g_source_file: Optional[str] = None
-solver: Optional[Any] = None  # Z3 Solver type
+solver: Any = None  # Z3 Solver type - initialized in init_global_vars()
 results: Dict[str, Any] = {}
 visited_pcs: Set[int] = set()
 vertices: Dict[int, BasicBlock] = {}
@@ -685,11 +685,13 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
         balance_state["Ia"] = init_ia + deposited_value
 
     if not gas_price and gen is not None:
+        assert gen is not None, "Generator must be initialized"
         new_var_name = gen.gen_gas_price_var()
         gas_price = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = gas_price
 
     if not origin and gen is not None:
+        assert gen is not None, "Generator must be initialized"
         new_var_name = gen.gen_origin_var()
         origin = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = origin
@@ -1229,6 +1231,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 first = to_symbolic(first)
                 second = to_symbolic(second)
 
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(Not(second == 0))
                 computed = 0 if check_sat(solver) == unsat else URem(first, second)
@@ -1255,6 +1258,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 first = to_symbolic(first)
                 second = to_symbolic(second)
 
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(Not(second == 0))
                 if check_sat(solver) == unsat:
@@ -1291,6 +1295,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 first = to_symbolic(first)
                 second = to_symbolic(second)
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(Not(third == 0))
                 if check_sat(solver) == unsat:
@@ -1318,6 +1323,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 first = to_symbolic(first)
                 second = to_symbolic(second)
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(Not(third == 0))
                 if check_sat(solver) == unsat:
@@ -1344,6 +1350,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 # The computed value is unknown, this is because power is
                 # not supported in bit-vector theory
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_arbitrary_var()
                 computed = BitVec(new_var_name, 256)
             computed = simplify(computed) if is_expr(computed) else computed
@@ -1367,6 +1374,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 first = to_symbolic(first)
                 second = to_symbolic(second)
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(Not(Or(first >= 32, first < 0)))
                 if check_sat(solver) == unsat:
@@ -1537,6 +1545,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 first = to_symbolic(first)
                 second = to_symbolic(second)
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(Not(Or(first >= 32, first < 0)))
                 if check_sat(solver) == unsat:
@@ -1597,20 +1606,22 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             if isAllReal(s0, s1):
                 # simulate the hashing of sha3
                 data = [str(x) for x in memory[s0 : s0 + s1]]
-                position = "".join(data)
-                position = re.sub(r"\s+", "", position)
-                position = zlib.compress(six.b(position), 9)
-                position = base64.b64encode(position)
-                position = position.decode("utf-8", "strict")
+                position_str = "".join(data)
+                position_str = re.sub(r"\s+", "", position_str)
+                position_bytes = zlib.compress(six.b(position_str), 9)
+                position_encoded = base64.b64encode(position_bytes)
+                position = position_encoded.decode("utf-8", "strict")
                 if position in sha3_list:
                     stack.insert(0, sha3_list[position])
                 else:
+                    assert gen is not None, "Generator must be initialized"
                     new_var_name = gen.gen_arbitrary_var()
                     new_var = BitVec(new_var_name, 256)
                     sha3_list[position] = new_var
                     stack.insert(0, new_var)
             else:
                 # push into the execution a fresh symbolic variable
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_arbitrary_var()
                 new_var = BitVec(new_var_name, 256)
                 path_conditions_and_vars[new_var_name] = new_var
@@ -1630,6 +1641,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             if isReal(address) and global_params.USE_GLOBAL_BLOCKCHAIN and data_source is not None:
                 new_var = data_source.getBalance(address)
             else:
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_balance_var()
                 if new_var_name in path_conditions_and_vars:
                     new_var = path_conditions_and_vars[new_var_name]
@@ -1663,14 +1675,16 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     and current_func_name in g_src_map.func_name_to_params
                 ):
                     params = g_src_map.func_name_to_params[current_func_name]
-                    param_idx = (position - 4) // 32
+                    param_idx = (int(position) - 4) // 32
                     for param in params:
                         if param_idx == param["position"]:
                             new_var_name = param["name"]
                             g_src_map.var_names.append(new_var_name)
                 else:
+                    assert gen is not None, "Generator must be initialized"
                     new_var_name = gen.gen_data_var(position)
             else:
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_data_var(position)
             if new_var_name in path_conditions_and_vars:
                 new_var = path_conditions_and_vars[new_var_name]
@@ -1682,6 +1696,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             raise ValueError("STACK underflow")
     elif opcode == "CALLDATASIZE":
         global_state["pc"] = global_state["pc"] + 1
+        assert gen is not None, "Generator must be initialized"
         new_var_name = gen.gen_data_size()
         if new_var_name in path_conditions_and_vars:
             new_var = path_conditions_and_vars[new_var_name]
@@ -1727,6 +1742,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     code = evm[start:end]
                 mem[mem_location] = int(code, 16)
             else:
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_code_var("Ia", code_from, no_bytes)
                 if new_var_name in path_conditions_and_vars:
                     new_var = path_conditions_and_vars[new_var_name]
@@ -1737,6 +1753,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 temp = ((mem_location + no_bytes) / 32) + 1
                 current_miu_i = to_symbolic(current_miu_i)
                 expression = current_miu_i < temp
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(expression)
                 if MSIZE and check_sat(solver) != unsat:
@@ -1757,6 +1774,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             raise ValueError("STACK underflow")
     elif opcode == "RETURNDATASIZE":
         global_state["pc"] += 1
+        assert gen is not None, "Generator must be initialized"
         new_var_name = gen.gen_arbitrary_var()
         new_var = BitVec(new_var_name, 256)
         stack.insert(0, new_var)
@@ -1772,6 +1790,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 stack.insert(0, len(code) / 2)
             else:
                 # not handled yet
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_code_size_var(address)
                 if new_var_name in path_conditions_and_vars:
                     new_var = path_conditions_and_vars[new_var_name]
@@ -1805,6 +1824,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 code = evm[start:end]
                 mem[mem_location] = int(code, 16)
             else:
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_code_var(address, code_from, no_bytes)
                 if new_var_name in path_conditions_and_vars:
                     new_var = path_conditions_and_vars[new_var_name]
@@ -1815,6 +1835,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 temp = ((mem_location + no_bytes) / 32) + 1
                 current_miu_i = to_symbolic(current_miu_i)
                 expression = current_miu_i < temp
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(expression)
                 if MSIZE and check_sat(solver) != unsat:
@@ -1896,12 +1917,14 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 temp = ((address + 31) / 32) + 1
                 current_miu_i = to_symbolic(current_miu_i)
                 expression = current_miu_i < temp
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(expression)
                 if MSIZE and check_sat(solver) != unsat:
                     # this means that it is possibly that current_miu_i < temp
                     current_miu_i = If(expression, temp, current_miu_i)
                 solver.pop()
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_mem_var(address)
                 if new_var_name in path_conditions_and_vars:
                     new_var = path_conditions_and_vars[new_var_name]
@@ -1954,6 +1977,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 temp = ((stored_address + 31) / 32) + 1
                 expression = current_miu_i < temp
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(expression)
                 if MSIZE and check_sat(solver) != unsat:
@@ -1982,6 +2006,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 if isReal(current_miu_i):
                     current_miu_i = BitVecVal(current_miu_i, 256)
                 expression = current_miu_i < temp
+                assert solver is not None, "Solver must be initialized"
                 solver.push()
                 solver.add(expression)
                 if MSIZE and check_sat(solver) != unsat:
@@ -2035,10 +2060,13 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                         new_var_name = re.compile(operators).split(new_var_name)[0].strip()
                         new_var_name = g_src_map.get_parameter_or_state_var(new_var_name)
                         if new_var_name:
+                            assert gen is not None, "Generator must be initialized"
                             new_var_name = gen.gen_owner_store_var(position_str, new_var_name)
                         else:
+                            assert gen is not None, "Generator must be initialized"
                             new_var_name = gen.gen_owner_store_var(position_str)
                     else:
+                        assert gen is not None, "Generator must be initialized"
                         new_var_name = gen.gen_owner_store_var(position_str)
 
                     if new_var_name in path_conditions_and_vars:
@@ -2123,6 +2151,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
         # we need o think about this in the future, in case precise gas
         # can be tracked
         global_state["pc"] = global_state["pc"] + 1
+        assert gen is not None, "Generator must be initialized"
         new_var_name = gen.gen_gas_var()
         new_var = BitVec(new_var_name, 256)
         path_conditions_and_vars[new_var_name] = new_var
@@ -2138,6 +2167,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             if isReal(stored_address) and stored_address in global_state["It"]:
                 value_to_store = global_state["It"].get(stored_address, 0)
             else:
+                assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_gas_var()
                 if str(stored_address) in global_state["It"]:
                     value_to_store = global_state["It"].get(str(stored_address), 0)
@@ -2179,8 +2209,8 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
     #  60s & 70s: Push Operations
     #
     elif opcode.startswith("PUSH", 0):  # this is a push instruction
-        position = int(opcode[4:], 10)
-        global_state["pc"] = global_state["pc"] + 1 + position
+        push_size = int(opcode[4:], 10)
+        global_state["pc"] = global_state["pc"] + 1 + push_size
         pushed_value = int(instr_parts[1], 16)
         stack.insert(0, pushed_value)
     #
@@ -2188,9 +2218,9 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
     #
     elif opcode.startswith("DUP", 0):
         global_state["pc"] = global_state["pc"] + 1
-        position = int(opcode[3:], 10) - 1
-        if len(stack) > position:
-            duplicate = stack[position]
+        dup_position = int(opcode[3:], 10) - 1
+        if len(stack) > dup_position:
+            duplicate = stack[dup_position]
             stack.insert(0, duplicate)
         else:
             raise ValueError("STACK underflow")
@@ -2200,10 +2230,10 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
     #
     elif opcode.startswith("SWAP", 0):
         global_state["pc"] = global_state["pc"] + 1
-        position = int(opcode[4:], 10)
-        if len(stack) > position:
-            temp = stack[position]
-            stack[position] = stack[0]
+        swap_position = int(opcode[4:], 10)
+        if len(stack) > swap_position:
+            temp = stack[swap_position]
+            stack[swap_position] = stack[0]
             stack[0] = temp
         else:
             raise ValueError("STACK underflow")
@@ -2232,6 +2262,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             stack.pop(0)
             stack.pop(0)
             stack.pop(0)
+            assert gen is not None, "Generator must be initialized"
             new_var_name = gen.gen_arbitrary_var()
             new_var = BitVec(new_var_name, 256)
             stack.insert(0, new_var)
@@ -2293,7 +2324,9 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     if isReal(recipient):
                         new_address_name = "concrete_address_" + str(recipient)
                     else:
+                        assert gen is not None, "Generator must be initialized"
                         new_address_name = gen.gen_arbitrary_address_var()
+                    assert gen is not None, "Generator must be initialized"
                     old_balance_name = gen.gen_arbitrary_var()
                     old_balance = BitVec(old_balance_name, 256)
                     path_conditions_and_vars[old_balance_name] = old_balance
@@ -2321,7 +2354,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                         recipient = recipient[:-1]
                     recipients.add(recipient)
                 else:
-                    recipients.add(None)
+                    recipients.add(str(recipient))
 
             transfer_amount = stack.pop(0)
             stack.pop(0)
@@ -2363,6 +2396,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             stack.pop(0)
             stack.pop(0)
             stack.pop(0)
+            assert gen is not None, "Generator must be initialized"
             new_var_name = gen.gen_arbitrary_var()
             new_var = BitVec(new_var_name, 256)
             stack.insert(0, new_var)
@@ -2380,12 +2414,13 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                         recipient = recipient[:-1]
                     recipients.add(recipient)
                 else:
-                    recipients.add(None)
+                    recipients.add(str(recipient))
 
             stack.pop(0)
             stack.pop(0)
             stack.pop(0)
             stack.pop(0)
+            assert gen is not None, "Generator must be initialized"
             new_var_name = gen.gen_arbitrary_var()
             new_var = BitVec(new_var_name, 256)
             stack.insert(0, new_var)
@@ -2412,7 +2447,9 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             if isReal(recipient):
                 new_address_name = "concrete_address_" + str(recipient)
             else:
+                assert gen is not None, "Generator must be initialized"
                 new_address_name = gen.gen_arbitrary_address_var()
+            assert gen is not None, "Generator must be initialized"
             old_balance_name = gen.gen_arbitrary_var()
             old_balance = BitVec(old_balance_name, 256)
             path_conditions_and_vars[old_balance_name] = old_balance
@@ -2518,6 +2555,7 @@ def detect_money_concurrency() -> None:
     # if PRINT_MODE: print "All false positive cases: ", false_positive
     log.debug("Concurrency in paths: ")
     if global_params.REPORT_MODE:
+        assert rfile is not None, "Report file must be initialized"
         rfile.write("number of path: " + str(n) + "\n")
         # number of FP detected
         rfile.write(str(len(false_positive)) + "\n")
@@ -2582,6 +2620,7 @@ def detect_callstack_attack() -> None:
     global calls_affect_state
     global callstack
 
+    assert g_disasm_file is not None, "Disasm file path must be initialized"
     with open(g_disasm_file) as f:
         disasm_data = f.read()
     # We changed the disassembler and now the disasm file has a different
@@ -2692,6 +2731,7 @@ def detect_vulnerabilities() -> Dict[str, Any]:
         detect_callstack_attack()
 
         if global_params.REPORT_MODE:
+            assert rfile is not None, "Report file must be initialized"
             rfile.write(str(total_no_of_paths) + "\n")
 
         detect_money_concurrency()
@@ -2699,6 +2739,7 @@ def detect_vulnerabilities() -> Dict[str, Any]:
 
         stop = time.time()
         if global_params.REPORT_MODE:
+            assert rfile is not None, "Report file must be initialized"
             rfile.write(str(stop - begin))
             rfile.close()
 
@@ -2764,7 +2805,7 @@ def vulnerability_found() -> int:
         vulnerabilities.append(parity_multisig_bug_2)
 
     for vul in vulnerabilities:
-        if vul.is_vulnerable():
+        if vul is not None and vul.is_vulnerable():
             return 1
     return 0
 
