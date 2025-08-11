@@ -665,57 +665,59 @@ class TestLOGOpcodeStackValidation:
 
     def test_log_opcodes_stack_underflow_prevention(self, mock_oyente_modules):
         """Test that LOG opcodes properly validate stack has enough elements.
-        
+
         This test verifies the fix for LOG opcodes that were missing stack validation,
         which could cause crashes when the stack didn't have enough elements.
         """
-        from oyente.symExec import Parameter, sym_exec_ins
-        
+        from oyente.symExec import Parameter
+        from oyente.symExec import sym_exec_ins
+
         # Initialize global state with pc
         global_state = {"pc": 0}
-        
+
         # Test LOG0 - needs 2 stack elements (offset, size)
         params_insufficient = Parameter(stack=[1], global_state=global_state)  # Only 1 element, needs 2
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG0", 0, "test")
-        
+
         # Test LOG1 - needs 3 stack elements (offset, size, topic1)
         params_insufficient = Parameter(stack=[1, 2], global_state=global_state)  # Only 2 elements, needs 3
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG1", 0, "test")
-        
+
         # Test LOG2 - needs 4 stack elements
         params_insufficient = Parameter(stack=[1, 2, 3], global_state=global_state)  # Only 3 elements, needs 4
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG2", 0, "test")
-        
+
         # Test LOG3 - needs 5 stack elements
         params_insufficient = Parameter(stack=[1, 2, 3, 4], global_state=global_state)  # Only 4 elements, needs 5
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG3", 0, "test")
-        
+
         # Test LOG4 - needs 6 stack elements
         params_insufficient = Parameter(stack=[1, 2, 3, 4, 5], global_state=global_state)  # Only 5 elements, needs 6
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG4", 0, "test")
-    
+
     def test_log_opcodes_with_sufficient_stack(self, mock_oyente_modules):
         """Test that LOG opcodes work correctly with sufficient stack elements."""
-        from oyente.symExec import Parameter, sym_exec_ins
-        
+        from oyente.symExec import Parameter
+        from oyente.symExec import sym_exec_ins
+
         # Initialize global state with pc
         global_state = {"pc": 0}
-        
+
         # Test LOG0 with sufficient stack
         params_log0 = Parameter(stack=[10, 20], global_state=global_state)  # offset=10, size=20
         sym_exec_ins(params_log0, 0, "LOG0", 0, "test")
         assert params_log0.stack == []  # Stack should be empty after popping 2 elements
-        
+
         # Test LOG1 with sufficient stack
         params_log1 = Parameter(stack=[10, 20, 30], global_state=global_state)  # offset=10, size=20, topic=30
         sym_exec_ins(params_log1, 0, "LOG1", 0, "test")
         assert params_log1.stack == []  # Stack should be empty after popping 3 elements
-        
+
         # Test LOG4 with sufficient stack
         params_log4 = Parameter(stack=[10, 20, 30, 40, 50, 60], global_state=global_state)
         sym_exec_ins(params_log4, 0, "LOG4", 0, "test")
