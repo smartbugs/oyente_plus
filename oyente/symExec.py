@@ -2054,7 +2054,9 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             # print(target_address)
             if isSymbolic(target_address):
                 try:
-                    target_address = int(str(simplify(target_address)))
+                    simplified_target = simplify(target_address) if is_expr(target_address) else target_address
+                    target_str = str(simplified_target)
+                    target_address = int(float(target_str)) if "." in target_str else int(target_str)
                 except (ValueError, TypeError) as e:
                     raise TypeError("Target address must be an integer") from e
             vertices[block].set_jump_target(target_address)
@@ -2068,7 +2070,10 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             target_address = stack.pop(0)
             if isSymbolic(target_address):
                 try:
-                    target_address = int(str(simplify(target_address)))
+                    simplified_target = simplify(target_address) if is_expr(target_address) else target_address
+                    # Handle decimal values by converting to float first, then int
+                    target_str = str(simplified_target)
+                    target_address = int(float(target_str)) if "." in target_str else int(target_str)
                 except (ValueError, TypeError) as e:
                     raise TypeError("Target address must be an integer") from e
             vertices[block].set_jump_target(target_address)
@@ -2186,12 +2191,16 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
     #  a0s: Logging Operations
     #
     elif opcode in ("LOG0", "LOG1", "LOG2", "LOG3", "LOG4"):
-        global_state["pc"] = global_state["pc"] + 1
-        # We do not simulate these log operations
+        # LOG operations require: 2 (offset, size) + number of topics
         num_of_pops = 2 + int(opcode[3:])
-        while num_of_pops > 0:
-            stack.pop(0)
-            num_of_pops -= 1
+        if len(stack) >= num_of_pops:
+            global_state["pc"] = global_state["pc"] + 1
+            # We do not simulate these log operations
+            while num_of_pops > 0:
+                stack.pop(0)
+                num_of_pops -= 1
+        else:
+            raise ValueError("STACK underflow")
 
     #
     #  f0s: System Operations

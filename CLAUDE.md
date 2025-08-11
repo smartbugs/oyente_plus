@@ -11,7 +11,7 @@ Guidance for Claude Code when working with this repository.
 - ✅ **Testing**: 492 tests (427 executed), 100% pass rate - COMPLETED
 - ✅ **Code Quality**: 0 linting errors - COMPLETED  
 - 🔄 **Type Safety**: 15/17 modules typed, 172 mypy errors remain - IN PROGRESS
-- ✅ **Critical Bugs**: 3 of 5 critical bugs FIXED ✅ (major progress!) - MOSTLY COMPLETED
+- ✅ **Critical Bugs**: 5 of 6 critical bugs FIXED ✅ (major progress!) - MOSTLY COMPLETED
 - ❌ **CI/CD**: Not configured - TODO
 
 ## ⚠️ Recent Breaking Changes
@@ -85,7 +85,7 @@ mypy oyente/file_to_edit.py
 - **Security**: Never use `shell=True`, validate all inputs, fix hardcoded API key
 - **Testing**: Add tests for all new functionality  
 - **Documentation**: Google-style docstrings for public APIs
-- **Critical Bugs**: File Path Resolution ✅, Stack Underflow ✅, and Z3 Expression Exception ✅ FIXED. Remaining: Source Map KeyError and systematic stack validation
+- **Critical Bugs**: File Path Resolution ✅, Stack Underflow ✅, Z3 Expression Exception ✅, LOG Opcodes Stack Validation ✅, and JUMP/JUMPI Address Conversion ✅ FIXED. Remaining: Source Map KeyError
 
 ## Essential Patterns
 
