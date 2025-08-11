@@ -125,8 +125,8 @@ vertices: Dict[int, BasicBlock] = {}
 edges: Dict[int, List[int]] = {}
 blocks: Dict[int, BasicBlock] = {}
 instructions: Dict[int, str] = {}
-callstack: List[Any] = []
-money_concurrency: List[Any] = []
+callstack: Optional[CallStack] = None
+money_concurrency: Optional[MoneyConcurrency] = None
 
 
 def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
@@ -167,14 +167,14 @@ def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
     return evm_file_name
 
 
-time_dependency: List[Any] = []
-reentrancy: List[Any] = []
-assertion_failure: List[Any] = []
-integer_overflow: List[Any] = []
-integer_underflow: List[Any] = []
-parity_multisig_bug_2: List[Any] = []
-recipients: List[str] = []
-data_source: List[Any] = []
+time_dependency: Optional[TimeDependency] = None
+reentrancy: Optional[Reentrancy] = None
+assertion_failure: Optional[AssertionFailure] = None
+integer_overflow: Optional[IntegerOverflow] = None
+integer_underflow: Optional[IntegerUnderflow] = None
+parity_multisig_bug_2: Optional[ParityMultisigBug2] = None
+recipients: Set[str] = set()
+data_source: Optional[EthereumData] = None
 jump_type: Dict[int, str] = {}
 MSIZE: bool = False
 g_timeout: Optional[bool] = None
@@ -810,7 +810,7 @@ def sym_exec_block(
     assert solver is not None, "Solver must be initialized before symbolic execution"
 
     visited = params.visited
-    stack = params.stack
+    stack: Stack = cast(Stack, params.stack)
     global_state = params.global_state
     path_conditions_and_vars = params.path_conditions_and_vars
     analysis = params.analysis
@@ -999,19 +999,19 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
     opcode = instr_parts[0]
 
     if opcode == "INVALID":
-        return
+        return None
     elif opcode == "ASSERTFAIL":
         if g_src_map:
             source_code = g_src_map.get_source_code(global_state["pc"])
             source_code = source_code.split("(")[0]
             func_name = source_code.strip()
-            if check_sat(solver, False) != unsat:
+            if solver is not None and check_sat(solver, False) != unsat:
                 model = solver.model()
             if func_name == "assert":
                 global_problematic_pcs["assertion_failure"].append(Assertion(global_state["pc"], model))
             elif func_call != -1:
                 global_problematic_pcs["assertion_failure"].append(Assertion(func_call, model))
-        return
+        return None
 
     # collecting the analysis result by calling this skeletal function
     # this should be done before symbolically executing the instruction,
@@ -1028,7 +1028,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
     #
     if opcode == "STOP":
         global_state["pc"] = global_state["pc"] + 1
-        return
+        return None
     elif opcode == "ADD":
         if len(stack) > 1:
             global_state["pc"] = global_state["pc"] + 1
@@ -1061,7 +1061,11 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                         if instruction.startswith("REVERT")
                     )
 
-            if (jump_type[block] != "conditional" or not check_revert) and not isAllReal(computed, first):
+            if (
+                (jump_type[block] != "conditional" or not check_revert)
+                and not isAllReal(computed, first)
+                and solver is not None
+            ):
                 solver.push()
                 solver.add(UGT(first, computed))
                 if check_sat(solver) == sat:
@@ -1115,7 +1119,11 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                         if instruction.startswith("REVERT")
                     )
 
-            if (jump_type[block] != "conditional" or not check_revert) and not isAllReal(first, second):
+            if (
+                (jump_type[block] != "conditional" or not check_revert)
+                and not isAllReal(first, second)
+                and solver is not None
+            ):
                 solver.push()
                 solver.add(UGT(second, first))
                 if check_sat(solver) == sat:
@@ -1144,10 +1152,13 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 first = to_symbolic(first)
                 second = to_symbolic(second)
-                solver.push()
-                solver.add(Not(second == 0))
-                computed = 0 if check_sat(solver) == unsat else UDiv(first, second)
-                solver.pop()
+                if solver is not None:
+                    solver.push()
+                    solver.add(Not(second == 0))
+                    computed = 0 if check_sat(solver) == unsat else UDiv(first, second)
+                    solver.pop()
+                else:
+                    computed = UDiv(first, second)
             computed = simplify(computed) if is_expr(computed) else computed
             stack.insert(0, computed)
         else:
@@ -1170,29 +1181,33 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             else:
                 first = to_symbolic(first)
                 second = to_symbolic(second)
-                solver.push()
-                solver.add(Not(second == 0))
-                if check_sat(solver) == unsat:
-                    computed = 0
-                else:
+                if solver is not None:
                     solver.push()
-                    solver.add(Not(And(first == -(2**255), second == -1)))
+                    solver.add(Not(second == 0))
                     if check_sat(solver) == unsat:
-                        computed = -(2**255)
+                        computed = 0
                     else:
                         solver.push()
-                        solver.add(first / second < 0)
-                        sign = -1 if check_sat(solver) == sat else 1
+                        solver.add(Not(And(first == -(2**255), second == -1)))
+                        if check_sat(solver) == unsat:
+                            computed = -(2**255)
+                        else:
+                            solver.push()
+                            solver.add(first / second < 0)
+                            sign = -1 if check_sat(solver) == sat else 1
 
-                        def z3_abs(x):
-                            return If(x >= 0, x, -x)
+                            def z3_abs(x: Any) -> Any:
+                                return If(x >= 0, x, -x)
 
-                        first = z3_abs(first)
-                        second = z3_abs(second)
-                        computed = sign * (first / second)
+                            first = z3_abs(first)
+                            second = z3_abs(second)
+                            computed = sign * (first / second)
+                            solver.pop()
                         solver.pop()
                     solver.pop()
-                solver.pop()
+                else:
+                    # Fallback when solver is None
+                    computed = first / second
             computed = simplify(computed) if is_expr(computed) else computed
             stack.insert(0, computed)
         else:
@@ -1251,7 +1266,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     sign = BitVecVal(-1, 256) if check_sat(solver) == sat else BitVecVal(1, 256)
                     solver.pop()
 
-                    def z3_abs(x):
+                    def z3_abs(x: Any) -> Any:
                         return If(x >= 0, x, -x)
 
                     first = z3_abs(first)
@@ -1612,7 +1627,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
             address = stack.pop(0)
-            if isReal(address) and global_params.USE_GLOBAL_BLOCKCHAIN:
+            if isReal(address) and global_params.USE_GLOBAL_BLOCKCHAIN and data_source is not None:
                 new_var = data_source.getBalance(address)
             else:
                 new_var_name = gen.gen_balance_var()
@@ -1752,7 +1767,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
             address = stack.pop(0)
-            if isReal(address) and global_params.USE_GLOBAL_BLOCKCHAIN:
+            if isReal(address) and global_params.USE_GLOBAL_BLOCKCHAIN and data_source is not None:
                 code = data_source.getCode(address)
                 stack.insert(0, len(code) / 2)
             else:
@@ -1778,6 +1793,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             if (
                 isAllReal(address, mem_location, current_miu_i, code_from, no_bytes)
                 and global_params.USE_GLOBAL_BLOCKCHAIN
+                and data_source is not None
             ):
                 temp = math.ceil((mem_location + no_bytes) / float(32))
                 if temp > current_miu_i:
@@ -1984,7 +2000,12 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             if isReal(position) and position in global_state["Ia"]:
                 value = global_state["Ia"][position]
                 stack.insert(0, value)
-            elif global_params.USE_GLOBAL_STORAGE and isReal(position) and position not in global_state["Ia"]:
+            elif (
+                global_params.USE_GLOBAL_STORAGE
+                and isReal(position)
+                and position not in global_state["Ia"]
+                and data_source is not None
+            ):
                 value = data_source.getStorageAt(position)
                 global_state["Ia"][position] = value
                 stack.insert(0, value)
@@ -2236,7 +2257,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
 
             if isReal(transfer_amount) and transfer_amount == 0:
                 stack.insert(0, 1)  # x = 0
-                return
+                return None
 
             # Let us ignore the call depth
             balance_ia = global_state["balance"]["Ia"]
@@ -2312,7 +2333,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
 
             if isReal(transfer_amount) and transfer_amount == 0:
                 stack.insert(0, 1)  # x = 0
-                return
+                return None
 
             # Let us ignore the call depth
             balance_ia = global_state["balance"]["Ia"]
@@ -2401,13 +2422,15 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
             new_balance = old_balance + transfer_amount
             global_state["balance"][new_address_name] = new_balance
             # TODO
-            return
+            return None
         else:
             raise ValueError("STACK underflow")
 
     else:
         log.debug("UNKNOWN INSTRUCTION: " + opcode)
         raise Exception("UNKNOWN INSTRUCTION: " + opcode)
+
+    return None
 
 
 # Detect if a money flow depends on the timestamp
@@ -2517,7 +2540,7 @@ def detect_parity_multisig_bug_2() -> None:
     log.info(s)
 
 
-def check_callstack_attack(disasm):
+def check_callstack_attack(disasm: Any) -> List[int]:
     problematic_instructions = ["CALL", "CALLCODE"]
     pcs = []
     for i in range(0, len(disasm)):
@@ -2701,7 +2724,8 @@ def detect_vulnerabilities() -> Dict[str, Any]:
             log.info("\t  Assertion failure: \t False")
         results["evm_code_coverage"] = "0/0"
 
-    return results, vulnerability_found()
+    results["vulnerability_count"] = vulnerability_found()
+    return results
 
 
 def log_info() -> None:
@@ -2808,7 +2832,7 @@ def get_recipients(disasm_file: str, contract_address: str) -> Dict[str, Any]:
     g_disasm_file = disasm_file
     g_source_file = None
     data_source = EthereumData(contract_address)
-    recipients = []  # type: List[str]
+    recipients.clear()  # Clear the global list
 
     evm_code_coverage = float(len(visited_pcs)) / len(instructions.keys())
 
