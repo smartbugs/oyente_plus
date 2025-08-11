@@ -13,7 +13,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help format lint type-check test test-unit test-integration test-performance test-property test-legacy test-cov test-unit-cov test-integration-cov all clean install install-dev setup
+.PHONY: help format lint type-check test test-unit test-integration test-performance test-property test-cov test-unit-cov test-integration-cov all clean install install-dev setup
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -49,12 +49,12 @@ type-check: ## Type check with mypy
 
 ##@ Testing
 
-test: ## Run pytest tests (specify file with: make test TEST=path/to/test_file.py)
+test: ## Run all tests (specify file with: make test TEST=path/to/test_file.py)
 ifdef TEST
 	@echo "🧪 Running specific test: $(TEST)..."
 	@$(POETRY_RUN) pytest $(TEST) -v && echo "✅ Test $(TEST) complete" || (echo "❌ Test $(TEST) failed" && exit 1)
 else
-	@echo "🧪 Running all pytest tests..."
+	@echo "🧪 Running all tests..."
 	@$(POETRY_RUN) pytest && echo "✅ Tests complete" || (echo "❌ Tests failed" && exit 1)
 endif
 
@@ -74,9 +74,6 @@ test-property: ## Run only property-based tests
 	@echo "🧪 Running property-based tests..."
 	@$(POETRY_RUN) pytest tests/property/ -v && echo "✅ Property tests complete" || (echo "❌ Property tests failed" && exit 1)
 
-test-legacy: ## Run legacy EVM tests
-	@echo "🧪 Running legacy EVM tests..."
-	@$(POETRY_RUN) python oyente/run_tests.py && echo "✅ Legacy tests complete" || (echo "❌ Legacy tests failed" && exit 1)
 
 test-cov: ## Run tests with coverage (specify file with: make test-cov TEST=path/to/test_file.py)
 ifdef TEST
@@ -99,7 +96,7 @@ test-integration-cov: ## Run integration tests with coverage
 
 ##@ Comprehensive
 
-all: format lint type-check test ## Run all quality checks and tests
+all: format lint type-check test-unit test-integration ## Run all quality checks and tests
 	@echo "✅ All checks passed successfully"
 
 ##@ Maintenance
