@@ -9,6 +9,7 @@ import pytest
 from tests.helpers import run_oyente_cli
 
 
+@pytest.mark.integration
 class TestCLIBasics:
     """Test basic CLI functionality."""
 
@@ -41,6 +42,7 @@ class TestCLIBasics:
 
 
 @pytest.mark.slow
+@pytest.mark.integration
 class TestCLIWorkflow:
     """Test complete CLI workflow scenarios."""
 

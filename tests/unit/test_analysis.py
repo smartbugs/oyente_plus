@@ -8,6 +8,8 @@ path feasibility analysis.
 from unittest.mock import Mock
 from unittest.mock import patch
 
+import pytest
+
 from tests.mocks.mock_z3 import create_mock_z3_module
 
 
@@ -77,6 +79,7 @@ with patch.dict(
     from oyente.analysis import update_analysis
 
 
+@pytest.mark.unit
 class TestSetCurFile:
     """Test cases for set_cur_file function."""
 
@@ -99,6 +102,7 @@ class TestSetCurFile:
         assert oyente.analysis.cur_file == second_file
 
 
+@pytest.mark.unit
 class TestInitAnalysis:
     """Test cases for init_analysis function."""
 
@@ -140,6 +144,7 @@ class TestInitAnalysis:
         assert analysis1 is not analysis2
 
 
+@pytest.mark.unit
 class TestDisplayAnalysis:
     """Test cases for display_analysis function."""
 
@@ -161,6 +166,7 @@ class TestDisplayAnalysis:
             mock_debug.assert_called_with("Money flow: []")
 
 
+@pytest.mark.unit
 class TestCheckReentrancyBug:
     """Test cases for check_reentrancy_bug function."""
 
@@ -286,6 +292,7 @@ class TestCheckReentrancyBug:
             oyente.analysis.Solver = original_solver
 
 
+@pytest.mark.unit
 class TestCalculateGas:
     """Test cases for calculate_gas function."""
 
@@ -352,6 +359,7 @@ class TestCalculateGas:
         assert gas_increment >= 3  # At least the base opcode cost
 
 
+@pytest.mark.unit
 class TestUpdateAnalysis:
     """Test cases for update_analysis function."""
 
@@ -421,6 +429,7 @@ class TestUpdateAnalysis:
         assert len(self.analysis["money_flow"]) >= initial_flow_len
 
 
+@pytest.mark.unit
 class TestIsFeasible:
     """Test cases for is_feasible function."""
 
@@ -468,6 +477,7 @@ class TestIsFeasible:
         assert isinstance(result, bool)
 
 
+@pytest.mark.unit
 class TestIsFalsePositive:
     """Test cases for is_false_positive function."""
 
@@ -494,6 +504,7 @@ class TestIsFalsePositive:
         assert isinstance(result, bool)
 
 
+@pytest.mark.unit
 class TestIsDiff:
     """Test cases for is_diff function."""
 
@@ -562,6 +573,7 @@ class TestIsDiff:
         assert result == 0
 
 
+@pytest.mark.unit
 class TestIntegration:
     """Integration tests for analysis module."""
 

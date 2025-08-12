@@ -54,6 +54,7 @@ with patch.dict(
 oyente = oyente_module
 
 
+@pytest.mark.unit
 class TestCommandUtilities:
     """Test utility functions for command validation."""
 
@@ -79,6 +80,7 @@ class TestCommandUtilities:
             oyente.cmd_exists(None)
 
 
+@pytest.mark.unit
 class TestVersionComparison:
     """Test version string comparison functionality."""
 
@@ -117,6 +119,7 @@ class TestVersionComparison:
         assert oyente.compare_versions("1.10.0", "1.9.0") == 1
 
 
+@pytest.mark.unit
 class TestDependencyValidation:
     """Test dependency installation and validation."""
 
@@ -187,6 +190,7 @@ class TestDependencyValidation:
             assert mock_warning.call_count >= 1
 
 
+@pytest.mark.unit
 class TestBytecodeAnalysis:
     """Test bytecode analysis workflow."""
 
@@ -249,6 +253,7 @@ class TestBytecodeAnalysis:
         json.loads(call_args)
 
 
+@pytest.mark.unit
 class TestSolidityAnalysis:
     """Test Solidity analysis workflows."""
 
@@ -354,6 +359,7 @@ class TestSolidityAnalysis:
             )
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Test main function and argument parsing."""
 
@@ -510,6 +516,7 @@ class TestMainFunction:
             oyente.main()
 
 
+@pytest.mark.unit
 class TestArgumentParsing:
     """Test argument parsing edge cases."""
 
@@ -552,6 +559,7 @@ class TestArgumentParsing:
         assert args.allow_paths == ""
 
 
+@pytest.mark.unit
 class TestIntegration:
     """Integration tests for complete workflows."""
 
@@ -597,6 +605,7 @@ class TestIntegration:
             mock_analyze.assert_not_called()
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling scenarios."""
 

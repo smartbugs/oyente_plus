@@ -79,6 +79,7 @@ crytic_compile.CryticCompile = Mock()
 crytic_compile.InvalidCompilation = MockInvalidCompilationError
 
 
+@pytest.mark.unit
 class TestInputHelperInitialization:
     """Tests for InputHelper class initialization."""
 
@@ -147,6 +148,7 @@ class TestInputHelperInitialization:
         assert helper.evm is False  # Default value
 
 
+@pytest.mark.unit
 class TestInputHelperBytecodeProcessing:
     """Tests for bytecode input processing."""
 
@@ -369,6 +371,7 @@ class TestInputHelperBytecodeProcessing:
             helper._hex2asm(bytecode)
 
 
+@pytest.mark.unit
 class TestInputHelperSolidityCompilation:
     """Tests for Solidity contract compilation."""
 
@@ -461,6 +464,7 @@ class TestInputHelperSolidityCompilation:
             assert ":" in contract_name  # Should have format "file:contract"
 
 
+@pytest.mark.unit
 class TestInputHelperStandardJson:
     """Tests for Standard JSON compilation."""
 
@@ -542,6 +546,7 @@ class TestInputHelperStandardJson:
         assert "Storage.sol:Storage" in contract_names
 
 
+@pytest.mark.unit
 class TestInputHelperContractFiltering:
     """Tests for contract filtering and targeting."""
 
@@ -593,6 +598,7 @@ class TestInputHelperContractFiltering:
                 helper.get_inputs(target_contracts=["NonExistentToken"])
 
 
+@pytest.mark.unit
 class TestInputHelperFileManagement:
     """Tests for temporary file management."""
 
@@ -687,6 +693,7 @@ class TestInputHelperFileManagement:
             assert call_args[0][0] == "contract1.sol:Token"
 
 
+@pytest.mark.unit
 class TestInputHelperLibraryLinking:
     """Tests for library linking functionality."""
 
@@ -727,6 +734,7 @@ class TestInputHelperLibraryLinking:
             assert "StringUtils" in available_libs
 
 
+@pytest.mark.unit
 class TestInputHelperErrorHandling:
     """Tests for error handling and edge cases."""
 
@@ -963,6 +971,7 @@ class TestInputHelperErrorHandling:
         assert result == []
 
 
+@pytest.mark.unit
 class TestInputHelperIntegration:
     """Integration tests for complete workflows."""
 

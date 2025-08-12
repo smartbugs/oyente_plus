@@ -52,6 +52,7 @@ def mock_oyente_modules():
         yield mocked_modules
 
 
+@pytest.mark.unit
 class TestParameter:
     """Test the Parameter class for symbolic execution state."""
 
@@ -123,6 +124,7 @@ class TestParameter:
             assert param_copy.mem == {"test": "data"}
 
 
+@pytest.mark.unit
 class TestGlobalVariableManagement:
     """Test global variable initialization and management."""
 
@@ -170,6 +172,7 @@ class TestGlobalVariableManagement:
         assert mock_src_map["source"] == "contract.sol"
 
 
+@pytest.mark.unit
 class TestControlFlowGraphConstruction:
     """Test control flow graph construction functions."""
 
@@ -261,6 +264,7 @@ class TestControlFlowGraphConstruction:
         assert 1 == 1  # Most non-PUSH instructions are 1 byte
 
 
+@pytest.mark.unit
 class TestSymbolicExecution:
     """Test symbolic execution functions."""
 
@@ -353,6 +357,7 @@ class TestSymbolicExecution:
         assert len(expected_vulnerability_types) == 8
 
 
+@pytest.mark.unit
 class TestVulnerabilityDetection:
     """Test individual vulnerability detection functions."""
 
@@ -400,6 +405,7 @@ class TestVulnerabilityDetection:
         assert callable(mock_detector.get_warnings)
 
 
+@pytest.mark.unit
 class TestUtilityFunctions:
     """Test utility and helper functions."""
 
@@ -477,6 +483,7 @@ class TestUtilityFunctions:
         assert result is None
 
 
+@pytest.mark.unit
 class TestMainAnalysisFunctions:
     """Test main analysis workflow functions."""
 
@@ -552,6 +559,7 @@ class TestMainAnalysisFunctions:
         assert isinstance(result, list)
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling in symbolic execution."""
 
@@ -578,6 +586,7 @@ class TestErrorHandling:
         # unknown_param should be ignored
 
 
+@pytest.mark.unit
 class TestIntegrationHelpers:
     """Helper functions for integration testing."""
 
@@ -660,6 +669,7 @@ class TestIntegrationHelpers:
 """
 
 
+@pytest.mark.unit
 class TestLOGOpcodeStackValidation:
     """Test stack validation for LOG opcodes."""
 
@@ -718,6 +728,7 @@ class TestLOGOpcodeStackValidation:
         assert params_log4.stack == []  # Stack should be empty after popping 6 elements
 
 
+@pytest.mark.unit
 class TestZ3ExpressionHandling:
     """Test Z3 expression handling in SLOAD operations."""
 

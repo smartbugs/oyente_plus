@@ -17,6 +17,7 @@ from z3 import unsat
 from oyente import utils
 
 
+@pytest.mark.unit
 class TestMathematicalUtils:
     """Test mathematical utility functions."""
 
@@ -70,6 +71,7 @@ class TestMathematicalUtils:
         assert utils.to_signed(2 ** (256 - 1) + 1) == -(2 ** (256 - 1) - 1)
 
 
+@pytest.mark.unit
 class TestSymbolicOperations:
     """Test symbolic operation utility functions."""
 
@@ -124,6 +126,7 @@ class TestSymbolicOperations:
         assert result is x
 
 
+@pytest.mark.unit
 class TestZ3HelperFunctions:
     """Test Z3 solver helper functions."""
 
@@ -176,6 +179,7 @@ class TestZ3HelperFunctions:
         mock_solver.pop.assert_not_called()
 
 
+@pytest.mark.unit
 class TestDataStructureUtils:
     """Test data structure utility functions."""
 
@@ -229,6 +233,7 @@ class TestDataStructureUtils:
         assert copy["dict"] is not original["dict"]
 
 
+@pytest.mark.unit
 class TestVariableUtils:
     """Test variable analysis utility functions."""
 
@@ -342,6 +347,7 @@ class TestVariableUtils:
 # Contract info tests moved to tests/integration/test_file_operations.py
 
 
+@pytest.mark.unit
 class TestEdgeCasesAndErrorHandling:
     """Test edge cases and error handling scenarios."""
 
