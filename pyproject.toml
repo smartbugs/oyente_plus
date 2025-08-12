@@ -216,6 +216,10 @@ markers = [
     "performance: marks tests as performance tests",
     "requires_z3: marks tests that require Z3 solver",
     "requires_solc: marks tests that require Solidity compiler",
+    "smoke: marks tests as smoke tests (critical path)",
+    "regression: marks tests as regression tests",
+    "fuzzing: marks tests as fuzz tests",
+    "mutation: marks tests as mutation tests",
 ]
 filterwarnings = [
     "error",
