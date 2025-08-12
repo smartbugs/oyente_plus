@@ -3,23 +3,19 @@
 Guidance for Claude Code when working with this repository.
 
 ## 📋 Required Reading
+
 - **`README.md`** - Setup, architecture, usage
 - **`docs/PRD.yaml`** - Development roadmap and status  
 - **`docs/testing.md`** - Testing guide (406+ tests)
 
-## Project Status
-- ✅ **Testing**: 492 tests (427 executed), 100% pass rate - COMPLETED
-- ✅ **Code Quality**: 0 linting errors - COMPLETED  
-- ✅ **Type Safety**: 15/17 modules typed, 0 mypy errors - COMPLETED
-- ✅ **Critical Bugs**: 5 of 6 critical bugs FIXED ✅ (major progress!) - MOSTLY COMPLETED
-- ❌ **CI/CD**: Not configured - TODO
-
 ## ⚠️ Recent Breaking Changes
+
 - `vuln.name` changed from `"AssertionFailure"` to `"Assertion Failure"`
 
 ## Development Workflow
 
 ### Complete Development Cycle
+
 ```bash
 # 1. DEVELOP: Implement feature/fix
 #    - Add type hints and docstrings
@@ -48,6 +44,7 @@ make all          # Must pass 100% before commit
 ```
 
 ### Quick Commands
+
 ```bash
 make all          # Complete workflow (MANDATORY before commits)
 python oyente/oyente.py -s <contract.sol>  # Quick analysis
@@ -71,6 +68,7 @@ solc-select use <version>  # Switch to required version (e.g., 0.8.19)
 ### Code Quality Requirements
 
 **MANDATORY before ANY changes:**
+
 ```bash
 # Use make targets for comprehensive checks
 make all          # Format, lint, type-check, test (before commits)
@@ -85,6 +83,7 @@ mypy oyente/file_to_edit.py
 ```
 
 ### Key Standards
+
 - **Type hints**: All new code must have type annotations (complete type safety achieved ✅)
 - **Security**: Never use `shell=True`, validate all inputs, fix hardcoded API key
 - **Testing**: Add tests for all new functionality  
@@ -94,6 +93,7 @@ mypy oyente/file_to_edit.py
 ## Essential Patterns
 
 ### Type Hints (Required)
+
 ```python
 from typing import Dict, List, Optional, Protocol
 
@@ -107,6 +107,7 @@ def analyze_contract(
 ```
 
 ### Error Handling (Required)
+
 ```python
 # ❌ BAD - Never use bare except
 try:
@@ -126,9 +127,10 @@ except (ValueError, TypeError) as e:
 
 **Limits**: Files <500 lines, functions <50 lines, complexity <10
 
-**Naming**: 
+**Naming**:
+
 - Classes: `PascalCase`
-- Functions/variables: `snake_case` 
+- Functions/variables: `snake_case`
 - Constants: `UPPER_SNAKE_CASE`
 
 ### Testing
