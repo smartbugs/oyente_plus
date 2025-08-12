@@ -22,6 +22,8 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.fixtures.registry import fixture_registry
+
 
 @pytest.fixture
 def temp_dir() -> Generator[Path, None, None]:
@@ -233,6 +235,11 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "performance: marks tests as performance tests")
     config.addinivalue_line("markers", "requires_z3: marks tests that require Z3 solver")
     config.addinivalue_line("markers", "requires_solc: marks tests that require Solidity compiler")
+    # New granular markers from roadmap
+    config.addinivalue_line("markers", "smoke: critical path tests for quick feedback")
+    config.addinivalue_line("markers", "regression: regression tests for bug prevention")
+    config.addinivalue_line("markers", "fuzzing: property-based fuzzing tests")
+    config.addinivalue_line("markers", "mutation: mutation testing targets")
 
 
 # Pytest hooks for better test output
@@ -299,3 +306,33 @@ def mock_crytic_compile():
         }
         mock_compile.return_value = mock_instance
         yield mock_instance
+
+
+@pytest.fixture
+def fixtures() -> Any:
+    """Provide access to the centralized fixture registry."""
+    return fixture_registry
+
+
+@pytest.fixture
+def contract_factory():
+    """Provide access to contract factory."""
+    from tests.fixtures.factories import ContractFactory
+
+    return ContractFactory
+
+
+@pytest.fixture
+def analysis_factory():
+    """Provide access to analysis factory."""
+    from tests.fixtures.factories import AnalysisFactory
+
+    return AnalysisFactory
+
+
+@pytest.fixture
+def vulnerability_factory():
+    """Provide access to vulnerability factory."""
+    from tests.fixtures.factories import VulnerabilityFactory
+
+    return VulnerabilityFactory

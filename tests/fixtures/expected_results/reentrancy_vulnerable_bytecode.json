@@ -1,0 +1,12 @@
+{
+  "vulnerabilities": [
+    {
+      "type": "reentrancy",
+      "description": "External call followed by state change",
+      "severity": "high",
+      "line_numbers": [1, 2, 3]
+    }
+  ],
+  "analysis_time": 2.5,
+  "success": true
+}

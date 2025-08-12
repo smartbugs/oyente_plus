@@ -1,0 +1,15 @@
+{
+  "vulnerabilities": {
+    "reentrancy": [
+      {
+        "type": "cross_function_reentrancy",
+        "description": "External call in withdraw() can re-enter emergencyWithdraw()",
+        "severity": "high",
+        "functions": ["withdraw", "emergencyWithdraw"],
+        "pattern": "cross_function_reentrancy"
+      }
+    ]
+  },
+  "analysis_time": 2.1,
+  "success": true
+}

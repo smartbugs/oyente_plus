@@ -1,0 +1,15 @@
+{
+  "vulnerabilities": {
+    "reentrancy": [
+      {
+        "type": "reentrancy",
+        "description": "External call before state change in vulnerableWithdraw()",
+        "severity": "high",
+        "function": "vulnerableWithdraw",
+        "recommendation": "Move state changes before external calls, or use reentrancy guard pattern"
+      }
+    ]
+  },
+  "analysis_time": 1.3,
+  "success": true
+}
