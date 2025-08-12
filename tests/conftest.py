@@ -34,56 +34,81 @@ def temp_dir() -> Generator[Path, None, None]:
 @pytest.fixture(params=["sat", "unsat", "unknown"])
 def mock_z3_solver_parametrized(request):
     """Parametrized mock Z3 solver for testing all solver states."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result=request.param)
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result=request.param)
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_solver():
     """Mock Z3 solver for fast unit tests (defaults to SAT)."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="sat")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="sat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_sat_solver():
     """Mock Z3 solver that always returns SAT."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="sat")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="sat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_unsat_solver():
     """Mock Z3 solver that always returns UNSAT."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="unsat")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="unsat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_unknown_solver():
     """Mock Z3 solver that always returns UNKNOWN."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="unknown")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="unknown")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture

@@ -9,6 +9,7 @@ support common Z3 operations while allowing tests to control solver behavior.
 from __future__ import annotations
 
 from typing import Any
+from typing import Literal
 from typing import Union
 from unittest.mock import MagicMock
 
@@ -75,6 +76,32 @@ class MockZ3BitVec(MockZ3Expr):
 
     def size(self):
         return self.size
+
+
+class MockZ3BitVecIntegration(MockZ3BitVec):
+    """Mock Z3 BitVec with extended operations for integration testing."""
+
+    def __xor__(self, other):
+        return MockZ3BitVecIntegration(f"({self.name} ^ {other})", self.size)
+
+    def __lshift__(self, other):
+        return MockZ3BitVecIntegration(f"({self.name} << {other})", self.size)
+
+    def __rshift__(self, other):
+        return MockZ3BitVecIntegration(f"({self.name} >> {other})", self.size)
+
+    def __invert__(self):
+        return MockZ3BitVecIntegration(f"~{self.name}", self.size)
+
+    def __div__(self, other):
+        return MockZ3BitVecIntegration(f"({self.name} / {other})", self.size)
+
+    def __mod__(self, other):
+        return MockZ3BitVecIntegration(f"({self.name} % {other})", self.size)
+
+    def as_long(self) -> int:
+        """Get value as Python integer."""
+        return self.value if self.value is not None else 0
 
 
 class MockZ3Model:
@@ -321,20 +348,143 @@ def create_mock_z3_module(solver_result: str = "sat", model_values: dict[str, An
     return mock_z3
 
 
+class MockZ3Factory:
+    """Factory for creating mock Z3 components with configurable behavior.
+
+    Supports different modes for unit and integration testing:
+    - 'unit': Minimal mocks for fast unit tests
+    - 'integration': Full-featured mocks for integration tests
+    - 'full': Complete Z3 API compatibility (for future use)
+    """
+
+    @staticmethod
+    def create_solver(
+        mode: Literal["unit", "integration", "full"] = "unit",
+        result: str = "sat",
+        model_values: dict[str, Any] | None = None,
+    ) -> MockZ3Solver:
+        """Create a mock solver configured for the specified testing mode.
+
+        Args:
+            mode: Testing mode - 'unit', 'integration', or 'full'
+            result: Default result for solver.check() - "sat", "unsat", or "unknown"
+            model_values: Values to return in the model when sat
+
+        Returns:
+            Configured MockZ3Solver instance
+        """
+        solver = MockZ3Solver(result, model_values)
+
+        if mode == "integration":
+            # Add integration-specific features
+            solver._mode = "integration"
+            # Integration tests may need more realistic behavior
+            solver._check_count = 0
+            solver._original_check = solver.check
+
+            def tracked_check(*assumptions):
+                solver._check_count += 1
+                return solver._original_check(*assumptions)
+
+            solver.check = tracked_check
+
+        elif mode == "full":
+            # Future: Add full Z3 API compatibility
+            solver._mode = "full"
+
+        return solver
+
+    @staticmethod
+    def create_bitvec(
+        name: str, size: int, value: int | None = None, mode: Literal["unit", "integration", "full"] = "unit"
+    ) -> MockZ3BitVec:
+        """Create a mock BitVec configured for the specified testing mode.
+
+        Args:
+            name: Name of the bitvector
+            size: Size in bits
+            value: Optional initial value
+            mode: Testing mode
+
+        Returns:
+            Configured MockZ3BitVec instance
+        """
+        if mode == "integration":
+            # Use integration-specific class with extended operations
+            return MockZ3BitVecIntegration(name, size, value)
+
+        return MockZ3BitVec(name, size, value)
+
+    @staticmethod
+    def create_bitvec_val(value: int, size: int, mode: Literal["unit", "integration", "full"] = "unit") -> MockZ3BitVec:
+        """Create a mock BitVecVal with a specific value.
+
+        Args:
+            value: The integer value
+            size: Size in bits
+            mode: Testing mode
+
+        Returns:
+            Configured MockZ3BitVec instance with value
+        """
+        return MockZ3Factory.create_bitvec(f"val_{value}", size, value, mode)
+
+    @staticmethod
+    def create_z3_module(
+        mode: Literal["unit", "integration", "full"] = "unit",
+        solver_result: str = "sat",
+        model_values: dict[str, Any] | None = None,
+    ) -> MagicMock:
+        """Create a complete mock Z3 module for the specified testing mode.
+
+        Args:
+            mode: Testing mode
+            solver_result: Default result for solver.check()
+            model_values: Default model values
+
+        Returns:
+            Mock module configured for the specified mode
+        """
+        mock_z3 = create_mock_z3_module(solver_result, model_values)
+
+        if mode == "integration":
+            # Add integration-specific Z3 functions
+            mock_z3.Extract = lambda high, low, expr: MagicMock(high=high, low=low, expr=expr)
+            mock_z3.Concat = lambda *args: MagicMock(args=args)
+            mock_z3.UDiv = lambda a, b: MagicMock(a=a, b=b)
+            mock_z3.URem = lambda a, b: MagicMock(a=a, b=b)
+            mock_z3.ULT = lambda a, b: MagicMock(a=a, b=b)
+            mock_z3.ULE = lambda a, b: MagicMock(a=a, b=b)
+            mock_z3.UGT = lambda a, b: MagicMock(a=a, b=b)
+            mock_z3.UGE = lambda a, b: MagicMock(a=a, b=b)
+
+            # Override Solver factory to use integration mode
+            def solver_factory():
+                return MockZ3Factory.create_solver(mode="integration", result=solver_result, model_values=model_values)
+
+            mock_z3.Solver = solver_factory
+
+            # Override BitVec factories to use integration mode
+            mock_z3.BitVec = lambda name, size: MockZ3Factory.create_bitvec(name, size, mode="integration")
+            mock_z3.BitVecVal = lambda value, size: MockZ3Factory.create_bitvec_val(value, size, mode="integration")
+
+        return mock_z3
+
+
 # Utility functions for common testing scenarios
 def create_sat_solver(model_values: dict[str, Any] | None = None) -> MockZ3Solver:
     """Create a solver that always returns SAT."""
-    return MockZ3Solver("sat", model_values)
+    return MockZ3Factory.create_solver("unit", "sat", model_values)
 
 
 def create_unsat_solver() -> MockZ3Solver:
     """Create a solver that always returns UNSAT."""
-    return MockZ3Solver("unsat")
+    return MockZ3Factory.create_solver("unit", "unsat")
 
 
 def create_unknown_solver() -> MockZ3Solver:
     """Create a solver that always returns UNKNOWN."""
-    return MockZ3Solver("unknown")
+    return MockZ3Factory.create_solver("unit", "unknown")
 
 
 def create_conditional_solver(condition_func) -> MockZ3Solver:
