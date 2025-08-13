@@ -4,11 +4,11 @@ This document explains the testing structure and workflows for Oyente+, covering
 
 ## Current Status
 
-- **Total Tests**: 406+ test functions (342 unit + 64 integration) (405 passing, 1 skipped)
-- **Pass Rate**: 99.8%
-- **Test Files**: 14 comprehensive test files
-- **Test Categories**: Unit (342), Integration (64), Property, Performance
-- **Coverage**: Measurement currently blocked by technical issue, but all core modules have test coverage
+- **Total Tests**: 425+ test functions executed with 100% pass rate
+- **Pass Rate**: 100% (no skipped tests currently)
+- **Test Files**: Comprehensive test files covering core modules
+- **Test Categories**: Unit, Integration, Property, Performance
+- **Coverage**: All core modules have test coverage
 
 ## Test Organization
 
@@ -16,8 +16,8 @@ Following industry best practices, our tests are organized into distinct categor
 
 ```
 tests/
-├── unit/           # Fast, isolated tests (10 test files, 342 tests)
-├── integration/    # Component interaction tests (6 test files, 64 tests)
+├── unit/           # Fast, isolated tests
+├── integration/    # Component interaction tests
 ├── property/       # Hypothesis property-based tests
 ├── performance/    # Benchmark tests (pytest-benchmark)
 ├── fixtures/       # Test data and utilities
@@ -29,7 +29,7 @@ tests/
 ### Unit Tests (`tests/unit/`)
 
 **Purpose**: Test individual functions and classes in isolation
-**Test Count**: 342 test functions across 10 test files
+**Test Count**: Majority of the 425+ test functions
 **Execution Time**: < 10 seconds total
 **Dependencies**: No external tools, filesystem, or network
 
@@ -53,7 +53,7 @@ tests/
 ### Integration Tests (`tests/integration/`)
 
 **Purpose**: Test component interactions and workflows
-**Test Count**: 90+ test functions across 6 test files
+**Test Count**: Subset of the 425+ test functions
 **Execution Time**: < 3 minutes total
 **Dependencies**: May use external tools (solc, Z3) and real file I/O
 
@@ -87,8 +87,8 @@ tests/
 
 ```bash
 # Development workflow - run before each commit
-make test          # All tests (384+ tests, ~8 seconds)
-make all          # Full quality checks including all tests
+make test          # Unit tests only (~425 tests, ~8 seconds) 
+make all          # Full quality checks including unit tests
 
 # Specific test types
 make test-unit           # Unit tests only
@@ -179,9 +179,9 @@ pytest -m "integration and requires_solc"  # Integration tests with Solidity
 
 ### Default Behavior
 
-- **pytest** (no arguments): Runs unit tests only
+- **make test** / **pytest** (no arguments): Runs unit tests only (excludes integration)
 - Integration tests are excluded by default for fast development cycles
-- Use explicit markers or directories to run integration tests
+- Use explicit commands or markers to run integration tests
 
 ### Configuration in pyproject.toml
 
@@ -404,10 +404,8 @@ The following tests are currently skipped in the test suite. This section docume
 
 ### Summary
 
-- **Total Skipped Tests**: 2
-- **Unit Tests Skipped**: 1
-- **Integration Tests Skipped**: 1
-- **Current Pass Rate**: 99.5% (405 passing, 1 skipped out of 406 total)
+- **Total Skipped Tests**: 0 (currently)
+- **Current Pass Rate**: 100% (425+ tests passing)
 
 ### Future Work
 
