@@ -218,7 +218,7 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 
 **📋 Immediate Priority**:
 - Fix remaining 2 critical bugs (1-2 days effort)
-- Setup CI/CD and pre-commit hooks
+- Setup CI/CD pipeline
 
 ### Code Quality Standards
 
@@ -251,6 +251,55 @@ make all  # Runs format, lint, type-check, test
 4. **Add Tests**: All new functionality requires tests
 
 5. **Documentation**: Update docstrings and README as needed
+
+### Pre-commit Hooks
+
+Automated quality checks run before each commit to ensure consistent code quality:
+
+#### Setup
+
+Pre-commit hooks are automatically installed when using the setup script:
+
+```bash
+./setup-venv.sh  # Installs and configures pre-commit hooks
+```
+
+Or install manually:
+
+```bash
+# Install pre-commit (included in dev dependencies)
+poetry install --with dev
+
+# Install the hooks (run once after cloning)
+poetry run pre-commit install
+```
+
+#### What Runs Automatically
+
+Each commit triggers:
+
+- **File Checks**: Trailing whitespace, file endings, YAML/JSON/TOML syntax
+- **Code Formatting**: `make format` (Black formatting)
+- **Linting**: `make lint` (Ruff code quality checks)
+- **Type Checking**: `make type-check` (mypy static analysis)
+- **Unit Tests**: `make test-unit` (fast unit tests)
+- **Integration Tests**: `make test-integration` (comprehensive tests)
+
+#### Usage Tips
+
+```bash
+# Run manually on all files
+poetry run pre-commit run --all-files
+
+# Run specific hooks
+poetry run pre-commit run format
+poetry run pre-commit run test-unit
+
+# Skip hooks (emergency only)
+git commit --no-verify -m "emergency commit"
+```
+
+If any check fails, fix the issues and commit again. The hooks ensure all code meets quality standards before entering the repository.
 
 ## 📈 Benchmarks & Testing
 
