@@ -48,8 +48,11 @@ secrets.json
 current_test.pickle
 contract_data/
 bytecode*
+
+# Keep test fixture files
 !tests/fixtures/bytecode
 !tests/fixtures/bytecode/*
+!tests/fixtures/contracts/**/*.sol
 !tests/integration/fixtures/bytecode
 !tests/integration/fixtures/bytecode/*
 !tests/integration/fixtures/contracts/*.sol
