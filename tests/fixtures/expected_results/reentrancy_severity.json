@@ -8,7 +8,7 @@
         "function": "criticalVuln"
       },
       {
-        "type": "reentrancy", 
+        "type": "reentrancy",
         "description": "Medium reentrancy vulnerability",
         "severity": "medium",
         "function": "mediumVuln"
