@@ -5,7 +5,7 @@ Guidance for Claude Code when working with this repository.
 ## 📋 Required Reading
 
 - **`README.md`** - Setup, architecture, usage
-- **`docs/PRD.yaml`** - Development roadmap and status  
+- **`docs/PRD.yaml`** - Development roadmap and status
 - **`docs/testing.md`** - Testing guide (406+ tests)
 
 ## ⚠️ Recent Breaking Changes
@@ -73,7 +73,7 @@ solc-select use <version>  # Switch to required version (e.g., 0.8.19)
 # Use make targets for comprehensive checks
 make all          # Format, lint, type-check, test (before commits)
 make format       # Format code with Black
-make lint         # Check with Ruff  
+make lint         # Check with Ruff
 make type-check   # Verify with mypy
 make test         # Run all tests
 
@@ -86,7 +86,7 @@ mypy oyente/file_to_edit.py
 
 - **Type hints**: All new code must have type annotations (complete type safety achieved ✅)
 - **Security**: Never use `shell=True`, validate all inputs, fix hardcoded API key
-- **Testing**: Add tests for all new functionality  
+- **Testing**: Add tests for all new functionality
 - **Documentation**: Google-style docstrings for public APIs
 - **Critical Bugs**: File Path Resolution ✅, Stack Underflow ✅, Z3 Expression Exception ✅, LOG Opcodes Stack Validation ✅, and JUMP/JUMPI Address Conversion ✅ FIXED. Remaining: Source Map KeyError
 
@@ -147,14 +147,14 @@ except (ValueError, TypeError) as e:
 ```python
 def analyze_contract(source_code: str, timeout: int = 120) -> Dict[str, List[str]]:
     """Analyze smart contract for vulnerabilities.
-    
+
     Args:
         source_code: Solidity source code to analyze
         timeout: Maximum analysis time in seconds
-        
+
     Returns:
         Dictionary mapping vulnerability types to warning messages
-        
+
     Raises:
         AnalysisError: If compilation fails
         TimeoutError: If analysis exceeds timeout
@@ -167,7 +167,7 @@ def analyze_contract(source_code: str, timeout: int = 120) -> Dict[str, List[str
 **Before ANY commit:**
 
 1. `make all` - MUST pass completely
-2. Add tests for new functionality  
+2. Add tests for new functionality
 3. Add type hints and docstrings
 4. Never commit secrets or use `shell=True`
 

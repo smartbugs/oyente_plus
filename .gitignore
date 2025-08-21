@@ -48,6 +48,7 @@ secrets.json
 current_test.pickle
 contract_data/
 bytecode*
+standard_json_output
 
 # Keep test fixture files
 !tests/fixtures/bytecode

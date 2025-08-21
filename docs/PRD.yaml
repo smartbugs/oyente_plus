@@ -11,7 +11,7 @@ metadata:
 
 project_overview:
   description: |
-    Oyente+ is a modernized fork of the original Oyente smart contract analysis tool 
+    Oyente+ is a modernized fork of the original Oyente smart contract analysis tool
     that performs symbolic execution to detect security vulnerabilities in Ethereum smart contracts.
 
   current_state:

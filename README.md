@@ -25,7 +25,7 @@ An Analysis Tool for Smart Contracts
 ### Prerequisites
 
 - **Python 3.8+** (excluding 3.12.0) - Modern type hints and features
-- **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management  
+- **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
 - **[Go Ethereum (geth)](https://geth.ethereum.org/downloads/)** - EVM execution engine
 - **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
@@ -59,12 +59,7 @@ make setup
 
 ```bash
 # Install all dependencies (development, testing, linting)
-poetry install --with dev,test,lint
-
-# Install specific dependency groups
-poetry install --with dev    # Development tools only
-poetry install --with test   # Testing framework only  
-poetry install --with lint   # Linting tools only
+poetry install --with dev
 
 # Production installation only
 poetry install --only main
@@ -215,9 +210,11 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 **✅ Completed**:
 - **Type Safety**: 0 mypy errors - complete type coverage achieved
 
+**✅ Completed**:
+- **Pre-commit hooks** configured with automated quality checks
+
 **🔄 In Progress**:
 - **CI/CD pipeline** not yet configured
-- **Pre-commit hooks** not yet configured
 
 **📋 Immediate Priority**:
 - Fix remaining 2 critical bugs (1-2 days effort)
@@ -279,7 +276,7 @@ python -m pytest tests/performance/ --benchmark-only
 
 The `samples/` directory contains test contracts including:
 - `SimpleDAO.sol` - Reentrancy vulnerability
-- `EtherLotto.sol` - Randomness issues  
+- `EtherLotto.sol` - Randomness issues
 - `Government.sol` - Access control patterns
 
 ## 📚 Resources
