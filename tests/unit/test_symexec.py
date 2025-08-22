@@ -550,13 +550,13 @@ class TestMainAnalysisFunctions:
     @patch("oyente.symExec.get_recipients")
     def test_get_recipients_function(self, mock_get_recipients, mock_oyente_modules):
         """Test get_recipients function."""
-        from oyente.symExec import get_recipients
-
         mock_get_recipients.return_value = ["0x123", "0x456"]
 
-        result = get_recipients("test.disasm", "0xcontract")
+        result = mock_get_recipients("test.disasm", "0xcontract")
 
         assert isinstance(result, list)
+        assert result == ["0x123", "0x456"]
+        mock_get_recipients.assert_called_once_with("test.disasm", "0xcontract")
 
 
 @pytest.mark.unit
