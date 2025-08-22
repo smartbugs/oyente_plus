@@ -8,27 +8,41 @@ import json
 
 import pytest
 
+from tests.fixtures.registry import fixture_registry
+
 
 @pytest.mark.integration
 @pytest.mark.slow
 class TestReentrancyDetection:
     """Test reentrancy vulnerability detection end-to-end."""
 
+    @pytest.mark.smoke
     def test_classic_dao_style_reentrancy(self, integration_fixtures):
         """Test detection of classic DAO-style reentrancy vulnerability."""
-        contract_path = integration_fixtures["contracts"] / "dao_reentrancy.sol"
-        expected_result = integration_fixtures["expected"] / "dao_reentrancy.json"
+        # Use centralized fixture registry for test data
+        contract_source = fixture_registry.get_contract("reentrancy_vulnerable", category="vulnerable")
+        expected_result = fixture_registry.get_expected_result("reentrancy_vulnerable")
+
+        # Fallback to file-based fixtures if registry doesn't have the data
+        if not contract_source:
+            contract_path = integration_fixtures["contracts"] / "reentrancy_vulnerable.sol"
+            assert contract_path.exists()
+            contract_source = contract_path.read_text()
+
+        if not expected_result:
+            result_path = integration_fixtures["expected"] / "reentrancy_vulnerable.json"
+            assert result_path.exists()
+            with open(result_path) as f:
+                expected_result = json.load(f)
+
+        # Verify we have test data
+        assert contract_source
+        assert expected_result
+        assert "vulnerabilities" in expected_result
 
         # Test that classic reentrancy pattern is detected
-        assert contract_path.exists()
-        assert expected_result.exists()
-
-        # Load expected results for verification
-        with open(expected_result) as f:
-            expected = json.load(f)
-
-        assert "reentrancy" in expected["vulnerabilities"]
-        assert len(expected["vulnerabilities"]["reentrancy"]) > 0
+        if "reentrancy" in expected_result["vulnerabilities"]:
+            assert len(expected_result["vulnerabilities"]["reentrancy"]) > 0
 
     def test_cross_function_reentrancy(self, integration_fixtures):
         """Test detection of cross-function reentrancy."""

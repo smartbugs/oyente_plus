@@ -11,6 +11,7 @@ import pytest
 from oyente.basicblock import BasicBlock
 
 
+@pytest.mark.unit
 class TestBasicBlockInitialization:
     """Test BasicBlock initialization and basic properties."""
 
@@ -56,6 +57,7 @@ class TestBasicBlockInitialization:
         assert block.end == 100
 
 
+@pytest.mark.unit
 class TestBasicBlockInstructions:
     """Test instruction management in basic blocks."""
 
@@ -113,6 +115,7 @@ class TestBasicBlockInstructions:
         assert block.get_instructions() == expected_order
 
 
+@pytest.mark.unit
 class TestBasicBlockType:
     """Test block type management."""
 
@@ -163,6 +166,7 @@ class TestBasicBlockType:
         assert block.get_block_type() == block_type
 
 
+@pytest.mark.unit
 class TestBasicBlockFallsTo:
     """Test falls_to address management."""
 
@@ -214,6 +218,7 @@ class TestBasicBlockFallsTo:
         assert block.get_falls_to() == 30
 
 
+@pytest.mark.unit
 class TestBasicBlockJumpTarget:
     """Test jump target management."""
 
@@ -281,6 +286,7 @@ class TestBasicBlockJumpTarget:
         assert block.jump_target == 42
 
 
+@pytest.mark.unit
 class TestBasicBlockBranchExpression:
     """Test branch expression management."""
 
@@ -329,6 +335,7 @@ class TestBasicBlockBranchExpression:
         assert block.get_branch_expression() == expr2
 
 
+@pytest.mark.unit
 class TestBasicBlockDisplay:
     """Test the display functionality."""
 
@@ -400,6 +407,7 @@ class TestBasicBlockDisplay:
             assert f"INSTR_{i}" in calls
 
 
+@pytest.mark.unit
 class TestBasicBlockIntegration:
     """Test basic block in integrated scenarios."""
 
@@ -491,6 +499,7 @@ class TestBasicBlockIntegration:
         assert block.get_jump_target() == 0x200
 
 
+@pytest.mark.unit
 class TestBasicBlockEdgeCases:
     """Test edge cases and error conditions."""
 

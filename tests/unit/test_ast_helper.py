@@ -81,6 +81,7 @@ with patch.dict(
     from oyente.ast_helper import AstHelper
 
 
+@pytest.mark.unit
 class TestAstHelper:
     """Test cases for AstHelper class."""
 
@@ -523,6 +524,7 @@ class TestAstHelper:
         assert "children" in converted_ast
 
 
+@pytest.mark.unit
 class TestAstHelperEdgeCases:
     """Test edge cases and error conditions for AstHelper."""
 
@@ -602,6 +604,7 @@ class TestAstHelperEdgeCases:
         utils_mock.run_command.side_effect = None
 
 
+@pytest.mark.unit
 class TestAstHelperIntegration:
     """Integration tests for AstHelper with more realistic data."""
 

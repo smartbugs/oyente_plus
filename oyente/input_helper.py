@@ -361,7 +361,8 @@ class InputHelper:
                 logging.critical("Solidity compilation failed.")
                 if global_params.WEB:
                     print({"error": err})
-            exit(1)
+            # Re-raise the exception instead of calling exit(1) directly
+            raise
 
     def _compile_standard_json(self) -> List[Tuple[str, str]]:
         """Compile standard JSON input using solc directly.

@@ -9,6 +9,7 @@ import pytest
 from oyente.vargenerator import Generator
 
 
+@pytest.mark.unit
 class TestGenerator:
     """Test the Generator class for variable name generation."""
 

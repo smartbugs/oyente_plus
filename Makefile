@@ -9,7 +9,7 @@ VENV_ACTIVE := $(shell echo $$VIRTUAL_ENV)
 ifeq ($(VENV_ACTIVE),)
     POETRY_RUN := $(POETRY) run
 else
-    POETRY_RUN := 
+    POETRY_RUN :=
 endif
 
 .DEFAULT_GOAL := help
@@ -23,15 +23,15 @@ help: ## Show this help message
 
 setup: ## Create virtual environment and install all dependencies using Poetry
 	@echo "🚀 Setting up development environment..."
-	@$(POETRY) install --with dev,test,lint && echo "✅ Setup complete" || (echo "❌ Setup failed" && exit 1)
+	@$(POETRY) install --with dev && echo "✅ Setup complete" || (echo "❌ Setup failed" && exit 1)
 
 install: ## Install production dependencies only
 	@echo "📦 Installing production dependencies..."
 	@$(POETRY) install --only main && echo "✅ Installation complete" || (echo "❌ Installation failed" && exit 1)
 
-install-dev: ## Install all dependencies including dev/test/lint groups
+install-dev: ## Install all dependencies including dev group
 	@echo "🔧 Installing all dependencies..."
-	@$(POETRY) install --with dev,test,lint && echo "✅ Development installation complete" || (echo "❌ Development installation failed" && exit 1)
+	@$(POETRY) install --with dev && echo "✅ Development installation complete" || (echo "❌ Development installation failed" && exit 1)
 
 ##@ Code Quality
 

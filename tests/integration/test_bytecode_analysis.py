@@ -6,21 +6,30 @@ symbolic execution, and vulnerability detection.
 
 import pytest
 
+from tests.fixtures.registry import fixture_registry
+
 
 @pytest.mark.integration
 class TestBytecodeAnalysis:
     """Test analysis of EVM bytecode."""
 
+    @pytest.mark.smoke
     def test_simple_bytecode_analysis(self, integration_fixtures):
         """Test analysis of simple EVM bytecode."""
-        bytecode_file = integration_fixtures["bytecode"] / "simple_contract.bin"
+        # Try to get bytecode from fixture registry first
+        bytecode_content = fixture_registry.get_bytecode("simple_contract")
 
-        # Test bytecode loading and analysis setup - simplified for now
-        # Future: Add real bytecode analysis integration here
+        # Fallback to file-based fixtures if registry doesn't have it
+        if not bytecode_content:
+            bytecode_file = integration_fixtures["bytecode"] / "simple_contract.bin"
+            assert bytecode_file.exists()
+            bytecode_content = bytecode_file.read_text().strip()
 
-        # Test that bytecode file exists and is readable
-        assert bytecode_file.exists()
-        assert bytecode_file.suffix == ".bin"
+        # Test bytecode loading and analysis setup
+        assert bytecode_content
+        assert len(bytecode_content) > 0
+        # Basic bytecode validation - should be hex string
+        assert all(c in "0123456789abcdefABCDEF" for c in bytecode_content)
 
     def test_complex_bytecode_with_vulnerabilities(self, integration_fixtures):
         """Test analysis of complex bytecode with known vulnerabilities."""

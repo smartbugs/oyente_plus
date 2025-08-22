@@ -54,6 +54,7 @@ with patch.dict(
 oyente = oyente_module
 
 
+@pytest.mark.unit
 class TestCommandUtilities:
     """Test utility functions for command validation."""
 
@@ -79,6 +80,7 @@ class TestCommandUtilities:
             oyente.cmd_exists(None)
 
 
+@pytest.mark.unit
 class TestVersionComparison:
     """Test version string comparison functionality."""
 
@@ -117,6 +119,7 @@ class TestVersionComparison:
         assert oyente.compare_versions("1.10.0", "1.9.0") == 1
 
 
+@pytest.mark.unit
 class TestDependencyValidation:
     """Test dependency installation and validation."""
 
@@ -187,6 +190,7 @@ class TestDependencyValidation:
             assert mock_warning.call_count >= 1
 
 
+@pytest.mark.unit
 class TestBytecodeAnalysis:
     """Test bytecode analysis workflow."""
 
@@ -249,6 +253,7 @@ class TestBytecodeAnalysis:
         json.loads(call_args)
 
 
+@pytest.mark.unit
 class TestSolidityAnalysis:
     """Test Solidity analysis workflows."""
 
@@ -354,50 +359,49 @@ class TestSolidityAnalysis:
             )
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Test main function and argument parsing."""
 
     @patch("sys.argv", ["oyente.py", "--source", "test.sol"])
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
-    @patch("builtins.exit")
-    def test_main_solidity_analysis(self, mock_exit, mock_analyze_solidity, mock_has_dependencies):
+    def test_main_solidity_analysis(self, mock_analyze_solidity, mock_has_dependencies):
         """Test main function with Solidity source analysis."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.return_value = 0
 
-        oyente.main()
+        result = oyente.main()
 
         mock_has_dependencies.assert_called_once()
         mock_analyze_solidity.assert_called_once()
-        mock_exit.assert_called_once_with(0)
+        assert result == 0
 
     @patch("sys.argv", ["oyente.py", "--source", "test.bin", "--bytecode"])
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_bytecode")
-    @patch("builtins.exit")
-    def test_main_bytecode_analysis(self, mock_exit, mock_analyze_bytecode, mock_has_dependencies):
+    def test_main_bytecode_analysis(self, mock_analyze_bytecode, mock_has_dependencies):
         """Test main function with bytecode analysis."""
         mock_has_dependencies.return_value = True
         mock_analyze_bytecode.return_value = 1
 
-        oyente.main()
+        result = oyente.main()
 
         mock_has_dependencies.assert_called_once()
         mock_analyze_bytecode.assert_called_once()
-        mock_exit.assert_called_once_with(1)
+        assert result == 1
 
     @patch("sys.argv", ["oyente.py", "--source", "test.json", "--standard-json"])
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
-    @patch("builtins.exit")
-    def test_main_standard_json(self, mock_exit, mock_analyze_solidity, mock_has_dependencies):
+    def test_main_standard_json(self, mock_analyze_solidity, mock_has_dependencies):
         """Test main function with standard JSON input."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.return_value = 0
 
-        oyente.main()
+        result = oyente.main()
 
+        assert result == 0
         mock_has_dependencies.assert_called_once()
         # Check that analyze_solidity was called with standard_json type
         args, kwargs = mock_analyze_solidity.call_args
@@ -409,14 +413,14 @@ class TestMainFunction:
     @patch("sys.argv", ["oyente.py", "--source", "test.json", "--standard-json-output"])
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
-    @patch("builtins.exit")
-    def test_main_standard_json_output(self, mock_exit, mock_analyze_solidity, mock_has_dependencies):
+    def test_main_standard_json_output(self, mock_analyze_solidity, mock_has_dependencies):
         """Test main function with standard JSON output."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.return_value = 0
 
-        oyente.main()
+        result = oyente.main()
 
+        assert result == 0
         args, kwargs = mock_analyze_solidity.call_args
         if len(args) > 1:
             assert args[1] == "standard_json_output"
@@ -427,17 +431,15 @@ class TestMainFunction:
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
     @patch("tests.unit.test_oyente.oyente.global_params")
-    @patch("builtins.exit")
-    def test_main_global_params_setting(
-        self, mock_exit, mock_global_params, mock_analyze_solidity, mock_has_dependencies
-    ):
+    def test_main_global_params_setting(self, mock_global_params, mock_analyze_solidity, mock_has_dependencies):
         """Test that main function sets global parameters correctly."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.return_value = 0
 
-        oyente.main()
+        result = oyente.main()
 
-        # Check that timeout was set
+        # Check that function returns 0 and timeout was set
+        assert result == 0
         assert mock_global_params.TIMEOUT == 5000
 
     @patch("sys.argv", ["oyente.py", "--remoteURL", "http://example.com/contract.sol"])
@@ -445,10 +447,7 @@ class TestMainFunction:
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
     @patch("tests.unit.test_oyente.oyente.requests.get")
     @patch("builtins.open", new_callable=mock_open)
-    @patch("builtins.exit")
-    def test_main_remote_url(
-        self, mock_exit, mock_file_open, mock_requests_get, mock_analyze_solidity, mock_has_dependencies
-    ):
+    def test_main_remote_url(self, mock_file_open, mock_requests_get, mock_analyze_solidity, mock_has_dependencies):
         """Test main function with remote URL."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.return_value = 0
@@ -458,8 +457,9 @@ class TestMainFunction:
         mock_response.text = "contract TestContract {}"
         mock_requests_get.return_value = mock_response
 
-        oyente.main()
+        result = oyente.main()
 
+        assert result == 0
         mock_requests_get.assert_called_once_with("http://example.com/contract.sol", timeout=30)
         mock_file_open.assert_called_once_with("remote_contract.sol", "w")
         mock_file_open().write.assert_called_once_with("contract TestContract {}")
@@ -479,17 +479,17 @@ class TestMainFunction:
         """Test main function when dependencies are missing."""
         mock_has_dependencies.return_value = False
 
-        # Should return early without calling analyze functions
-        oyente.main()
+        # Should return 1 when dependencies are missing
+        result = oyente.main()
 
         mock_has_dependencies.assert_called_once()
+        assert result == 1
 
     @patch("sys.argv", ["oyente.py", "--source", "test.sol", "--verbose"])
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
     @patch("logging.getLogger")
-    @patch("builtins.exit")
-    def test_main_logging_configuration(self, mock_exit, mock_get_logger, mock_analyze_solidity, mock_has_dependencies):
+    def test_main_logging_configuration(self, mock_get_logger, mock_analyze_solidity, mock_has_dependencies):
         """Test main function configures logging correctly."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.return_value = 0
@@ -497,8 +497,9 @@ class TestMainFunction:
         mock_logger = Mock()
         mock_get_logger.return_value = mock_logger
 
-        oyente.main()
+        result = oyente.main()
 
+        assert result == 0
         # Should set DEBUG level for verbose mode
         mock_logger.setLevel.assert_called_with(level=logging.DEBUG)
 
@@ -510,6 +511,7 @@ class TestMainFunction:
             oyente.main()
 
 
+@pytest.mark.unit
 class TestArgumentParsing:
     """Test argument parsing edge cases."""
 
@@ -552,6 +554,7 @@ class TestArgumentParsing:
         assert args.allow_paths == ""
 
 
+@pytest.mark.unit
 class TestIntegration:
     """Integration tests for complete workflows."""
 
@@ -579,11 +582,11 @@ class TestIntegration:
         mock_result = {"vulnerabilities": {"reentrancy": ["Warning: Potential reentrancy"]}}
         mock_symexec_run.return_value = (mock_result, 1)
 
-        with patch("sys.argv", ["oyente.py", "--source", "test.sol"]), patch("builtins.exit") as mock_exit:
-            oyente.main()
+        with patch("sys.argv", ["oyente.py", "--source", "test.sol"]):
+            result = oyente.main()
 
-            # Should exit with code 1 (vulnerabilities found)
-            mock_exit.assert_called_once_with(1)
+            # Should return exit code 1 (vulnerabilities found)
+            assert result == 1
 
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed", return_value=False)
     def test_workflow_missing_dependencies(self, mock_has_dependencies):
@@ -591,19 +594,20 @@ class TestIntegration:
         with patch("sys.argv", ["oyente.py", "--source", "test.sol"]), patch(
             "tests.unit.test_oyente.oyente.analyze_solidity"
         ) as mock_analyze:
-            oyente.main()
+            result = oyente.main()
 
-            # Should not call analyze functions
+            # Should return 1 and not call analyze functions
+            assert result == 1
             mock_analyze.assert_not_called()
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling scenarios."""
 
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed")
     @patch("tests.unit.test_oyente.oyente.analyze_solidity")
-    @patch("builtins.exit")
-    def test_analyze_solidity_exception_handling(self, mock_exit, mock_analyze_solidity, mock_has_dependencies):
+    def test_analyze_solidity_exception_handling(self, mock_analyze_solidity, mock_has_dependencies):
         """Test that exceptions in analyze_solidity are handled properly."""
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.side_effect = Exception("Analysis failed")

@@ -25,9 +25,9 @@
 
 	\section*{Abstract}
 	\OY\footnote{\url{https://github.com/smartbugs/oyente}} could not analyze contracts written for the latest EVM and Solidity releases. We therefore forked it into \OYp\footnote{\url{https://github.com/smartbugs/oyente_plus}}, adding full support for current EVM and Solidity versions.
-	
+
 	To validate these enhancements, we conducted a comparative evaluation using subsets of these two smart contract datasets: cgt\footnote{\url{https://github.com/gsalzer/cgt}} and skelcodes\footnote{\url{https://github.com/gsalzer/skelcodes}}. We integrated \OYp\ as a new tool into SmartBugs\footnote{\url{https://github.com/smartbugs/smartbugs}}—generating normalized outputs (CSV or PostgreSQL arrays) of both tools and making analysis of the result data easier.
-	
+
 	We assessed performance, stability and the new features of \OYp\ by executing multiple iterations on each dataset—analyzing runtime bytecodes and Solidity source files. We tested for regressions introduced by \OYp. Detailed changes and enhancements in \OYp\ are documented in the repository\footnote{\url{https://github.com/smartbugs/oyente_plus/blob/update/EVMandSOLupdate.md}}.
 
 	\newpage
@@ -38,33 +38,33 @@
 
 	\section{Introduction And Motivation}
 	Smart contracts—self-executing programs deployed on blockchain platforms such as Ethereum—have ushered in a new era of decentralized applications.  However, they remain prone to critical vulnerabilities (e.g.\ re-entrancy, integer over/underflows, timestamp dependence) that attackers can exploit for financial gain.  Static analysis tools like \OY\ perform symbolic execution to uncover these flaws, but the original \OY\ is limited to EVM v1.7.3 and Solidity $\le$ 0.4.26.  As the Ethereum ecosystem has evolved, this version gap has rendered vanilla \OY\ unable to analyze the vast majority of recent contracts.
-	
+
 	In this work, we present \textbf{\OYp}, a fork of \OY\ that:
-	
+
 	\begin{itemize}
-		\item Fully Supports Solidity 0.5.x–0.8.x and EVM releases up to v1.16.1 
+		\item Fully Supports Solidity 0.5.x–0.8.x and EVM releases up to v1.16.1
 		\item Integrates seamlessly into the SmartBugs framework for large-scale evaluation
 	\end{itemize}
 
 	\section{Generating Results}
 	This section explains how we produced the results presented in this report. It covers (1) the SmartBugs execution parameters we chose and (2) the database setup used to collect and analyze the tool outputs.
-	
+
 	\subsection{SmartBugs Execution}
 	We installed SmartBugs following the official guide\footnote{\url{https://github.com/smartbugs/smartbugs/blob/master/doc/installation.md}} and then tailored its settings to our hardware. In particular, the flags \texttt{processes}, \texttt{timeout} and \texttt{mem-limit} should be set according to the target system to ensure efficient, reproducible analyses. A running Docker daemon is a prerequisite of SmartBugs---consider that it uses the python-lib \texttt{docker}, which relies on the Docker socket to communicate with the daemon. It is recommended to use Docker itself, instead of other tools (e.g., SUSE Rancher Desktop) to avoid issues. See Appendix A for the full installation and run commands.
-	
+
 	\subsection{Database Setup}
 	To enable SQL-based analysis, we used a PostgreSQL database instead of importing SmartBugs’ normalized CSV output into a spreadsheet. On Ubuntu 24.04.2 LTS, we installed PostgreSQL, created a database, defined a table matching the CSV schema, and loaded the data via PostgreSQL \texttt{\\COPY} command. You can find the full list of database installation and setup commands in Appendix B.
 
 	\section{Data Overview}
 	This section introduces the two smart contract datasets we analyzed (1) and highlights their key characteristics relevant to this evaluation (2). Furthermore the section describes which vulnerabilities \OY\ and \OYp\ are looking for (3) and how the normalized data of SmartBugs is structured (4).
-	
+
 	To get a deeper understanding of the datasets, one can take a look at their respective GitHub repositories\footnote{\url{https://github.com/gsalzer/cgt}}\footnote{\url{https://github.com/gsalzer/skelcodes}}.
 	% Page 3
 	\subsection{Contract Dataset Statistics}
 	Table\ref{tab:source-overview} summarizes the composition of each dataset in terms of folder count, the number of files declaring a pragma, files without any pragma, and files containing multiple pragmas. Each folder contains a \texttt{<contract>.sol}, \texttt{<contract>.hex} and \texttt{<contract>.rt.hex} file of the respective smart contract.
-	
+
 	This gives an immediate sense of how many contracts might produce errors during and require parsing or cleanup before analysis.
-	
+
 	\begin{table}[ht]
 		\centering
 		\begin{tabular}{lrrrr}
@@ -143,20 +143,20 @@
 
 	\subsection{Vulnerability Types}
 	We focus on the six common vulnerability classes detected by \OY\ and \OYp:
-	
+
 	\begin{description}
 		\item[Callstack Depth Attack Vulnerability:]	An attacker repeatedly chains external calls until the EVM’s maximum call‐stack depth is reached, causing subsequent calls to fail and potentially masking malicious behavior.\footnote{\url{https://docs.soliditylang.org/en/latest/security-considerations.html}} This vulnerability has been made largely irrelevant by an EVM update that was deployed on the main net in 2016.
-		
+
 		\item[Integer Overflow:] Occurs when an arithmetic operation exceeds the maximum value of its integer type (e.g.\ adding 1 to a uint8(255) wraps to 0), leading to incorrect logic or security breaches.\footnote{\url{https://owasp.org/www-project-smart-contract-top-10/2023/en/src/SC02-integer-overflow-underflow.html}} Since version 0.8.0, the Solidity compiler adds bound checks by default, hence overflows will manifest as assertion violations.
-		
+
 		\item[Integer Underflow:] The inverse of overflow: subtracting below the minimum of an integer wraps to its maximum (e.g., $0 - 1$ wraps to $2^n - 1$), which can be exploited to bypass checks or drain funds.\footnote{\url{https://owasp.org/www-project-smart-contract-top-10/2023/en/src/SC02-integer-overflow-underflow.html}} Since version 0.8.0, the Solidity compiler adds bound checks by default, hence underflows will manifest as assertion violations.
-		
+
 		\item[Re-Entrancy Vulnerability:] A contract makes an external call before updating its own state, allowing the callee to recursively re-enter and manipulate the contract logic (famously used in The DAO hack).\footnote{\url{https://hackernoon.com/hack-solidity-reentrancy-attack}}
-		
-		\item[Timestamp Dependency]  
+
+		\item[Timestamp Dependency]
 		Contracts relying on \texttt{block.timestamp} (or \texttt{now}) can be misled by miners, who can influence timestamps within limits, affecting auctions, randomness, and time-locks.\footnote{\url{https://owasp.org/www-project-smart-contract-top-10/2023/en/src/SC03-timestamp-dependence.html}}
-		
-		\item[Transaction Ordering Dependence (TOD)]  
+
+		\item[Transaction Ordering Dependence (TOD)]
 		When a contract’s outcome hinges on the order of pending transactions, attackers can front-run or back-run others in the mempool to gain unfair advantage.\footnote{\url{https://scs.owasp.org/SCWE/SCSVS-ARCH/SCWE-052/}}
 	\end{description}
 
@@ -202,32 +202,32 @@
 		\caption{Summary of SmartBugs runs comparing \OY\ and \OYp.}
 		\label{tab:run-summary}
 	\end{table}
-	
+
 	We executed nine runs in total, covering both \texttt{runtime} and \texttt{solidity} modes across the CGT and Skelcodes datasets. The very first run (\CGTrbcA) served as a pre-fix baseline before applying a correction for the Callstack\_Depth\_Attack vulnerability. All subsequent runs were organized into paired executions to verify result consistency:
-	
+
 	\begin{itemize}
 		\item \CGTrbcB, \CGTrbcC\ (runtime on CGT)
 		\item \CGTsscA, \CGTsscB\ (solidity on CGT)
 		\item \SKCrbcA, \SKCrbcB\ (runtime on Skelcodes)
 		\item \SKCsscA, \SKCsscB\ (solidity on Skelcodes)
 	\end{itemize}
-	
+
 	\section{Results: Vulnerability Comparison}
 	For each run and vulnerability, we compare detection by \OY\ and \OYp. Since the runs were done in pairs, as discussed in the previous section, we also took the result consistency into account.
-	
+
 	\subsection{Callstack Depth Attack Vulnerability Analysis}
 	Table~\ref{tab:callstack-results} summarizes the detection of the \emph{Callstack\_Depth\_Attack\_Vulnerability} across our SmartBugs runs.
-	
+
 	The very first execution (RunID \CGTrbcA) revealed a defect in \OYp, which failed to flag any instances (0/132) of this vulnerability. After applying a targeted bugfix\footnote{\url{https://github.com/smartbugs/oyente_plus/commit/19aa6a64d0b758489fe42dcc5fd721537bc2b843}}, subsequent paired runs in \texttt{runtime} mode on the CGT dataset (\CGTrbcB, \CGTrbcC) show that \OYp\ now detects 103 of the 132 cases originally found by \OY, with perfect run-to-run consistency. Similar improvements are observed in \texttt{solidity} mode on CGT (\CGTsscA, \CGTsscB) and \texttt{runtime} mode on Skelcodes (\SKCrbcA, \SKCrbcB), confirming the bugfix’s effectiveness.
-	
+
 	\subsubsection*{Relevance of Callstack Depth Attacks Today}
 	Although \OY\ still achieves higher raw recall on this check, \emph{call-depth attacks} have been rendered impractical by protocol-level changes. Since the Tangerine Whistle hard fork (October 2016), EIP-150’s\footnote{\url{https://eips.ethereum.org/EIPS/eip-150}} “63/64 rule” ensures that every contract call reserves at least 1/64 of the caller’s gas, preventing an attacker from exhausting the call stack before running out of gas. Contemporary best-practice guides therefore mark call-depth attacks as deprecated and of historical interest only.
-	
+
 	\subsubsection*{\OYp\ Advantage On Skelcodes In Solidity Mode}
 	In \texttt{solidity} mode on the Skelcodes dataset (RunIDs \SKCsscA, \SKCsscB), \OYp\ significantly outperforms \OY\ (258/259 vs.\ 5 detections). This inversion stems from version support: vanilla \OY\ is limited to Solidity versions up to 0.4.26 and EVM version up to 1.7.3, and emits warnings or fails on newer compiler/EVM versions. In contrast, \OYp\ fully supports recent Solidity (0.5.x–0.8.x) and EVM releases, allowing it to analyze the vast majority of contracts in Skelcodes without compatibility issues.
 
     \setlength\tabcolsep{4.5pt}
-	
+
 	\begin{table}[ht]
         \centering
         \setlength\tabcolsep{4.5pt}%
@@ -252,7 +252,7 @@
 
 	\subsection{Integer Overflow Analysis}
 	Table~\ref{tab:overflow-results} summarizes the detection of the \emph{Integer\_Overflow} vulnerability across our SmartBugs runs. All \texttt{runtime}-mode executions returned zero detections, confirming that \OY\ and \OYp\ can only identify overflow issues by inspecting the Solidity source.
-	
+
 	In \texttt{solidity} mode on the CGT dataset (RunIDs \CGTsscA, \CGTsscB), \OY\ flagged 1\,100/1\,088 overflow cases, respectively, while \OYp\ flagged 1\,245 cases in both runs. The overlap of 1\,088/1\,079 contracts yields a recall of approximately 99\,\% for \OYp\ relative to \OY, and shows 157/166 additional flags.
 
 	On Skelcodes in \texttt{solidity} mode (RunIDs \SKCsscA, \SKCsscB), vanilla \OY\ detected only 14/13 overflows (0.8\,\% of contracts) due to its lack of support for Solidity $\ge$ 0.5.x and EVM $\ge$ 1.7.3, whereas \OYp\ detected 1\,281/1\,281 cases (71\,\% of contracts), demonstrating its clear advantage on recent sources.
@@ -277,12 +277,12 @@
 		\caption{Detection summary for \emph{Integer\_Overflow}.}
 		\label{tab:overflow-results}
 	\end{table}
-	
+
 	\subsection{Integer Underflow Analysis}
 	Table~\ref{tab:underflow-results} summarizes the detection of the \emph{Integer\_Underflow} vulnerability. As with overflow, no underflows are detected in any \texttt{runtime}-mode runs, underscoring that underflow checks require source-level analysis.
-	
+
 	In CGT \texttt{solidity} mode (\CGTsscA, \CGTsscB), \OY\ found 678/675 underflows, while \OYp\ found 1\,077/1\,078, with an overlap of 676/673 cases. This corresponds to a recall of roughly 99\,\% for \OYp, with approx.~400 additional flags—again reflecting more aggressive detection of borderline patterns by the updated parser.
-	
+
 	On Skelcodes (\texttt{solidity} mode, \SKCsscA, \SKCsscB), \OY’s support gap limits it to 20/23 underflow flags (1.1\,\%), whereas \OYp\ identifies 1\,262/1\,263 cases (70\,\%). Apparently, \OYp\ copes differently with features of recent Solidity versions than \OY, reinforcing that newer Solidity versions only become analyzable with the \OYp\ enhancements.
 
 	\begin{table}[ht]
@@ -305,9 +305,9 @@
 		\caption{Detection summary for \emph{Integer\_Underflow}.}
 		\label{tab:underflow-results}
 	\end{table}
-	
+
 	\subsection{Re-Entrancy Vulnerability Analysis}
-	Table~\ref{tab:reentrancy-results} summarizes the detection of the \emph{Re\_Entrancy\_Vulnerability} across our SmartBugs runs. 
+	Table~\ref{tab:reentrancy-results} summarizes the detection of the \emph{Re\_Entrancy\_Vulnerability} across our SmartBugs runs.
 
 	\begin{table}[ht]
 		\centering
@@ -329,12 +329,12 @@
 		\caption{Detection summary for \emph{Re\_Entrancy\_Vulnerability}.}
 		\label{tab:reentrancy-results}
 	\end{table}
-	
+
 	Across both CGT and Skelcodes datasets, \OYp\ consistently reports more re-entrancy issues than vanilla \OY. In the CGT runs (both \texttt{runtime} and \texttt{solidity} modes), \OYp\ finds up to 80 cases per run versus 40 by \OY, with an overlap of about 40 contracts. On Skelcodes, the gap widens: in \texttt{runtime} mode, \OYp\ flags 110/112 versus only 1/2 by \OY; in \texttt{solidity} mode, \OYp\ detects 86/89 cases while \OY\ detects 0/1. This reflects \OY’s lack of support for newer Solidity/EVM versions, which causes it to miss or abort on many recent contracts.
-	
+
 	\subsection{Timestamp Dependency Analysis}
 	Table~\ref{tab:timestamp-results} shows the detection of the \emph{Timestamp\_Dependency} vulnerability.
-	
+
 	\begin{table}[ht]
 		\centering
 		\begin{tabular}{lrrrrrrr}
@@ -355,12 +355,12 @@
 		\caption{Detection summary for \emph{Timestamp\_Dependency}.}
 		\label{tab:timestamp-results}
 	\end{table}
-	
+
 	Both tools detect hundreds of timestamp-dependency issues in CGT across runs, with \OYp\ finding slightly more unique cases (up to 98 extra flags in initial CGT runs). In Skelcodes, detection drops sharply—vanilla \OY\ flags only 1/4 cases per run, while \OYp\ still identifies 40/46 instances, again illustrating the impact of supporting recent Solidity/EVM versions.
-	
+
 	\subsection{Transaction Ordering Dependence Analysis}
 	Table~\ref{tab:tod-results} summarizes the detection of the \emph{Transaction\_Ordering\_Dependence\_TOD} vulnerability across our SmartBugs runs. Across both datasets and modes, \OYp\ consistently detects more Transaction Ordering Dependence issues than vanilla \OY.
-	
+
 	\begin{table}[ht]
 		\centering
 		\begin{tabular}{lrrrrrrrr}
@@ -381,7 +381,7 @@
 		\caption{Detection summary for \emph{Transaction\_Ordering\_Dependence\_TOD}.}
 		\label{tab:tod-results}
 	\end{table}
-	
+
 	\begin{itemize}
 		\item \texttt{CGT, runtime mode (\CGTrbcA, \CGTrbcB):}
 		\OY\ flags 561/567 cases; \OYp\ flags 648/760, with overlaps of 497/508, yielding net gains of +81 to +199 detections.
@@ -392,14 +392,14 @@
 		\item \texttt{Skelcodes, solidity mode (\SKCsscA, \SKCsscB):}
 		\OY\ reports 2; \OYp\ reports 112/115, including the two contracts by \OY\ and adding +110/+113 new ones.
 	\end{itemize}
-		
+
 	This consistent increase demonstrates \OYp’s enhanced capability to detect transaction ordering vulnerabilities, particularly in more recent contract sets where vanilla \OY’s static analysis and version limitations hinder coverage.
-	
+
 	\section{Error And Failure Analysis}
-	
+
 	\subsection{Error Analysis}
 	Table~\ref{tab:summary_errors} summarizes the number of contracts whose analysis aborted with an error in each SmartBugs run. Notably:
-	
+
 	\begin{itemize}
 		\item All \texttt{runtime}-mode runs (\CGTrbcA, \CGTrbcB, \CGTrbcC, \SKCrbcA, \SKCrbcB) completed without errors for both tools.
 		\item In \texttt{solidity}-mode on the CGT dataset (\CGTsscA, \CGTsscB), both \OY\ and \OYp\ failed to compile exactly 36 contracts.
@@ -450,16 +450,16 @@
 		\caption{Most frequent errors encountered during analysis.}
 		\label{tab:error_types}
 	\end{table}
-	
+
 	\subsection{Failure Analysis}
 	This section examines contracts whose analysis terminated with a “fail” status rather than completing (either with findings or cleanly). Table~\ref{tab:failure_summary} gives an overview per run, and Table~\ref{tab:failure_types_detailed} drills into the most common fail prefixes (first 25 characters of the error message) to approximate distinct failure modes.
-	
+
 	\begin{table}[ht]
 		\centering
 		\begin{tabular}{lrrrrrrr}
 			\toprule
-			\textbf{Run ID}      & \textbf{Total} & \textbf{\OY} & \textbf{Only \OY} 
-			& \textbf{\OYp} & \textbf{Only \OYp} 
+			\textbf{Run ID}      & \textbf{Total} & \textbf{\OY} & \textbf{Only \OY}
+			& \textbf{\OYp} & \textbf{Only \OYp}
 			& \textbf{Both}   & \textbf{Neither} \\
 			\midrule
 			\CGTrbcA & 1879 & 9 & 8 & 1 & 0 & 1 & 1870 \\
@@ -476,43 +476,43 @@
 		\caption{Contracts that ended in a “fail” status per run.}
 		\label{tab:failure_summary}
 	\end{table}
-	
+
 	\subsubsection{Failure Type Details}
 	Table~\ref{tab:failure_types_detailed} breaks down the dominant failure modes by run, normalized to high‐level exception or Docker exit codes. Several key observations emerge:
-	
+
 	\begin{itemize}
 		\item \textbf{CGT Runtime Mode (\CGTrbcA, \CGTrbcB, \CGTrbcC):}
 		Failures are rare (up to 4 per run) and dominated by \texttt{DOCKER\_SEGV} and \texttt{ValueError} in \OY.
 		\OYp\ eliminates Docker segmentation faults entirely, instead showing occasional timeouts (\texttt{DOCKER\_TIMEOUT}) and matching \texttt{NameError} counts, indicating improved low‐level stability.
-		
+
 		\item \textbf{CGT Solidity Mode (\CGTsscA, \CGTsscB):}
 		Both tools equally share JSON decoding errors (18 total).
 		\OY\ most frequently aborts with \texttt{RuntimeError} (60 total failures each) and Docker segmentation faults, reflecting generic harness crashes.
 		\OYp\ reduces \texttt{RuntimeError} from 60 to 1 but incurs more timeouts, suggesting parser robustness improvements at the cost of longer executions.
-		
-		\item \textbf{Skelcodes Runtime Test (\SKCrbcA, \SKCrbcB):}  
-		Large contracts trigger Docker OOM kills (\texttt{DOCKER\_KILL\_OOM}, 15/16 in \OY) and timeouts (19/21 in \OYp).  
+
+		\item \textbf{Skelcodes Runtime Test (\SKCrbcA, \SKCrbcB):}
+		Large contracts trigger Docker OOM kills (\texttt{DOCKER\_KILL\_OOM}, 15/16 in \OY) and timeouts (19/21 in \OYp).
 		\OYp\ removes all OOM kills but exhibits timeouts, highlighting better memory handling but continued high resource demands.
-		
-		\item \textbf{Skelcodes Solidity Mode (\SKCsscA, \SKCsscB):}  
-		\OY\ aborts on 1\,166 contracts (58\,\%), chiefly via \texttt{RuntimeError} (765/754), \texttt{IndexError} (327/337), and \texttt{KeyError} (72).  
+
+		\item \textbf{Skelcodes Solidity Mode (\SKCsscA, \SKCsscB):}
+		\OY\ aborts on 1\,166 contracts (58\,\%), chiefly via \texttt{RuntimeError} (765/754), \texttt{IndexError} (327/337), and \texttt{KeyError} (72).
 		In contrast, \OYp\ cuts total failures to about 160, with only a handful of \texttt{RuntimeError} (6), \texttt{TypeError} (95), and timeouts (40/45), demonstrating robust version support while exposing new edge‐case exceptions for further optimization.
 	\end{itemize}
-	
+
 	Overall, \OYp\ reduces low‐level crashes and OOM failures, shifting the residual failure profile toward higher‐level parser or runtime exceptions that can be targeted in future development.
-	
+
 	\begin{itemize}
 		\item CGT \texttt{runtime}-mode runs (\CGTrbcA, \CGTrbcB, \CGTrbcC) show only single‐digit failures, mostly unique to one tool or the other.
 		\item CGT \texttt{solidity}-mode (\CGTsscA, \CGTsscB) exhibits about 85 failures in \OY\ versus about 30 in \OYp, indicating \OYp’s improvements cut failures by over 60\,\%.
 		\item Skelcodes solidity runs (\SKCsscA, \SKCsscB) reveal large gaps: \OY\ fails on 1\,166 contracts (58\,\%), while \OYp\ reduces that to about 140 (8\,\%), a more than 85\,\% reduction in crashes and aborts.
 	\end{itemize}
-	
+
 	\begin{table}[ht]
 		\centering
 		\scriptsize
 		\begin{tabular}{llrrr}
 			\toprule
-			\textbf{Run ID}   & \textbf{Error Type} 
+			\textbf{Run ID}   & \textbf{Error Type}
 			& \textbf{\OY} & \textbf{\OYp} & \textbf{Total} \\
 			\midrule
 			\CGTrbcA & DOCKER\_SEGV & 4 & 0 & 4 \\
@@ -573,16 +573,16 @@
 		\label{tab:failure_types_detailed}
 	\end{table}
 	\clearpage
-	
+
 	\section{Runtime Performance and Timeout Analysis}
-	
+
 	Using only successful runs (no errors, no failures), we computed per‐tool latency percentiles and averages, and then counted overall failures and timeouts:
-	
+
 	\begin{table}[ht]
 		\centering
 		\begin{tabular}{lrrrrr}
 			\toprule
-			\textbf{Tool} & \textbf{Median [s]} & \textbf{95th\,\%ile [s]} & \textbf{Mean [s]} & \textbf{\# Successes} 
+			\textbf{Tool} & \textbf{Median [s]} & \textbf{95th\,\%ile [s]} & \textbf{Mean [s]} & \textbf{\# Successes}
 			& \textbf{Timeouts} \\
 			\midrule
 			\OY & 3.46 & 33.4 & 8.99 & 11\,934 & 0 \\
@@ -592,18 +592,18 @@
 		\caption{Summary of successful‐run durations and timeout counts.}
 		\label{tab:runtime_summary}
 	\end{table}
-	
+
 	\noindent
 	\textbf{Key observations:}
 	\begin{itemize}
-		\item \textbf{Speed on supported contracts:}  
-		\OY\ is substantially faster—its median successful run is only 3.5 s (95\,\% of runs under 33 s), compared to \OYp’s 23.7 s median (95\,\% under 336 s).  
-		\item \textbf{Robustness:}  
-		\OYp\ completes more analyses overall (58\,\% success rate, 14\,800 runs) than \OY\ (52\,\% success, 11\,934 runs), reflecting far fewer outright failures (416 vs.\ 2617).  
-		\item \textbf{Timeout behavior:}  
-		\OY\ never hit the user‐configured timeout, whereas \OYp\ timed out 163 times—an expected trade‐off given its longer average runtimes on complex or newer contracts.  
+		\item \textbf{Speed on supported contracts:}
+		\OY\ is substantially faster—its median successful run is only 3.5 s (95\,\% of runs under 33 s), compared to \OYp’s 23.7 s median (95\,\% under 336 s).
+		\item \textbf{Robustness:}
+		\OYp\ completes more analyses overall (58\,\% success rate, 14\,800 runs) than \OY\ (52\,\% success, 11\,934 runs), reflecting far fewer outright failures (416 vs.\ 2617).
+		\item \textbf{Timeout behavior:}
+		\OY\ never hit the user‐configured timeout, whereas \OYp\ timed out 163 times—an expected trade‐off given its longer average runtimes on complex or newer contracts.
 	\end{itemize}
-	
+
 	For the subset of contracts that both tools analyse to completion without
 	raising an error, \OY\ records shorter median runtimes.  Yet \OY\ also
 	exhibits instances of silent termination that are not captured as explicit
@@ -611,7 +611,7 @@
 	In contrast, \OYp\ achieves broader coverage and far fewer observable
 	failures, albeit with longer measured runtimes for the contracts it completes
 	and with a modest number of timeouts.
-	
+
 	\subsection{EVM Code Coverage Analysis}
 	To measure how much of each contract’s bytecode was explored, we extracted the \texttt{"EVM Code Coverage: xx.x\%"} entries from the \texttt{infos} array, used a regular expression to pull out the numeric percentage, cast it to \texttt{NUMERIC}, and then averaged those values per \texttt{(runid, toolid)}.
 
@@ -644,7 +644,7 @@
 		\caption{Average EVM code coverage by run and tool.}
 		\label{tab:coverage_summary}
 	\end{table}
-	
+
 	\noindent
 	\textbf{Interpretation:}
 	\begin{itemize}
@@ -658,7 +658,7 @@
 
 	\section{Areas of Improvement in \OYp}
 	Although \OYp\ delivers substantially higher EVM code coverage and far fewer outright failures than vanilla \OY, our quantitative analyses (Tables~\ref{tab:runtime_summary}, \ref{tab:coverage_summary}, \ref{tab:failure_summary}) highlight several key areas for further enhancement:
-	
+
 	\begin{itemize}
 		\item \textbf{Fix new Exceptions in \OYp:}
 		\begin{itemize}
@@ -669,34 +669,34 @@
 			\end{itemize}
 			\item \emph{Recommendation:} Apart from general improvement of exception and error handling in \OYp, focus on fixing these general issues to improve the stability of the tool further.
 		\end{itemize}
-		
+
 		\item \textbf{Exception and Error Handling:} \begin{itemize}
-			\item \emph{Observation:} Residual parser/runtime exceptions (e.g.\ \texttt{RuntimeError}, \texttt{TypeError}, JSON decode errors) still account for 416 failures (Table~\ref{tab:failure_summary}).  
+			\item \emph{Observation:} Residual parser/runtime exceptions (e.g.\ \texttt{RuntimeError}, \texttt{TypeError}, JSON decode errors) still account for 416 failures (Table~\ref{tab:failure_summary}).
 			\item \emph{Recommendation:} Harden input preprocessing—sanitize and validate source maps and JSON artifacts before symbolic execution. Normalize exception flows by catching and categorizing low‐level errors earlier, improving the tool’s resilience against malformed inputs.
 		\end{itemize}
-		
-		\item \textbf{Analysis Performance and Timeouts:}  
+
+		\item \textbf{Analysis Performance and Timeouts:}
 		\begin{itemize}
 			\item \emph{Observation:} \OYp’s median successful runtime (23.7\,s) is nearly 7$\times$ slower than \OY’s (3.46\,s), and its P95 tail approaches 6 min, leading to 163 timeouts under our current limits.
 			\item \emph{Recommendation:} Profile and optimize hotspot routines in symbolic execution and bytecode traversal (e.g.\ the AST walker and constraint solver) to reduce per‐contract latency.
 		\end{itemize}
-		
-		\item \textbf{Expand and streamline unit testing}  
+
+		\item \textbf{Expand and streamline unit testing}
 		\begin{itemize}
-			\item \emph{Observation:}  
-			\OYp\ currently relies on a sparse, end‐to‐end test harness, which makes it cumbersome to isolate and verify individual components.  
-			\item \emph{Recommendation:}  
-			Adopt a lightweight testing framework (e.g.\ pytest) and aim for at least 70\,\% coverage on core modules.  
+			\item \emph{Observation:}
+			\OYp\ currently relies on a sparse, end‐to‐end test harness, which makes it cumbersome to isolate and verify individual components.
+			\item \emph{Recommendation:}
+			Adopt a lightweight testing framework (e.g.\ pytest) and aim for at least 70\,\% coverage on core modules.
 			\begin{itemize}
-				\item Identify critical functions (AST parsing, constraint solving, source‐map resolution) and write fine‐grained tests that mock external dependencies.  
-				\item Use parameterized tests to cover edge cases (empty inputs, malformed bytecode, unusual pragma versions).  
-				\item Integrate coverage checks into CI so regressions are caught automatically on every pull request.  
+				\item Identify critical functions (AST parsing, constraint solving, source‐map resolution) and write fine‐grained tests that mock external dependencies.
+				\item Use parameterized tests to cover edge cases (empty inputs, malformed bytecode, unusual pragma versions).
+				\item Integrate coverage checks into CI so regressions are caught automatically on every pull request.
 			\end{itemize}
 		\end{itemize}
-		
-		\item \textbf{Refactor for modular architecture}  
+
+		\item \textbf{Refactor for modular architecture}
 		\begin{itemize}
-			\item \emph{Observation:}  
+			\item \emph{Observation:}
 			The current codebase mixes parsing, symbolic execution, and I/O in tightly coupled scripts, making maintenance and feature additions error‐prone.
 			\item \emph{Recommendation:}
 			Decompose the code into well‐defined packages and interfaces:
@@ -707,20 +707,20 @@
 			\end{itemize}
 		\end{itemize}
 	\end{itemize}
-	
+
 	Addressing these areas will help \OYp\ achieve both the robustness and the efficiency required for large‐scale smart‐contract auditing on current Solidity/EVM codebases.
 
 	\section{Conclusion}
 	In this work, we have presented \OYp, a fork of the original \OY\ vulnerability scanner updated to support recent EVM (v1.15.10) and Solidity (v0.5.x–v0.8.x) versions.  By integrating \OYp\ into the SmartBugs framework and performing nine test runs with the CGT and Skelcodes datasets, we demonstrated that:
-	
+
 	\begin{itemize}
 		\item \textbf{Extended version support} yields significantly higher vulnerability recall on recent contracts (e.g.\ +2500 detections of arithmetic and ordering bugs on Skelcodes) and reduces outright failures by over 85\% (1166 to 144 in solidity mode).
 		\item \textbf{Bugfixes} (e.g.\ call-stack detection) restored parity with vanilla \OY\ on legacy checks, while obsoleting deprecated attack vectors (call-depth attacks are no longer feasible under EIP-150).
 		\item \textbf{Performance trade-offs}: \OYp\ achieves 15–20\,\% higher code coverage on CGT and 60\,\% on Skelcodes, at the cost of a 7$\times$ slower median runtime and occasional timeouts (163 vs.\ 0).
 	\end{itemize}
-	
+
 	Taken together, these results confirm that \OYp\ is both more robust and more comprehensive on recent Solidity/EVM codebases, at the expense of additional execution time. Future work should focus on:
-	
+
 	\begin{itemize}
 		\item \emph{Profiling and optimizing} the symbolic-execution hotspots to reduce median runtime and P95 tail.
 		\item \emph{Hardening exception flows} around parser and I/O edges to eliminate the remaining 416 failures and the handful of new TypeError/ValueError cases.
@@ -728,50 +728,50 @@
 	\end{itemize}
 
 	\section*{Acknowledgments}
-	The author would like to thank Gernot Salzer and Monika di Angelo for their ongoing support, incisive feedback, and for providing the CGT and Skelcodes datasets.  
+	The author would like to thank Gernot Salzer and Monika di Angelo for their ongoing support, incisive feedback, and for providing the CGT and Skelcodes datasets.
 	He is also grateful to the SmartBugs team for welcoming \OYp\ into their framework and GitHub organization, and for their assistance during integration.
 
 	\section*{Generative AI Assistance}
 	We leveraged the ChatGPT language model\footnote{\url{https://chatgpt.com/}} to refine the report’s grammar, spelling, and overall language clarity. All content was reviewed and edited by us to ensure factual accuracy and originality.
-	
+
 	OpenAI’s ChatGPT was used during the development of code snippets and algorithm prototypes for \OYp. It also aided in diagnosing and resolving implementation issues, helping to accelerate bug fixes and feature enhancements. All code was subsequently verified and tested.
-	
+
 	Preliminary discussions and ideation were supported by queries to ChatGPT. We validated and expanded upon the suggestions. All final content decisions remain with us.
 
     \newpage
 	\appendix
 	\section*{Appendix}
-	
+
 	\subsection*{Verbatim Listing of Setup and SQL Commands}
-	
+
 	\subsubsection*{SmartBugs Installation And Execution}
 	The following steps were taken to generate our results.
-	
+
 	\begin{verbatim}
 		# Setup SmartBugs
 		git clone https://github.com/smartbugs/smartbugs.git
 		cd smartbugs
 		./install/setup-venv.sh; source venv/bin/activate
-		
+
 		# Run analysis
 		./smartbugs -t oyente,oyente+ -f <dataset-location>/*/*.sol \
 		--processes <X> --mem-limit <Y> --timeout <Z>
-		
+
 		# Reformat raw output and generate PostgreSQL-ready CSV
 		./reparse results
 		./results2csv -p results > <path_to_results_file>
 	\end{verbatim}
-	
+
 	\subsubsection*{Database Setup}
 	Here you can find the commands used to install and setup a PostgreSQL database on Ubuntu.
-	
+
 	\begin{verbatim}
 		# Install PostgreSQL and create user & database
 		sudo apt install -y postgresql postgresql-contrib
 		sudo systemctl enable --now postgresql
 		sudo -u postgres createuser <username> --createdb
 		sudo -u postgres createdb <database_name> --owner=<username>
-		
+
 		# Define table schema based on smartbugs output
 		psql <database_name> <<EOF
 		CREATE TABLE smartbugs_results (
@@ -790,7 +790,7 @@
 		fails          TEXT[]
 		);
 		EOF
-		
+
 		# Import smartbugs results and cast timestamps
 		psql <database_name> <<EOF
 		\copy <table_name> (filename, basename, toolid, toolmode, parser_version, runid, start, duration, exit_code, findings, infos, errors, fails)
@@ -800,21 +800,21 @@
 		USING to_timestamp(start)::timestamp without time zone;
 		EOF
 	\end{verbatim}
-	
+
 	\subsection*{Verbatim Listings Of Dataset Analyses}
-	The contract dataset statistics were queried via \texttt{grep} and \texttt{wc} CLI commands:	
+	The contract dataset statistics were queried via \texttt{grep} and \texttt{wc} CLI commands:
 	\begin{verbatim}
 		# Files w/ pragma
 		grep -c "pragma solidity" <path_to_dataset>/*/*.sol | grep -v ":0" | wc -l
-		
+
 		# Files w/o pragma
 		grep -c "pragma solidity" <path_to_dataset>/*/*.sol | grep ":0" | wc -l
-		
+
 		# Multi-pragma files
 		grep -c "pragma solidity" <path_to_dataset>/*/*.sol | grep -v ":1" | grep -v ":0" | wc -l
 	\end{verbatim}
 
-	Via \texttt{grep} and \texttt{wc} CLI commands we queried the Solidity version distribution:	
+	Via \texttt{grep} and \texttt{wc} CLI commands we queried the Solidity version distribution:
 	\begin{verbatim}
 		# Repeat (or loop) for versions 0.4.x up to 0.8.x
 		grep "pragma solidity" <path_to_dataset>/*/*.sol | grep "0.4." | wc -l
@@ -825,14 +825,14 @@
 	\begin{verbatim}
 		# Extract a list of unique contract names inside the ZIP
 		unzip -Z1 skelcodes_selection.zip | xargs -n1 basename | sort -u > names.txt
-		
+
 		# Only keep CSV lines whose first field matches the list
 		awk -F',' 'NR==FNR {have[$1]; next} ($1 in have)' names.txt info.csv > info_filtered.csv
 	\end{verbatim}
 
 	\subsection*{Verbatim Listing Of SQL Statements}
 	This section shows the SQL statements used to query the results for our Tables from the database.
-	
+
 	\begin{itemize}
 		\item SQL query to generate Table~\ref{tab:run-summary} - Run Summary:
 		\begin{verbatim}
@@ -951,7 +951,7 @@
 		\item SQL query to generate Table~\ref{tab:runtime_summary} - Runtime Summary:
 		\begin{verbatim}
 			WITH successes AS (
-				SELECT 
+				SELECT
 					runid, toolid, duration, fails, errors
 				FROM smartbugs_results
 				WHERE cardinality(fails) = 0 AND cardinality(errors) = 0

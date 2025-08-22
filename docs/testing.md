@@ -4,24 +4,33 @@ This document explains the testing structure and workflows for Oyente+, covering
 
 ## Current Status
 
-- **Total Tests**: 425+ test functions executed with 100% pass rate
+- **Total Tests**: 533 test functions (429 unit + 104 integration) executed with 100% pass rate
 - **Pass Rate**: 100% (no skipped tests currently)
 - **Test Files**: Comprehensive test files covering core modules
 - **Test Categories**: Unit, Integration, Property, Performance
 - **Coverage**: All core modules have test coverage
+- **Infrastructure**: Modernized with centralized fixture registry and factories
 
 ## Test Organization
 
 Following industry best practices, our tests are organized into distinct categories:
 
-```
+```text
 tests/
 ├── unit/           # Fast, isolated tests
 ├── integration/    # Component interaction tests
 ├── property/       # Hypothesis property-based tests
 ├── performance/    # Benchmark tests (pytest-benchmark)
-├── fixtures/       # Test data and utilities
-└── mocks/          # Mock objects (Z3, filesystem, subprocess, crytic-compile)
+├── fixtures/       # Centralized fixture library
+│   ├── contracts/  # Static Solidity contracts by category (safe/vulnerable/edge_cases)
+│   ├── bytecode/   # EVM bytecode samples
+│   ├── expected_results/  # Golden files for integration tests
+│   ├── factories/  # Test data factories (contract, analysis, vulnerability)
+│   ├── data_generators.py  # Comprehensive data generators
+│   └── registry.py # Central fixture registry with caching
+├── mocks/          # Mock objects (Z3, filesystem, subprocess, crytic-compile)
+│   └── registry.py # Central mock registry
+└── templates/      # Test templates for common patterns
 ```
 
 ## Test Types
@@ -29,17 +38,19 @@ tests/
 ### Unit Tests (`tests/unit/`)
 
 **Purpose**: Test individual functions and classes in isolation
-**Test Count**: Majority of the 425+ test functions
+**Test Count**: 429 unit test functions
 **Execution Time**: < 10 seconds total
 **Dependencies**: No external tools, filesystem, or network
 
 **Characteristics**:
+
 - Use mocks for all external dependencies
 - Test single functions or classes
 - Fast execution for immediate feedback
 - Run on every code change
 
 **Examples**:
+
 - `test_vulnerability.py`: 40+ tests for all vulnerability detectors
 - `test_analysis.py`: 40+ tests for analysis functions
 - `test_input_helper.py`: 45+ tests including property-based testing
@@ -53,17 +64,19 @@ tests/
 ### Integration Tests (`tests/integration/`)
 
 **Purpose**: Test component interactions and workflows
-**Test Count**: Subset of the 425+ test functions
+**Test Count**: 65 integration test functions
 **Execution Time**: < 3 minutes total
 **Dependencies**: May use external tools (solc, Z3) and real file I/O
 
 **Characteristics**:
+
 - Test multiple components working together
 - May involve real compilation and analysis
 - Use real Solidity contracts as test data
 - Test CLI workflows and end-to-end scenarios
 
 **Examples**:
+
 - Full Solidity compilation pipeline
 - Bytecode analysis workflows
 - CLI argument parsing and execution
@@ -87,12 +100,12 @@ tests/
 
 ```bash
 # Development workflow - run before each commit
-make test          # Unit tests only (~425 tests, ~8 seconds) 
+make test          # Unit tests only (429 tests, ~8 seconds)
 make all          # Full quality checks including unit tests
 
 # Specific test types
 make test-unit           # Unit tests only
-make test-integration    # Integration tests only  
+make test-integration    # Integration tests only
 make test-performance    # Performance benchmarks
 make test-property       # Property-based tests
 
@@ -109,7 +122,7 @@ pytest                               # All unit tests
 pytest tests/unit/                   # Explicit unit test directory
 pytest -m unit                       # By marker
 
-# Integration tests  
+# Integration tests
 pytest -m integration                # Integration tests only
 pytest tests/integration/            # Integration test directory
 pytest --integration                 # If custom option added
@@ -158,9 +171,15 @@ Our tests use pytest markers for organization:
 ```bash
 # By test type
 pytest -m unit           # Unit tests
-pytest -m integration    # Integration tests  
+pytest -m integration    # Integration tests
 pytest -m property       # Property-based tests
 pytest -m performance    # Performance tests
+
+# By criticality and purpose (NEW)
+pytest -m smoke          # Smoke tests (critical path)
+pytest -m regression     # Regression tests
+pytest -m fuzzing        # Fuzz tests
+pytest -m mutation       # Mutation tests
 
 # By speed
 pytest -m "not slow"     # Skip slow tests
@@ -173,6 +192,8 @@ pytest -m requires_solc  # Tests requiring Solidity compiler
 # Combinations
 pytest -m "unit and not slow"              # Fast unit tests only
 pytest -m "integration and requires_solc"  # Integration tests with Solidity
+pytest -m "smoke or regression"            # Critical and regression tests
+pytest -m "fuzzing and property"           # Property-based fuzz tests
 ```
 
 ## Test Configuration
@@ -192,10 +213,16 @@ addopts = [
 ]
 markers = [
     "unit: marks tests as unit tests",
-    "integration: marks tests as integration tests", 
+    "integration: marks tests as integration tests",
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "property: marks tests as property-based tests",
     "performance: marks tests as performance tests",
+    "requires_z3: marks tests that require Z3 solver",
+    "requires_solc: marks tests that require Solidity compiler",
+    "smoke: marks tests as smoke tests (critical path)",
+    "regression: marks tests as regression tests",
+    "fuzzing: marks tests as fuzz tests",
+    "mutation: marks tests as mutation tests",
 ]
 ```
 
@@ -204,6 +231,7 @@ markers = [
 ### Unit Test Guidelines
 
 **DO**:
+
 - Test single functions or classes
 - Use mocks for all external dependencies
 - Focus on algorithmic correctness
@@ -211,22 +239,24 @@ markers = [
 - Test edge cases and error conditions
 
 **DON'T**:
+
 - Access filesystem or network
 - Call external processes
 - Test multiple components together
 - Use real Solidity compilation
 
 **Example**:
+
 ```python
 def test_vulnerability_detection_logic():
     \"\"\"Test vulnerability detection algorithm (unit test).\"\"\"
     # Mock all dependencies
     mock_solver = Mock()
     mock_solver.check.return_value = "sat"
-    
+
     detector = ReentrancyDetector(mock_source_map, [])
     result = detector._analyze_pattern(mock_bytecode)
-    
+
     assert result.is_vulnerable
     mock_solver.check.assert_called_once()
 ```
@@ -234,6 +264,7 @@ def test_vulnerability_detection_logic():
 ### Integration Test Guidelines
 
 **DO**:
+
 - Test component interactions
 - Use real files and external tools when needed
 - Test complete workflows
@@ -241,55 +272,223 @@ def test_vulnerability_detection_logic():
 - Use integration fixtures
 
 **DON'T**:
+
 - Test internal implementation details
 - Duplicate unit test logic
 - Create overly complex scenarios
 - Ignore timeout and performance
 
 **Example**:
+
 ```python
 @pytest.mark.integration
 def test_solidity_compilation_workflow(integration_fixtures):
     \"\"\"Test full Solidity compilation workflow (integration test).\"\"\"
     contract_path = integration_fixtures["contracts"] / "simple_safe.sol"
-    
+
     # Test real compilation
     helper = InputHelper(InputHelper.SOLIDITY, source=str(contract_path))
     contracts = helper.get_contracts()
-    
+
     assert len(contracts) > 0
     assert contracts[0][0].endswith("SimpleSafe")
 ```
 
+## Test Templates
+
+To standardize test creation and ensure consistent patterns, we provide comprehensive test templates in `tests/templates/`:
+
+### Available Templates
+
+1. **`vulnerability_test_template.py`** - Template for vulnerability detection tests
+2. **`integration_test_template.py`** - Template for integration and end-to-end tests
+3. **`mutation_test_template.py`** - Template for mutation testing (test quality validation)
+
+### Using Templates
+
+**Step 1**: Copy the appropriate template to your test file location
+
+```bash
+cp tests/templates/vulnerability_test_template.py tests/unit/test_my_detector.py
+```
+
+**Step 2**: Replace placeholders in the copied file
+
+- `CLASS_NAME` → Your component name (e.g., "ReentrancyDetector")
+- `MODULE_NAME` → Module path (e.g., "symExec")
+- `FUNCTION_NAME` → Function to test (e.g., "detect_reentrancy")
+
+**Step 3**: Implement specific test cases using the template structure
+
+### Template Features
+
+Each template includes:
+
+- **Proper markers**: `@pytest.mark.smoke`, `@pytest.mark.regression`, etc.
+- **Factory usage**: Integration with test data factories
+- **Error handling**: Comprehensive error scenario testing
+- **Performance tests**: Basic performance validation
+- **Property-based tests**: Integration with hypothesis for fuzzing
+- **Documentation**: Inline examples and usage patterns
+
+### Example Template Usage
+
+```python
+# From vulnerability_test_template.py
+class TestReentrancyDetectorVulnerabilityDetection:
+    """Test vulnerability detection for ReentrancyDetector."""
+
+    @pytest.mark.smoke
+    def test_detects_reentrancy_vulnerability(self, fixtures, mock_z3_solver):
+        # Arrange
+        vulnerable_contract = self.contract_factory.vulnerable_reentrancy()
+
+        # Act
+        result = detect_reentrancy(vulnerable_contract["source_code"])
+
+        # Assert
+        assert len(result["reentrancy_bug"]) > 0
+```
+
 ## Test Fixtures and Data
 
-### Unit Test Fixtures (`tests/fixtures/`)
+Our testing infrastructure features a centralized fixture library that provides both static test data and dynamic test data generation through factories.
 
-- Mock objects and test data for unit tests
-- Generated test cases for mathematical functions
-- Shared setup and teardown logic
+### Centralized Fixture Registry (`tests/fixtures/registry.py`)
 
-### Integration Fixtures (`tests/integration/fixtures/`)
+The `FixtureRegistry` class provides a unified interface for accessing all test fixtures:
 
-- Real Solidity contracts for testing
-- EVM bytecode samples
-- Expected analysis results (golden files)
-- Contract samples covering different vulnerability types
+```python
+from tests.fixtures.registry import fixture_registry
 
-**Structure**:
+# Access static contract files
+contract_source = fixture_registry.get_contract("reentrancy_vulnerable", category="vulnerable")
+
+# Access bytecode samples
+bytecode = fixture_registry.get_bytecode("simple_contract")
+
+# Access expected results
+expected = fixture_registry.get_expected_result("reentrancy_vulnerable")
+
+# Generate dynamic test data
+contract_data = fixture_registry.generate_contract("vulnerable_reentrancy")
+analysis_result = fixture_registry.generate_analysis_result(["reentrancy"])
 ```
-tests/integration/fixtures/
-├── contracts/
-│   ├── simple_safe.sol              # Basic safe contract
-│   ├── reentrancy_vulnerable.sol    # Known vulnerable contract  
-│   ├── reentrancy_safe.sol         # Properly protected contract
-│   └── syntax_error.sol            # Invalid Solidity for error testing
-├── bytecode/
-│   ├── simple_contract.bin         # Basic bytecode
-│   └── malformed.bin               # Invalid bytecode
-└── expected/
-    ├── reentrancy_vulnerable.json  # Expected analysis results
-    └── reentrancy_safe.json        # Expected safe analysis
+
+### Static Contract Library (`tests/fixtures/contracts/`)
+
+Organized by vulnerability categories:
+
+```text
+tests/fixtures/contracts/
+├── safe/                    # Safe, well-written contracts
+│   ├── basic_token.sol      # Simple ERC20-like token
+│   ├── simple_safe.sol      # Basic safe contract
+│   ├── simple_storage.sol   # Storage contract
+│   └── reentrancy_safe.sol  # Reentrancy-protected contract
+├── vulnerable/              # Known vulnerable contracts
+│   ├── reentrancy_vulnerable.sol     # Classic reentrancy vulnerability
+│   ├── cross_function_reentrancy.sol # Complex reentrancy patterns
+│   ├── integer_overflow.sol          # Integer overflow (pre-0.8.0)
+│   ├── timestamp_dependency.sol      # Timestamp manipulation
+│   └── dao_reentrancy.sol           # DAO-style reentrancy
+└── edge_cases/              # Edge cases and error conditions
+    ├── syntax_error.sol     # Invalid Solidity syntax
+    ├── old_pragma.sol       # Old Solidity versions
+    ├── multiple_contracts.sol # Multiple contracts in one file
+    └── library_user.sol     # Contract using libraries
+```
+
+### Test Data Factories (`tests/fixtures/factories/`)
+
+Factory classes for generating realistic test data:
+
+#### Contract Factory (`tests/fixtures/factories/contract.py`)
+
+```python
+from tests.fixtures.factories.contract import ContractFactory
+
+# Generate specific contract types
+safe_contract = ContractFactory.simple_storage()
+token_contract = ContractFactory.erc20_token()
+vulnerable_contract = ContractFactory.vulnerable_reentrancy()
+```
+
+#### Analysis Factory (`tests/fixtures/factories/analysis.py`)
+
+```python
+from tests.fixtures.factories.analysis import AnalysisFactory
+
+# Generate analysis results
+safe_result = AnalysisFactory.safe_contract()
+reentrancy_result = AnalysisFactory.with_reentrancy([100, 150, 200])
+multi_vuln_result = AnalysisFactory.with_multiple_vulnerabilities(["reentrancy", "overflow"])
+```
+
+#### Vulnerability Factory (`tests/fixtures/factories/vulnerability.py`)
+
+```python
+from tests.fixtures.factories.vulnerability import VulnerabilityFactory
+
+# Generate specific vulnerability patterns
+reentrancy_vuln = VulnerabilityFactory.reentrancy()
+overflow_vuln = VulnerabilityFactory.integer_overflow()
+security_report = SecurityReportFactory.vulnerable_contract_report(["reentrancy"])
+```
+
+### Integration Test Data
+
+**Expected Results** (`tests/fixtures/expected_results/`):
+
+- `*.json` files containing expected analysis outcomes
+- Used for regression testing and validation
+- Covers different vulnerability types and contract patterns
+
+**Bytecode Samples** (`tests/fixtures/bytecode/`):
+
+- `*.bin` files with EVM bytecode for various patterns
+- Includes edge cases like malformed bytecode
+- Used for bytecode analysis testing
+
+### Using Fixtures in Tests
+
+#### Static Fixtures
+
+```python
+def test_contract_analysis(fixture_registry):
+    contract_source = fixture_registry.get_contract("reentrancy_vulnerable", "vulnerable")
+    expected = fixture_registry.get_expected_result("reentrancy_vulnerable")
+
+    # Perform analysis
+    result = analyze_contract(contract_source)
+    assert result["reentrancy_bug"] == expected["reentrancy_bug"]
+```
+
+#### Dynamic Fixtures
+
+```python
+def test_vulnerability_detection():
+    # Generate realistic test data
+    contract = fixture_registry.generate_contract("vulnerable_reentrancy")
+    expected_analysis = fixture_registry.generate_analysis_result(["reentrancy"])
+
+    # Test with generated data
+    result = analyze_contract(contract["source_code"])
+    assert len(result["reentrancy_bug"]) > 0
+```
+
+#### Fixture Discovery
+
+```python
+# List available fixtures
+contracts = fixture_registry.list_contracts()                    # All contracts
+safe_contracts = fixture_registry.list_contracts("safe")         # Safe contracts only
+bytecode_files = fixture_registry.list_bytecode()               # Available bytecode
+expected_results = fixture_registry.list_expected_results()     # Expected results
+
+# Cache statistics
+stats = fixture_registry.get_cache_stats()
+print(f"Cached items: {stats['cached_items']}")
 ```
 
 ## CI/CD Integration
@@ -321,11 +520,13 @@ make test-property     # Property-based tests
 ## Performance Considerations
 
 ### Unit Tests
+
 - **Target**: < 1 second total execution time
 - **Method**: Aggressive mocking of all external dependencies
 - **Benefit**: Immediate feedback during development
 
-### Integration Tests  
+### Integration Tests
+
 - **Target**: < 3 minutes total execution time
 - **Method**: Limited scope, efficient test data
 - **Execution**: On-demand or in CI pipeline
@@ -347,16 +548,19 @@ pytest -n auto tests/integration/       # pytest-xdist
 ### Common Issues
 
 **Integration tests failing locally**:
+
 - Ensure external tools are installed (solc, Z3)
 - Check fixture file permissions
 - Verify network connectivity for contract info tests
 
 **Unit tests running slowly**:
+
 - Check for missing mocks
 - Look for accidental file I/O or network calls
 - Use pytest profiling: `pytest --profile`
 
 **Coverage gaps**:
+
 - Run separate coverage for unit and integration: `make test-unit-cov` and `make test-integration-cov`
 - Integration coverage may be lower - focus on unit test coverage
 
@@ -376,53 +580,17 @@ pytest --profile tests/unit/
 pytest --pdb tests/unit/test_module.py::test_function
 ```
 
-## Skipped Tests
-
-The following tests are currently skipped in the test suite. This section documents which tests are skipped and the reasons for skipping them:
-
-### Unit Tests
-
-#### `tests/unit/test_input_helper.py`
-
-**Skipped Test**: `TestInputHelperSolidityCompilation::test_compile_solidity_failure_exits`
-- **File**: `tests/unit/test_input_helper.py:413`
-- **Reason**: SystemExit test needs more work - temporarily skipped
-- **Details**: This test attempts to verify that compilation failures result in a `sys.exit(1)` call, but the current implementation requires more sophisticated mocking to properly capture and test the SystemExit behavior without actually terminating the test process.
-- **Impact**: Low - This is an edge case testing error handling behavior
-- **Status**: Temporary skip, planned for future implementation
-
-### Integration Tests
-
-#### `tests/integration/test_compilation_workflow.py`
-
-**Skipped Test**: `TestCryticCompileIntegration::test_compilation_failure_with_crytic_compile`
-- **File**: `tests/integration/test_compilation_workflow.py:154`
-- **Reason**: Test requires complex mocking that conflicts with module imports
-- **Details**: This integration test attempts to mock crytic-compile failures, but the mocking approach conflicts with the module import system used by crytic-compile, causing test instability.
-- **Impact**: Medium - This tests an important error handling path in the compilation workflow
-- **Status**: Temporary skip, requires refactoring of the test approach
-
-### Summary
-
-- **Total Skipped Tests**: 0 (currently)
-- **Current Pass Rate**: 100% (425+ tests passing)
-
-### Future Work
-
-Both skipped tests are marked as temporary and are planned for implementation:
-
-1. **SystemExit Testing**: Research and implement proper patterns for testing `sys.exit()` calls without terminating the test runner
-2. **Crytic-Compile Mocking**: Refactor the integration test to use a different approach that doesn't conflict with module imports, possibly using fixture-based error injection
-
 ## Manual Integration Testing
 
 Manual testing with sample contracts verifies functionality after changes to core modules:
 
 ### Test Collections
+
 - `samples/` - Main contracts with expected results (`.hex` bytecode)
 - `bytecode_cgt/` - 3000+ real-world contracts (`.hex` and `.sol`)
 
 ### Key Test Commands
+
 ```bash
 # Bytecode analysis
 python oyente/oyente.py -s samples/SimpleDAO.hex -b
@@ -438,8 +606,9 @@ python oyente/oyente.py -s invalid.hex -b
 ```
 
 ### After Module Changes
+
 - **source_map.py**: Test with `-j` flag for JSON source references
-- **symExec.py**: Test with `-v` flag on various contract types  
+- **symExec.py**: Test with `-v` flag on various contract types
 - **analysis.py**: Verify vulnerability detection accuracy
 
 ## Best Practices Summary
@@ -452,5 +621,17 @@ python oyente/oyente.py -s invalid.hex -b
 6. **CI Integration**: Structure tests for fast feedback in development workflow
 7. **Manual Verification**: Use sample contracts to verify functionality after major changes
 8. **Version Management**: Use solc-select to test compatibility across Solidity versions
+9. **Fixture Usage**: Use the centralized fixture registry for consistent test data
+10. **Factory Patterns**: Leverage test data factories for realistic, varied test inputs
+
+## Infrastructure Modernization
+
+The test infrastructure has been modernized with:
+
+- **Centralized Fixture Registry**: Single source of truth for all test fixtures
+- **Test Data Factories**: Dynamic generation of realistic test data using factory patterns
+- **Mock Consolidation**: Unified mock system with centralized registry
+- **Static Asset Organization**: Contracts organized by category (safe/vulnerable/edge_cases)
+- **Simplified Configuration**: Reduced complex setup from 300+ lines to ~15 lines
 
 This testing structure provides fast development cycles with comprehensive coverage while maintaining clear separation between different test types.

@@ -24,6 +24,7 @@ with patch.dict(
     from oyente import source_map
 
 
+@pytest.mark.unit
 class TestSourceClass:
     """Test the Source class for loading and parsing source files."""
 
@@ -71,6 +72,7 @@ class TestSourceClass:
             source_map.Source("nonexistent.sol")
 
 
+@pytest.mark.unit
 class TestSourceMapInitialization:
     """Test SourceMap initialization and basic setup."""
 
@@ -137,6 +139,7 @@ class TestSourceMapInitialization:
         assert source_map.SourceMap.ast_helper is None
 
 
+@pytest.mark.unit
 class TestSourceCodeExtraction:
     """Test source code extraction from program counter positions."""
 
@@ -196,6 +199,7 @@ class TestSourceCodeExtraction:
             pass
 
 
+@pytest.mark.unit
 class TestBuggyLineExtraction:
     """Test buggy line extraction for vulnerability reporting."""
 
@@ -261,6 +265,7 @@ class TestBuggyLineExtraction:
             assert isinstance(result, str)
 
 
+@pytest.mark.unit
 class TestLocationConversion:
     """Test location conversion utilities."""
 
@@ -341,6 +346,7 @@ class TestLocationConversion:
             pass
 
 
+@pytest.mark.unit
 class TestPositionHandling:
     """Test position and offset handling."""
 
@@ -424,6 +430,7 @@ class TestPositionHandling:
         assert result == -1
 
 
+@pytest.mark.unit
 class TestASTIntegration:
     """Test AST helper integration for variable and function information."""
 
@@ -503,6 +510,7 @@ class TestASTIntegration:
         assert result["transfer"][1]["position"] == 1
 
 
+@pytest.mark.unit
 class TestStandardJsonHandling:
     """Test Standard JSON input handling."""
 
@@ -558,6 +566,7 @@ class TestStandardJsonHandling:
             sourcemap._load_position_groups_standard_json()
 
 
+@pytest.mark.unit
 class TestSolidityHandling:
     """Test regular Solidity input handling."""
 
@@ -586,6 +595,7 @@ class TestSolidityHandling:
             assert result == {}
 
 
+@pytest.mark.unit
 class TestFilenameHandling:
     """Test filename handling and resolution."""
 
@@ -640,6 +650,7 @@ class TestFilenameHandling:
             assert "test.sol" in result
 
 
+@pytest.mark.unit
 class TestEdgeCasesAndErrorHandling:
     """Test edge cases and error conditions."""
 
@@ -726,6 +737,7 @@ class TestEdgeCasesAndErrorHandling:
             assert sourcemap._find_lower_bound(1, [3, 7]) == -1
 
 
+@pytest.mark.unit
 class TestIntegrationScenarios:
     """Test integration scenarios combining multiple features."""
 

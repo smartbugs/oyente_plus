@@ -22,6 +22,8 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.fixtures.registry import fixture_registry
+
 
 @pytest.fixture
 def temp_dir() -> Generator[Path, None, None]:
@@ -34,56 +36,81 @@ def temp_dir() -> Generator[Path, None, None]:
 @pytest.fixture(params=["sat", "unsat", "unknown"])
 def mock_z3_solver_parametrized(request):
     """Parametrized mock Z3 solver for testing all solver states."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result=request.param)
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result=request.param)
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_solver():
     """Mock Z3 solver for fast unit tests (defaults to SAT)."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="sat")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="sat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_sat_solver():
     """Mock Z3 solver that always returns SAT."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="sat")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="sat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_unsat_solver():
     """Mock Z3 solver that always returns UNSAT."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="unsat")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="unsat")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
 def mock_z3_unknown_solver():
     """Mock Z3 solver that always returns UNKNOWN."""
-    from tests.mocks.mock_z3 import MockZ3Solver
+    from tests.mocks.mock_z3 import MockZ3Factory
+    from tests.mocks.registry import MockRegistry
+
+    registry = MockRegistry()
+    mock_instance = MockZ3Factory.create_solver(mode="unit", result="unknown")
 
     with patch("z3.Solver") as mock_solver_class:
-        mock_instance = MockZ3Solver(result="unknown")
         mock_solver_class.return_value = mock_instance
         yield mock_instance
+
+    registry.reset_all()
 
 
 @pytest.fixture
@@ -208,6 +235,11 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "performance: marks tests as performance tests")
     config.addinivalue_line("markers", "requires_z3: marks tests that require Z3 solver")
     config.addinivalue_line("markers", "requires_solc: marks tests that require Solidity compiler")
+    # New granular markers from roadmap
+    config.addinivalue_line("markers", "smoke: critical path tests for quick feedback")
+    config.addinivalue_line("markers", "regression: regression tests for bug prevention")
+    config.addinivalue_line("markers", "fuzzing: property-based fuzzing tests")
+    config.addinivalue_line("markers", "mutation: mutation testing targets")
 
 
 # Pytest hooks for better test output
@@ -274,3 +306,33 @@ def mock_crytic_compile():
         }
         mock_compile.return_value = mock_instance
         yield mock_instance
+
+
+@pytest.fixture
+def fixtures() -> Any:
+    """Provide access to the centralized fixture registry."""
+    return fixture_registry
+
+
+@pytest.fixture
+def contract_factory():
+    """Provide access to contract factory."""
+    from tests.fixtures.factories import ContractFactory
+
+    return ContractFactory
+
+
+@pytest.fixture
+def analysis_factory():
+    """Provide access to analysis factory."""
+    from tests.fixtures.factories import AnalysisFactory
+
+    return AnalysisFactory
+
+
+@pytest.fixture
+def vulnerability_factory():
+    """Provide access to vulnerability factory."""
+    from tests.fixtures.factories import VulnerabilityFactory
+
+    return VulnerabilityFactory

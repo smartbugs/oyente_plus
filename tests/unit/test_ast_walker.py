@@ -21,6 +21,7 @@ import pytest
 from oyente.ast_walker import AstWalker
 
 
+@pytest.mark.unit
 class TestAstWalker:
     """Test cases for AstWalker class."""
 
@@ -320,6 +321,7 @@ class TestAstWalker:
         assert call_nodes[0]["attributes"]["member_name"] == "call"
 
 
+@pytest.mark.unit
 class TestAstWalkerEdgeCases:
     """Test edge cases and error conditions for AstWalker."""
 

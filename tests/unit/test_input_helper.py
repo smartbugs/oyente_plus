@@ -79,6 +79,7 @@ crytic_compile.CryticCompile = Mock()
 crytic_compile.InvalidCompilation = MockInvalidCompilationError
 
 
+@pytest.mark.unit
 class TestInputHelperInitialization:
     """Tests for InputHelper class initialization."""
 
@@ -147,6 +148,7 @@ class TestInputHelperInitialization:
         assert helper.evm is False  # Default value
 
 
+@pytest.mark.unit
 class TestInputHelperBytecodeProcessing:
     """Tests for bytecode input processing."""
 
@@ -369,6 +371,7 @@ class TestInputHelperBytecodeProcessing:
             helper._hex2asm(bytecode)
 
 
+@pytest.mark.unit
 class TestInputHelperSolidityCompilation:
     """Tests for Solidity contract compilation."""
 
@@ -427,13 +430,9 @@ class TestInputHelperSolidityCompilation:
         with patch.object(MockCryticCompile, "__init__") as mock_init:
             mock_init.side_effect = MockInvalidCompilationError("Compilation failed")
 
-            # Mock exit to verify it's called
-            with patch("builtins.exit") as mock_exit:
-                # Call the method, which should call exit(1)
+            # The method should now raise the exception instead of calling exit(1)
+            with pytest.raises(MockInvalidCompilationError, match="Compilation failed"):
                 helper._compile_solidity()
-
-                # Verify exit was called with code 1
-                mock_exit.assert_called_once_with(1)
 
     def test_compile_solidity_with_libraries(self):
         """Test Solidity compilation with library linking."""
@@ -461,6 +460,7 @@ class TestInputHelperSolidityCompilation:
             assert ":" in contract_name  # Should have format "file:contract"
 
 
+@pytest.mark.unit
 class TestInputHelperStandardJson:
     """Tests for Standard JSON compilation."""
 
@@ -542,6 +542,7 @@ class TestInputHelperStandardJson:
         assert "Storage.sol:Storage" in contract_names
 
 
+@pytest.mark.unit
 class TestInputHelperContractFiltering:
     """Tests for contract filtering and targeting."""
 
@@ -593,6 +594,7 @@ class TestInputHelperContractFiltering:
                 helper.get_inputs(target_contracts=["NonExistentToken"])
 
 
+@pytest.mark.unit
 class TestInputHelperFileManagement:
     """Tests for temporary file management."""
 
@@ -687,6 +689,7 @@ class TestInputHelperFileManagement:
             assert call_args[0][0] == "contract1.sol:Token"
 
 
+@pytest.mark.unit
 class TestInputHelperLibraryLinking:
     """Tests for library linking functionality."""
 
@@ -727,6 +730,7 @@ class TestInputHelperLibraryLinking:
             assert "StringUtils" in available_libs
 
 
+@pytest.mark.unit
 class TestInputHelperErrorHandling:
     """Tests for error handling and edge cases."""
 
@@ -963,6 +967,7 @@ class TestInputHelperErrorHandling:
         assert result == []
 
 
+@pytest.mark.unit
 class TestInputHelperIntegration:
     """Integration tests for complete workflows."""
 

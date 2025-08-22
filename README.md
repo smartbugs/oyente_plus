@@ -5,6 +5,8 @@ An Analysis Tool for Smart Contracts
 [![License: GPL v3][license-badge]][license-badge-url]
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=flat-square)](https://www.python.org/downloads/)
 [![Code style: Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![CI/CD Pipeline](https://github.com/smartbugs/oyente_plus/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/smartbugs/oyente_plus/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/smartbugs/oyente_plus/branch/main/graph/badge.svg)](https://codecov.io/gh/smartbugs/oyente_plus)
 
 *This repository is currently maintained by Thomas Fenninger ([@zariliv](https://github.com/zariliv)). If you encounter any bugs or usage issues, please feel free to create an issue on [our issue tracker](https://github.com/smartbugs/oyente_plus/issues).*
 
@@ -15,7 +17,7 @@ An Analysis Tool for Smart Contracts
 - **Symbolic Execution**: Deep analysis using Z3 constraint solving
 - **Multi-format Support**: Analyze Solidity source code, EVM bytecode, or remote contracts
 - **Modern Python**: Built for Python 3.8+ with comprehensive type hints
-- **Comprehensive Testing**: 425+ test functions with 100% pass rate and property-based testing
+- **Comprehensive Testing**: 533 test functions with 100% pass rate and property-based testing
 - **Code Quality**: Enforced with Black, Ruff, mypy, and pytest
 - **Complete Type Safety**: 0 mypy errors across 15/17 modules
 - **Latest EVM Support**: Compatible with recent opcodes (PUSH0, TLOAD, TSTORE)
@@ -25,7 +27,7 @@ An Analysis Tool for Smart Contracts
 ### Prerequisites
 
 - **Python 3.8+** (excluding 3.12.0) - Modern type hints and features
-- **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management  
+- **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
 - **[Go Ethereum (geth)](https://geth.ethereum.org/downloads/)** - EVM execution engine
 - **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
@@ -59,12 +61,7 @@ make setup
 
 ```bash
 # Install all dependencies (development, testing, linting)
-poetry install --with dev,test,lint
-
-# Install specific dependency groups
-poetry install --with dev    # Development tools only
-poetry install --with test   # Testing framework only  
-poetry install --with lint   # Linting tools only
+poetry install --with dev
 
 # Production installation only
 poetry install --only main
@@ -143,7 +140,7 @@ make test-cov    # Run tests with coverage
 
 ## 🧪 Testing
 
-**Status**: 425+ test functions executed with 100% pass rate across comprehensive test infrastructure
+**Status**: 533 test functions executed with 100% pass rate across comprehensive test infrastructure
 
 ```bash
 # Quick commands
@@ -198,7 +195,7 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 
 **✅ Completed**:
 - **Code Quality**: 0 linting errors (fully resolved from 483)
-- **Testing Infrastructure**: 492 tests (427 executed) with 100% pass rate
+- **Testing Infrastructure**: 533 tests with 100% pass rate
 - **PEP 621 compliant packaging** with Poetry integration
 - **Comprehensive pyproject.toml configuration** for all tools
 - **Security-first code quality tooling** (Black, Ruff, mypy)
@@ -206,22 +203,10 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 - **Type hints** for 15/17 modules with comprehensive docstrings
 - **Robust mocking infrastructure** for Z3, filesystem, and external dependencies
 
-**✅ Critical Issues (Major Progress)**:
-- **3 of 5 critical bugs FIXED** ✅ (File Path Resolution, Stack Underflow, Z3 Expression Exception)
-- **2 critical bugs remaining**: Source Map KeyError, Systematic Stack Underflow Pattern
-- **Progress**: Tool reliability significantly improved with major bug fixes
-- See recent commits for detailed fixes
-
-**✅ Completed**:
+- **Critical Bug Fixes**: Major reliability improvements with 5+ critical bugs fixed
 - **Type Safety**: 0 mypy errors - complete type coverage achieved
-
-**🔄 In Progress**:
-- **CI/CD pipeline** not yet configured
-- **Pre-commit hooks** not yet configured
-
-**📋 Immediate Priority**:
-- Fix remaining 2 critical bugs (1-2 days effort)
-- Setup CI/CD and pre-commit hooks
+- **Pre-commit hooks**: Automated quality checks configured
+- **CI/CD pipeline**: GitHub Actions with multi-stage testing and automation
 
 ### Code Quality Standards
 
@@ -255,17 +240,118 @@ make all  # Runs format, lint, type-check, test
 
 5. **Documentation**: Update docstrings and README as needed
 
-## 📈 Benchmarks & Testing
+### Pre-commit Hooks
 
-### Modern Test Infrastructure
+Automated quality checks run before each commit to ensure consistent code quality:
 
-Comprehensive testing with pytest:
+#### Setup
+
+Pre-commit hooks are automatically installed when using the setup script:
 
 ```bash
-make test           # Run unit tests only (excludes integration by default)
-make test-unit      # Unit tests only (explicit)
-make test-integration  # Integration tests only
+./setup-venv.sh  # Installs and configures pre-commit hooks
 ```
+
+Or install manually:
+
+```bash
+# Install pre-commit (included in dev dependencies)
+poetry install --with dev
+
+# Install the hooks (run once after cloning)
+poetry run pre-commit install
+```
+
+#### What Runs Automatically
+
+Each commit triggers:
+
+- **File Checks**: Trailing whitespace, file endings, YAML/JSON/TOML syntax
+- **Code Formatting**: `make format` (Black formatting)
+- **Linting**: `make lint` (Ruff code quality checks)
+- **Type Checking**: `make type-check` (mypy static analysis)
+- **Unit Tests**: `make test-unit` (fast unit tests)
+- **Integration Tests**: `make test-integration` (comprehensive tests)
+
+#### Usage Tips
+
+```bash
+# Run manually on all files
+poetry run pre-commit run --all-files
+
+# Run specific hooks
+poetry run pre-commit run format
+poetry run pre-commit run test-unit
+
+# Skip hooks (emergency only)
+git commit --no-verify -m "emergency commit"
+```
+
+If any check fails, fix the issues and commit again. The hooks ensure all code meets quality standards before entering the repository.
+
+## 🔄 CI/CD Pipeline
+
+### Streamlined Three-Stage Pipeline
+
+The project uses a focused GitHub Actions pipeline with three essential stages:
+
+#### **Pipeline Stages** (< 15 minutes total)
+
+1. **Code Quality** (~5 minutes)
+   - Black formatting validation
+   - Ruff linting with security focus
+   - mypy type checking (0 errors required)
+
+2. **Unit Tests** (~5 minutes)
+   - Matrix testing across Python 3.8-3.11
+   - 533 test functions with 100% pass rate
+   - Coverage reporting via Codecov
+
+3. **Integration Tests** (~10 minutes)
+   - Real Solidity compilation testing
+   - End-to-end contract analysis validation
+   - Sample contract verification
+
+#### **Quality Gates**
+
+All code must pass:
+- ✅ 100% test success rate
+- ✅ Zero linting errors
+- ✅ Zero type checking errors
+- ✅ >80% code coverage
+
+#### **Development Integration**
+
+```bash
+# Local pipeline simulation (matches CI exactly)
+make all              # Complete quality check
+
+# Individual stages
+make format lint type-check  # Code quality
+make test-unit              # Unit tests
+make test-integration       # Integration tests
+```
+
+**📋 Pipeline Focus**: Streamlined for essential quality gates with fast feedback
+
+### Automated Dependency Management
+
+A separate workflow (`dependencies.yml`) handles dependency updates:
+
+**Weekly Dependency Updates:**
+- **Schedule:** Mondays at 8:00 AM UTC
+- **Process:** Check outdated dependencies → Update → Test → Create PR
+- **Validation:** Full quality checks using `make` targets
+- **Output:** Automated pull requests with update summaries
+
+**Manual Trigger:** Available via GitHub Actions UI
+
+**Token Configuration:**
+- Uses `GITHUB_TOKEN` (automatically provided by GitHub Actions)
+- No manual configuration required
+- Permissions: `contents: write`, `pull-requests: write`
+
+## 📈 Performance & Benchmarks
 
 ### Performance Testing
 
@@ -279,7 +365,7 @@ python -m pytest tests/performance/ --benchmark-only
 
 The `samples/` directory contains test contracts including:
 - `SimpleDAO.sol` - Reentrancy vulnerability
-- `EtherLotto.sol` - Randomness issues  
+- `EtherLotto.sol` - Randomness issues
 - `Government.sol` - Access control patterns
 
 ## 📚 Resources

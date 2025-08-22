@@ -9,6 +9,7 @@ import pytest
 from tests.helpers import run_oyente_cli
 
 
+@pytest.mark.integration
 class TestCLIBasics:
     """Test basic CLI functionality."""
 
@@ -41,6 +42,7 @@ class TestCLIBasics:
 
 
 @pytest.mark.slow
+@pytest.mark.integration
 class TestCLIWorkflow:
     """Test complete CLI workflow scenarios."""
 
@@ -48,11 +50,17 @@ class TestCLIWorkflow:
         """Test that providing invalid file path returns appropriate error."""
         result = run_oyente_cli(["-s", "nonexistent.sol"])
 
-        assert result.returncode != 0
+        # Debug output for CI failures
+        if result.returncode == 0:
+            print("DEBUG: Unexpected returncode=0")
+            print(f"DEBUG: stdout={result.stdout}")
+            print(f"DEBUG: stderr={result.stderr}")
+
+        assert result.returncode != 0, f"Expected non-zero return code, got {result.returncode}"
         assert any(
             word in (result.stdout + result.stderr).lower()
             for word in ["error", "not found", "file", "exist", "critical", "compilation", "failed"]
-        )
+        ), f"Expected error message not found. stdout: {result.stdout}, stderr: {result.stderr}"
 
     def test_invalid_option_returns_error(self):
         """Test that invalid command line options return error."""

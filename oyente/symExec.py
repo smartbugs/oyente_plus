@@ -150,7 +150,6 @@ def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
     """
     if disasm_file_path is None:
         raise ValueError("disasm_file_path cannot be None")
-
     if disasm_file_path.endswith(".evm.disasm"):
         evm_file_name = disasm_file_path.replace(".evm.disasm", "")
     elif disasm_file_path.endswith(".disasm"):
@@ -161,7 +160,7 @@ def resolve_evm_bytecode_file(disasm_file_path: Optional[str]) -> str:
     # Verify the file exists before returning it
     if not os.path.exists(evm_file_name):
         raise FileNotFoundError(
-            f"EVM bytecode file not found: {evm_file_name}. " f"Expected file for disasm: {disasm_file_path}"
+            f"EVM bytecode file not found: {evm_file_name}. Expected file for disasm: {disasm_file_path}"
         )
 
     return evm_file_name
@@ -2875,7 +2874,9 @@ def get_recipients(disasm_file: str, contract_address: str) -> Dict[str, Any]:
     data_source = EthereumData(contract_address)
     recipients.clear()  # Clear the global list
 
-    evm_code_coverage = float(len(visited_pcs)) / len(instructions.keys())
+    # Prevent division by zero when instructions is empty
+    instruction_count = len(instructions.keys())
+    evm_code_coverage = float(len(visited_pcs)) / instruction_count if instruction_count > 0 else 0.0
 
     run_build_cfg_and_analyze()
 

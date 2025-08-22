@@ -1,0 +1,81 @@
+# Pre-commit hooks configuration for Oyente+
+# Leverages existing Makefile targets for consistency
+
+repos:
+  # Basic file checks (no additional dependencies)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+  # Use existing Makefile targets for code quality
+  - repo: local
+    hooks:
+      - id: format
+        name: Format code with Black
+        entry: make format
+        language: system
+        types: [python]
+        files: '^(oyente/|tests/).*\.py$'
+        pass_filenames: false
+
+      - id: lint
+        name: Lint with Ruff
+        entry: make lint
+        language: system
+        types: [python]
+        files: '^(oyente/|tests/).*\.py$'
+        pass_filenames: false
+
+      - id: type-check
+        name: Type check with mypy
+        entry: make type-check
+        language: system
+        types: [python]
+        files: '^oyente/.*\.py$'
+        pass_filenames: false
+
+      - id: test-unit
+        name: Run unit tests
+        entry: make test-unit
+        language: system
+        types: [python]
+        files: '^(oyente/|tests/unit/).*\.py$'
+        pass_filenames: false
+
+      - id: test-integration
+        name: Run integration tests
+        entry: make test-integration
+        language: system
+        types: [python]
+        files: '^(oyente/|tests/integration/).*\.py$'
+        pass_filenames: false
+
+# Configuration
+default_language_version:
+  python: python3
+
+# Exclude patterns (keep it simple)
+exclude: |
+  (?x)^(
+    samples/.*|
+    bytecode_cgt/.*|
+    web/.*|
+    venv/.*|
+    build/.*|
+    dist/.*|
+    __pycache__/.*|
+    \..*cache/.*|
+    htmlcov/.*|
+    coverage.*|
+    standard_json_output
+  )$
+
+# TODO: Remove web/.* exclusion when web interface is re-implemented for Oyente+

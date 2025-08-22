@@ -52,6 +52,7 @@ def mock_oyente_modules():
         yield mocked_modules
 
 
+@pytest.mark.unit
 class TestParameter:
     """Test the Parameter class for symbolic execution state."""
 
@@ -123,6 +124,7 @@ class TestParameter:
             assert param_copy.mem == {"test": "data"}
 
 
+@pytest.mark.unit
 class TestGlobalVariableManagement:
     """Test global variable initialization and management."""
 
@@ -170,6 +172,7 @@ class TestGlobalVariableManagement:
         assert mock_src_map["source"] == "contract.sol"
 
 
+@pytest.mark.unit
 class TestControlFlowGraphConstruction:
     """Test control flow graph construction functions."""
 
@@ -261,6 +264,7 @@ class TestControlFlowGraphConstruction:
         assert 1 == 1  # Most non-PUSH instructions are 1 byte
 
 
+@pytest.mark.unit
 class TestSymbolicExecution:
     """Test symbolic execution functions."""
 
@@ -353,6 +357,7 @@ class TestSymbolicExecution:
         assert len(expected_vulnerability_types) == 8
 
 
+@pytest.mark.unit
 class TestVulnerabilityDetection:
     """Test individual vulnerability detection functions."""
 
@@ -400,6 +405,7 @@ class TestVulnerabilityDetection:
         assert callable(mock_detector.get_warnings)
 
 
+@pytest.mark.unit
 class TestUtilityFunctions:
     """Test utility and helper functions."""
 
@@ -477,6 +483,7 @@ class TestUtilityFunctions:
         assert result is None
 
 
+@pytest.mark.unit
 class TestMainAnalysisFunctions:
     """Test main analysis workflow functions."""
 
@@ -543,15 +550,16 @@ class TestMainAnalysisFunctions:
     @patch("oyente.symExec.get_recipients")
     def test_get_recipients_function(self, mock_get_recipients, mock_oyente_modules):
         """Test get_recipients function."""
-        from oyente.symExec import get_recipients
-
         mock_get_recipients.return_value = ["0x123", "0x456"]
 
-        result = get_recipients("test.disasm", "0xcontract")
+        result = mock_get_recipients("test.disasm", "0xcontract")
 
         assert isinstance(result, list)
+        assert result == ["0x123", "0x456"]
+        mock_get_recipients.assert_called_once_with("test.disasm", "0xcontract")
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling in symbolic execution."""
 
@@ -578,6 +586,7 @@ class TestErrorHandling:
         # unknown_param should be ignored
 
 
+@pytest.mark.unit
 class TestIntegrationHelpers:
     """Helper functions for integration testing."""
 
@@ -660,6 +669,7 @@ class TestIntegrationHelpers:
 """
 
 
+@pytest.mark.unit
 class TestLOGOpcodeStackValidation:
     """Test stack validation for LOG opcodes."""
 
@@ -679,22 +689,18 @@ class TestLOGOpcodeStackValidation:
         params_insufficient = Parameter(stack=[1], global_state=global_state)  # Only 1 element, needs 2
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG0", 0, "test")
-
         # Test LOG1 - needs 3 stack elements (offset, size, topic1)
         params_insufficient = Parameter(stack=[1, 2], global_state=global_state)  # Only 2 elements, needs 3
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG1", 0, "test")
-
         # Test LOG2 - needs 4 stack elements
         params_insufficient = Parameter(stack=[1, 2, 3], global_state=global_state)  # Only 3 elements, needs 4
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG2", 0, "test")
-
         # Test LOG3 - needs 5 stack elements
         params_insufficient = Parameter(stack=[1, 2, 3, 4], global_state=global_state)  # Only 4 elements, needs 5
         with pytest.raises(ValueError, match="STACK underflow"):
             sym_exec_ins(params_insufficient, 0, "LOG3", 0, "test")
-
         # Test LOG4 - needs 6 stack elements
         params_insufficient = Parameter(stack=[1, 2, 3, 4, 5], global_state=global_state)  # Only 5 elements, needs 6
         with pytest.raises(ValueError, match="STACK underflow"):
@@ -712,18 +718,17 @@ class TestLOGOpcodeStackValidation:
         params_log0 = Parameter(stack=[10, 20], global_state=global_state)  # offset=10, size=20
         sym_exec_ins(params_log0, 0, "LOG0", 0, "test")
         assert params_log0.stack == []  # Stack should be empty after popping 2 elements
-
         # Test LOG1 with sufficient stack
         params_log1 = Parameter(stack=[10, 20, 30], global_state=global_state)  # offset=10, size=20, topic=30
         sym_exec_ins(params_log1, 0, "LOG1", 0, "test")
         assert params_log1.stack == []  # Stack should be empty after popping 3 elements
-
         # Test LOG4 with sufficient stack
         params_log4 = Parameter(stack=[10, 20, 30, 40, 50, 60], global_state=global_state)
         sym_exec_ins(params_log4, 0, "LOG4", 0, "test")
         assert params_log4.stack == []  # Stack should be empty after popping 6 elements
 
 
+@pytest.mark.unit
 class TestZ3ExpressionHandling:
     """Test Z3 expression handling in SLOAD operations."""
 

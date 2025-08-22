@@ -6,23 +6,30 @@ to vulnerability detection results.
 
 import pytest
 
+from tests.fixtures.registry import fixture_registry
+
 
 @pytest.mark.integration
 @pytest.mark.slow
 class TestSourceAnalysis:
     """Test analysis of Solidity source files."""
 
+    @pytest.mark.smoke
     def test_simple_contract_analysis(self, integration_fixtures):
         """Test analysis of a simple contract without vulnerabilities."""
-        contract_path = integration_fixtures["contracts"] / "simple_safe.sol"
+        # Try fixture registry first
+        contract_source = fixture_registry.get_contract("simple_safe", category="safe")
 
-        # This would be a real analysis call in full integration
-        # For now, we'll mock the heavy parts while testing structure
+        # Fallback to file-based fixtures
+        if not contract_source:
+            contract_path = integration_fixtures["contracts"] / "simple_safe.sol"
+            assert contract_path.exists()
+            contract_source = contract_path.read_text()
 
         # Test that we can at least parse and set up the analysis
-        # without running the full symbolic execution
-        assert contract_path.exists()
-        assert contract_path.suffix == ".sol"
+        assert contract_source
+        assert "contract" in contract_source
+        assert "pragma solidity" in contract_source
 
     def test_vulnerable_contract_detection(self, integration_fixtures):
         """Test that vulnerable contracts are properly detected."""
