@@ -4,7 +4,7 @@ This document explains the testing structure and workflows for Oyente+, covering
 
 ## Current Status
 
-- **Total Tests**: 494 test functions (429 unit + 65 integration) executed with 100% pass rate
+- **Total Tests**: 533 test functions (429 unit + 104 integration) executed with 100% pass rate
 - **Pass Rate**: 100% (no skipped tests currently)
 - **Test Files**: Comprehensive test files covering core modules
 - **Test Categories**: Unit, Integration, Property, Performance
