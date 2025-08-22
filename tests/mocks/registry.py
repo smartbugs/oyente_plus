@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 from typing import Any
+from typing import Union
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -35,7 +36,7 @@ class MockRegistry:
         """
         self._mocks[module_name] = mock_object
 
-    def get_mock(self, module_name: str) -> Any | None:
+    def get_mock(self, module_name: str) -> Union[Any, None]:
         """Get a registered mock object.
 
         Args:
@@ -46,7 +47,7 @@ class MockRegistry:
         """
         return self._mocks.get(module_name)
 
-    def patch_module(self, module_name: str, mock_object: Any | None = None) -> Any:
+    def patch_module(self, module_name: str, mock_object: Union[Any, None] = None) -> Any:
         """Patch a module with a mock object.
 
         Args:
@@ -170,7 +171,7 @@ class MockRegistry:
 
 
 # Global registry instance for convenience
-_global_registry: MockRegistry | None = None
+_global_registry: Union[MockRegistry, None] = None
 
 
 def get_global_registry() -> MockRegistry:

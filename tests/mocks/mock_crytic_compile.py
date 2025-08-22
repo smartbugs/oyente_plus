@@ -8,13 +8,14 @@ allowing tests to run without actual compilation and in isolation.
 from __future__ import annotations
 
 import json
+from typing import Union
 from unittest.mock import patch
 
 
 class MockSourceUnit:
     """Mock source unit for crytic-compile."""
 
-    def __init__(self, contracts: dict[str, str], libraries: dict[str, str] | None = None):
+    def __init__(self, contracts: dict[str, str], libraries: Union[dict[str, str], None] = None):
         self._contracts = contracts
         self._libraries = libraries or {}
         self.contracts_names = list(contracts.keys())
@@ -49,7 +50,9 @@ class MockFilename:
 class MockCompilationUnit:
     """Mock compilation unit for crytic-compile."""
 
-    def __init__(self, contracts: dict[str, str], filename: str = "test.sol", libraries: dict[str, str] | None = None):
+    def __init__(
+        self, contracts: dict[str, str], filename: str = "test.sol", libraries: Union[dict[str, str], None] = None
+    ):
         self.compiler_version = MockCompilerVersion()
         self.source_units = {MockFilename(filename): MockSourceUnit(contracts, libraries)}
         self._libraries = libraries or {}
@@ -61,12 +64,12 @@ class MockCryticCompile:
     def __init__(
         self,
         source: str = "test.sol",
-        contracts: dict[str, str] | None = None,
+        contracts: Union[dict[str, str], None] = None,
         filename: str = "test.sol",
-        libraries: dict[str, str] | None = None,
+        libraries: Union[dict[str, str], None] = None,
         solc_remaps: str = "",
         solc_args: str = "",
-        target_contracts: list[str] | None = None,
+        target_contracts: Union[list[str], None] = None,
         **kwargs,
     ):
         if contracts is None:
@@ -125,9 +128,9 @@ class MockInvalidCompilationError(Exception):
 
 
 def create_mock_crytic_compile(
-    contracts: dict[str, str] | None = None,
-    libraries: dict[str, str] | None = None,
-    target_contracts: list[str] | None = None,
+    contracts: Union[dict[str, str], None] = None,
+    libraries: Union[dict[str, str], None] = None,
+    target_contracts: Union[list[str], None] = None,
     should_fail: bool = False,
     failure_message: str = "Compilation failed",
 ):
@@ -148,9 +151,9 @@ def create_mock_crytic_compile(
 
 
 def patch_crytic_compile(
-    contracts: dict[str, str] | None = None,
-    libraries: dict[str, str] | None = None,
-    target_contracts: list[str] | None = None,
+    contracts: Union[dict[str, str], None] = None,
+    libraries: Union[dict[str, str], None] = None,
+    target_contracts: Union[list[str], None] = None,
     should_fail: bool = False,
     failure_message: str = "Compilation failed",
 ):

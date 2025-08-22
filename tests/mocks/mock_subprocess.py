@@ -23,7 +23,7 @@ class MockCompletedProcess:
         returncode: int = 0,
         stdout: str = "",
         stderr: str = "",
-        encoding: str | None = None,
+        encoding: Union[str, None] = None,
     ):
         self.args = args
         self.returncode = returncode
@@ -55,7 +55,7 @@ class MockSubprocess:
         returncode: int = 0,
         stdout: str = "",
         stderr: str = "",
-        side_effect: Exception | None = None,
+        side_effect: Union[Exception, None] = None,
     ):
         """
         Add a command and its expected result.
@@ -82,7 +82,7 @@ class MockSubprocess:
         capture_output: bool = False,
         text: bool = False,
         shell: bool = False,
-        timeout: float | None = None,
+        timeout: Union[float, None] = None,
         check: bool = False,
         **kwargs,
     ) -> MockCompletedProcess:
@@ -250,7 +250,7 @@ class OyenteCommandMocks:
         }
 
 
-def create_mock_subprocess(commands: dict[str, dict[str, Any]] | None = None) -> MockSubprocess:
+def create_mock_subprocess(commands: Union[dict[str, dict[str, Any]], None] = None) -> MockSubprocess:
     """Create a mock subprocess with pre-configured commands."""
     mock = MockSubprocess()
 
@@ -269,7 +269,7 @@ def create_mock_subprocess(commands: dict[str, dict[str, Any]] | None = None) ->
     return mock
 
 
-def patch_subprocess(commands: dict[str, dict[str, Any]] | None = None):
+def patch_subprocess(commands: Union[dict[str, dict[str, Any]], None] = None):
     """
     Decorator to patch subprocess with mock implementation.
 
@@ -301,7 +301,7 @@ def patch_subprocess(commands: dict[str, dict[str, Any]] | None = None):
 class MockSubprocessContext:
     """Context manager for subprocess mocking."""
 
-    def __init__(self, commands: dict[str, dict[str, Any]] | None = None):
+    def __init__(self, commands: Union[dict[str, dict[str, Any]], None] = None):
         self.mock = create_mock_subprocess(commands)
         self.patches = []
 

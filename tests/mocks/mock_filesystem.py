@@ -192,7 +192,7 @@ def create_mock_filesystem_patches(filesystem: MockFilesystem):
 class MockPath:
     """Mock pathlib.Path for testing."""
 
-    def __init__(self, path: Union[str, MockPath], filesystem: MockFilesystem | None = None):
+    def __init__(self, path: Union[str, MockPath], filesystem: Union[MockFilesystem, None] = None):
         self.path = str(path)
         self.filesystem = filesystem or MockFilesystem()
 
@@ -240,7 +240,7 @@ class MockPath:
 
 
 # Utility functions for common testing scenarios
-def mock_file_content(content: str, path: str | None = None):
+def mock_file_content(content: str, path: Union[str, None] = None):
     """Create a mock for reading file content."""
     return mock_open(read_data=content)
 

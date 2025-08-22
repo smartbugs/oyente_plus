@@ -70,7 +70,7 @@ class MockZ3Expr:
 class MockZ3BitVec(MockZ3Expr):
     """Mock Z3 BitVec for testing."""
 
-    def __init__(self, name: str, size: int, value: int | None = None):
+    def __init__(self, name: str, size: int, value: Union[int, None] = None):
         super().__init__(name, value)
         self.size = size
 
@@ -107,7 +107,7 @@ class MockZ3BitVecIntegration(MockZ3BitVec):
 class MockZ3Model:
     """Mock Z3 model for constraint solutions."""
 
-    def __init__(self, values: dict[str, Any] | None = None):
+    def __init__(self, values: Union[dict[str, Any], None] = None):
         self.values = values or {}
 
     def eval(self, expr: Union[MockZ3Expr, Any], model_completion: bool = True):
@@ -132,7 +132,7 @@ class MockZ3Model:
 class MockZ3Solver:
     """Mock Z3 solver for fast unit testing."""
 
-    def __init__(self, result: str = "sat", model_values: dict[str, Any] | None = None):
+    def __init__(self, result: str = "sat", model_values: Union[dict[str, Any], None] = None):
         """
         Initialize mock solver.
 
@@ -146,7 +146,7 @@ class MockZ3Solver:
         self.assertions_list: list[Any] = []
         self.push_count = 0
         self.solver_stack: list[list[Any]] = []
-        self.timeout_value: int | None = None
+        self.timeout_value: Union[int, None] = None
         self.set_params: dict[str, Any] = {}
 
     def add(self, *constraints):
@@ -306,7 +306,7 @@ class MockZ3:
         return expr
 
 
-def create_mock_z3_module(solver_result: str = "sat", model_values: dict[str, Any] | None = None):
+def create_mock_z3_module(solver_result: str = "sat", model_values: Union[dict[str, Any], None] = None):
     """
     Create a complete mock Z3 module for patching.
 
@@ -361,7 +361,7 @@ class MockZ3Factory:
     def create_solver(
         mode: Literal["unit", "integration", "full"] = "unit",
         result: str = "sat",
-        model_values: dict[str, Any] | None = None,
+        model_values: Union[dict[str, Any], None] = None,
     ) -> MockZ3Solver:
         """Create a mock solver configured for the specified testing mode.
 
@@ -396,7 +396,7 @@ class MockZ3Factory:
 
     @staticmethod
     def create_bitvec(
-        name: str, size: int, value: int | None = None, mode: Literal["unit", "integration", "full"] = "unit"
+        name: str, size: int, value: Union[int, None] = None, mode: Literal["unit", "integration", "full"] = "unit"
     ) -> MockZ3BitVec:
         """Create a mock BitVec configured for the specified testing mode.
 
@@ -433,7 +433,7 @@ class MockZ3Factory:
     def create_z3_module(
         mode: Literal["unit", "integration", "full"] = "unit",
         solver_result: str = "sat",
-        model_values: dict[str, Any] | None = None,
+        model_values: Union[dict[str, Any], None] = None,
     ) -> MagicMock:
         """Create a complete mock Z3 module for the specified testing mode.
 
@@ -472,7 +472,7 @@ class MockZ3Factory:
 
 
 # Utility functions for common testing scenarios
-def create_sat_solver(model_values: dict[str, Any] | None = None) -> MockZ3Solver:
+def create_sat_solver(model_values: Union[dict[str, Any], None] = None) -> MockZ3Solver:
     """Create a solver that always returns SAT."""
     return MockZ3Factory.create_solver("unit", "sat", model_values)
 

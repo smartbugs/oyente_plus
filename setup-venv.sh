@@ -19,8 +19,13 @@ else
 fi
 
 echo "📦 Installing all dependencies with Poetry..."
-# Clear any existing lock issues and install fresh
-poetry install --with dev --no-interaction --verbose
+# In CI with matrix builds, skip initial install to allow per-version lock regeneration
+if [ "$CI_SKIP_INSTALL" = "true" ]; then
+    echo "Skipping dependency installation (will be done after lock regeneration)"
+else
+    # Clear any existing lock issues and install fresh
+    poetry install --with dev --no-interaction --verbose
+fi
 
 echo "🔗 Setting up pre-commit hooks..."
 # Only install pre-commit hooks if not in CI environment
