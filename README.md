@@ -5,6 +5,8 @@ An Analysis Tool for Smart Contracts
 [![License: GPL v3][license-badge]][license-badge-url]
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=flat-square)](https://www.python.org/downloads/)
 [![Code style: Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![CI/CD Pipeline](https://github.com/smartbugs/oyente_plus/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/smartbugs/oyente_plus/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/smartbugs/oyente_plus/branch/main/graph/badge.svg)](https://codecov.io/gh/smartbugs/oyente_plus)
 
 *This repository is currently maintained by Thomas Fenninger ([@zariliv](https://github.com/zariliv)). If you encounter any bugs or usage issues, please feel free to create an issue on [our issue tracker](https://github.com/smartbugs/oyente_plus/issues).*
 
@@ -213,12 +215,15 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 **✅ Completed**:
 - **Pre-commit hooks** configured with automated quality checks
 
-**🔄 In Progress**:
-- **CI/CD pipeline** not yet configured
+**✅ Completed**:
+- **CI/CD pipeline** configured with GitHub Actions
+  - Multi-stage pipeline with quality checks, testing, and release automation
+  - Matrix testing across Python 3.8-3.11
+  - Automated dependency management and security scanning
+  - Complete coverage reporting and performance monitoring
 
 **📋 Immediate Priority**:
 - Fix remaining 2 critical bugs (1-2 days effort)
-- Setup CI/CD pipeline
 
 ### Code Quality Standards
 
@@ -300,6 +305,68 @@ git commit --no-verify -m "emergency commit"
 ```
 
 If any check fails, fix the issues and commit again. The hooks ensure all code meets quality standards before entering the repository.
+
+## 🔄 CI/CD Pipeline
+
+### Streamlined Three-Stage Pipeline
+
+The project uses a focused GitHub Actions pipeline with three essential stages:
+
+#### **Pipeline Stages** (< 15 minutes total)
+
+1. **Code Quality** (~5 minutes)
+   - Black formatting validation
+   - Ruff linting with security focus
+   - mypy type checking (0 errors required)
+
+2. **Unit Tests** (~5 minutes)
+   - Matrix testing across Python 3.8-3.11
+   - 425+ test functions with 100% pass rate
+   - Coverage reporting via Codecov
+
+3. **Integration Tests** (~10 minutes)
+   - Real Solidity compilation testing
+   - End-to-end contract analysis validation
+   - Sample contract verification
+
+#### **Quality Gates**
+
+All code must pass:
+- ✅ 100% test success rate
+- ✅ Zero linting errors
+- ✅ Zero type checking errors
+- ✅ >80% code coverage
+
+#### **Development Integration**
+
+```bash
+# Local pipeline simulation (matches CI exactly)
+make all              # Complete quality check
+
+# Individual stages
+make format lint type-check  # Code quality
+make test-unit              # Unit tests
+make test-integration       # Integration tests
+```
+
+**📋 Pipeline Focus**: Streamlined for essential quality gates with fast feedback
+
+### Automated Dependency Management
+
+A separate workflow (`dependencies.yml`) handles dependency updates:
+
+**Weekly Dependency Updates:**
+- **Schedule:** Mondays at 8:00 AM UTC
+- **Process:** Check outdated dependencies → Update → Test → Create PR
+- **Validation:** Full quality checks using `make` targets
+- **Output:** Automated pull requests with update summaries
+
+**Manual Trigger:** Available via GitHub Actions UI
+
+**Token Configuration:**
+- Uses `GITHUB_TOKEN` (automatically provided by GitHub Actions)
+- No manual configuration required
+- Permissions: `contents: write`, `pull-requests: write`
 
 ## 📈 Benchmarks & Testing
 

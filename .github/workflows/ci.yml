@@ -1,0 +1,127 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up development environment
+        run: ./setup-venv.sh
+
+      - name: Run code quality checks
+        timeout-minutes: 5
+        run: |
+          source venv/bin/activate
+          make format
+          make lint
+          make type-check
+
+  unit-tests:
+    name: Unit Tests
+    needs: code-quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        exclude:
+          - python-version: '3.12.0'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+
+      - name: Set up development environment
+        run: ./setup-venv.sh
+
+      - name: Run unit tests
+        timeout-minutes: 10
+        run: |
+          source venv/bin/activate
+          make test-unit
+
+      - name: Generate coverage report (Python 3.9 only)
+        if: matrix.python-version == '3.9'
+        run: |
+          source venv/bin/activate
+          make test-unit-cov
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.9'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  integration-tests:
+    name: Integration Tests
+    needs: unit-tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install system dependencies
+        run: |
+          sudo add-apt-repository ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install -y solc
+
+
+      - name: Set up development environment
+        run: ./setup-venv.sh
+
+      - name: Run integration tests
+        timeout-minutes: 15
+        run: |
+          source venv/bin/activate
+          make test-integration
+
+      - name: Test sample contract analysis
+        run: |
+          source venv/bin/activate
+          if [ -f "samples/SimpleDAO.hex" ]; then
+            python oyente/oyente.py -s samples/SimpleDAO.hex -b
+          else
+            echo "⚠️  Sample contract not found, skipping manual verification"
+          fi
