@@ -2874,7 +2874,9 @@ def get_recipients(disasm_file: str, contract_address: str) -> Dict[str, Any]:
     data_source = EthereumData(contract_address)
     recipients.clear()  # Clear the global list
 
-    evm_code_coverage = float(len(visited_pcs)) / len(instructions.keys())
+    # Prevent division by zero when instructions is empty
+    instruction_count = len(instructions.keys())
+    evm_code_coverage = float(len(visited_pcs)) / instruction_count if instruction_count > 0 else 0.0
 
     run_build_cfg_and_analyze()
 
