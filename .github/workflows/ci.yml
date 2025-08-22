@@ -144,10 +144,20 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          # Install go-ethereum for evm tool
+          sudo add-apt-repository -y ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install -y ethereum
+
           # Install solc-select and Solidity compiler
           pip install solc-select
           solc-select install 0.8.19
           solc-select use 0.8.19
+
+          # Verify installations
+          echo "🔍 Verifying installations:"
+          which evm && evm --version || echo "⚠️ evm not found"
+          which solc && solc --version || echo "⚠️ solc not found"
 
       - name: Set up development environment
         env:

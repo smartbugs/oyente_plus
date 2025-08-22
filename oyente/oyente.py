@@ -208,7 +208,7 @@ def analyze_solidity(args: argparse.Namespace, input_type: str = "solidity") -> 
         return 1
 
 
-def main() -> None:
+def main() -> int:
     """Main entry point for Oyente analyzer.
 
     Parses command-line arguments and runs the appropriate analysis
@@ -396,7 +396,7 @@ def main() -> None:
             global_params.GLOBAL_TIMEOUT = args.global_timeout
 
     if not has_dependencies_installed():
-        return
+        return 1
 
     if args.remote_URL:
         r = requests.get(args.remote_URL, timeout=30)  # 30 second timeout
@@ -416,8 +416,8 @@ def main() -> None:
     else:
         exit_code = analyze_solidity(args)
 
-    exit(exit_code)
+    return exit_code
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())
