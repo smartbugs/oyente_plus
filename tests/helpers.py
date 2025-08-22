@@ -47,6 +47,10 @@ def run_oyente_cli(
 
     cmd = [sys.executable, "oyente/oyente.py", *args]
 
+    # Default timeout to prevent hanging tests
+    if timeout is None:
+        timeout = 30
+
     return subprocess.run(  # noqa: S603
         cmd,
         capture_output=True,
