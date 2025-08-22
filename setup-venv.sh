@@ -38,7 +38,7 @@ fi
 echo "✅ Setup complete!"
 echo ""
 echo "To activate the environment, run:"
-echo "   poetry shell"
+echo "   . venv/bin/activate"
 echo ""
 echo "Or run commands directly with:"
 echo "   poetry run <command>"
