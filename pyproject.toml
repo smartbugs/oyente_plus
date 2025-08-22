@@ -43,6 +43,14 @@ package-mode = true
 
 [tool.poetry.dependencies]
 python = ">=3.8,!=3.12.0,<4.0"
+requests = ">=2.25.0"
+web3 = ">=6.0.0"
+z3-solver = "4.14.1.0"
+crytic-compile = "0.3.8"
+solc-select = ">=1.0.0"
+cbor2 = ">=5.0.0"
+six = ">=1.16.0"
+ethutils = {git = "https://github.com/gsalzer/ethutils.git", branch = "main"}
 
 [tool.poetry.group.dev.dependencies]
 # Code formatting and linting

@@ -4,17 +4,31 @@ set -e
 
 echo "🚀 Setting up Python development environment with Poetry..."
 
-echo "📦 Setting up Python venv with with Poetry..."
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip wheel
-pip install poetry
+# Check if Poetry is already installed
+if ! command -v poetry &> /dev/null; then
+    echo "📦 Setting up Python venv with Poetry..."
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip wheel
+    pip install poetry
+else
+    echo "✅ Poetry already installed, creating venv..."
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip wheel
+fi
 
 echo "📦 Installing all dependencies with Poetry..."
-poetry install --with dev
+# Clear any existing lock issues and install fresh
+poetry install --with dev --no-interaction --verbose
 
 echo "🔗 Setting up pre-commit hooks..."
-poetry run pre-commit install
+# Only install pre-commit hooks if not in CI environment
+if [ -z "$CI" ]; then
+    poetry run pre-commit install
+else
+    echo "Skipping pre-commit hook installation in CI environment"
+fi
 
 echo "✅ Setup complete!"
 echo ""
