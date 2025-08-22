@@ -147,6 +147,32 @@ class MockRegistry:
 
         return self._mocks
 
+    def create_crytic_compile_mocks(self) -> dict[str, Any]:
+        """Create and register CryticCompile-related mocks.
+
+        Returns:
+            Dictionary of created mocks
+        """
+        import os
+
+        from tests.mocks.mock_crytic_compile import MockCryticCompile
+        from tests.mocks.mock_crytic_compile import MockInvalidCompilationError
+
+        def mock_crytic_compile_constructor(source, *args, **kwargs):
+            """Mock CryticCompile constructor that checks if source file exists."""
+            # Check if the source file exists
+            if not os.path.exists(source) and not source.startswith("http"):
+                raise MockInvalidCompilationError(f"Source file not found: {source}")
+
+            # If file exists, return successful mock
+            return MockCryticCompile(source=source, **kwargs)
+
+        # Use patch_attribute for classes within modules
+        self.patch_attribute("input_helper", "CryticCompile", mock_crytic_compile_constructor)
+        self.patch_attribute("input_helper", "InvalidCompilation", MockInvalidCompilationError)
+
+        return {"CryticCompile": mock_crytic_compile_constructor, "InvalidCompilation": MockInvalidCompilationError}
+
     def setup_for_test(self, test_type: str = "unit") -> None:
         """Set up mocks for a specific test type.
 
@@ -155,6 +181,10 @@ class MockRegistry:
         """
         if test_type in ["unit", "integration"]:
             self.create_z3_mocks(mode=test_type)
+
+        # Set up CryticCompile mocks for integration tests
+        if test_type == "integration":
+            self.create_crytic_compile_mocks()
 
         # Apply all registered mocks to sys.modules
         for module_name, mock_obj in self._mocks.items():

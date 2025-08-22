@@ -430,13 +430,9 @@ class TestInputHelperSolidityCompilation:
         with patch.object(MockCryticCompile, "__init__") as mock_init:
             mock_init.side_effect = MockInvalidCompilationError("Compilation failed")
 
-            # Mock exit to verify it's called
-            with patch("builtins.exit") as mock_exit:
-                # Call the method, which should call exit(1)
+            # The method should now raise the exception instead of calling exit(1)
+            with pytest.raises(MockInvalidCompilationError, match="Compilation failed"):
                 helper._compile_solidity()
-
-                # Verify exit was called with code 1
-                mock_exit.assert_called_once_with(1)
 
     def test_compile_solidity_with_libraries(self):
         """Test Solidity compilation with library linking."""

@@ -20,6 +20,7 @@ import global_params
 import requests
 import six
 import symExec
+from crytic_compile import InvalidCompilation  # type: ignore[attr-defined]
 from input_helper import InputHelper
 from utils import run_command
 
@@ -112,15 +113,20 @@ def analyze_bytecode(args: argparse.Namespace) -> int:
     """
 
     helper = InputHelper(InputHelper.BYTECODE, source=args.source, evm=args.evm)
-    inp = helper.get_inputs()[0]
+    try:
+        inp = helper.get_inputs()[0]
+        result, exit_code = symExec.run(disasm_file=inp["disasm_file"])
+        helper.rm_tmp_files()
 
-    result, exit_code = symExec.run(disasm_file=inp["disasm_file"])
-    helper.rm_tmp_files()
+        if global_params.WEB:
+            six.print_(json.dumps(result))
 
-    if global_params.WEB:
-        six.print_(json.dumps(result))
-
-    return int(exit_code)
+        return int(exit_code)
+    except OSError as e:
+        # File not found or can't be read
+        logging.critical(f"Error reading bytecode file '{args.source}': {e}")
+        helper.rm_tmp_files()
+        return 1
 
 
 def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], int]:
@@ -188,13 +194,18 @@ def analyze_solidity(args: argparse.Namespace, input_type: str = "solidity") -> 
             source=args.source,
             evm=args.evm,
         )
-    inputs = helper.get_inputs(global_params.TARGET_CONTRACTS)
-    results, exit_code = run_solidity_analysis(inputs)
-    helper.rm_tmp_files()
+    try:
+        inputs = helper.get_inputs(global_params.TARGET_CONTRACTS)
+        results, exit_code = run_solidity_analysis(inputs)
+        helper.rm_tmp_files()
 
-    if global_params.WEB:
-        six.print_(json.dumps(results))
-    return int(exit_code)
+        if global_params.WEB:
+            six.print_(json.dumps(results))
+        return int(exit_code)
+    except InvalidCompilation:
+        # Compilation failed (including file not found)
+        helper.rm_tmp_files()
+        return 1
 
 
 def main() -> None:

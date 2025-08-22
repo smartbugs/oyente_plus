@@ -165,15 +165,12 @@ class TestCompilationErrorHandling:
             allow_paths="",
         )
 
-        # Mock the MockCryticCompile to raise an error when called and mock exit to prevent actual termination
+        # Mock the MockCryticCompile to raise an error when called
         with patch.object(
             MockCryticCompile, "__init__", side_effect=MockInvalidCompilationError("Syntax error")
-        ), patch("builtins.exit") as mock_exit:
-            # This should handle the compilation error and call exit(1)
+        ), pytest.raises(MockInvalidCompilationError, match="Syntax error"):
+            # This should handle the compilation error and raise the exception
             helper._compile_solidity()
-
-            # Verify exit was called with code 1
-            mock_exit.assert_called_once_with(1)
 
 
 @pytest.mark.integration
