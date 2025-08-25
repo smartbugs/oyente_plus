@@ -116,6 +116,11 @@ def analyze_bytecode(args: argparse.Namespace) -> int:
         logging.critical(f"Error reading bytecode file '{args.source}': {e}")
         helper.rm_tmp_files()
         return 1
+    except ValueError as e:
+        # Invalid bytecode format
+        logging.critical(f"Invalid bytecode format in '{args.source}': {e}")
+        helper.rm_tmp_files()
+        return 1
 
 
 def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], int]:

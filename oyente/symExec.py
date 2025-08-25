@@ -1739,7 +1739,12 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     start = code_from * 2
                     end = start + no_bytes * 2
                     code = evm[start:end]
-                mem[mem_location] = int(code, 16)
+                    # Fix: Handle empty code slices and invalid hex
+                    if code and all(c in "0123456789abcdefABCDEF" for c in code):
+                        mem[mem_location] = int(code, 16)
+                    else:
+                        # If code is empty or invalid, store 0 (common EVM behavior)
+                        mem[mem_location] = 0
             else:
                 assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_code_var("Ia", code_from, no_bytes)
@@ -2749,7 +2754,10 @@ def detect_vulnerabilities() -> Dict[str, Any]:
             if g_src_map:
                 detect_assertion_failure()
             else:
-                raise Exception("Assertion checks need a Source Map")
+                log.warning(
+                    "Assertion checks require a source map. Skipping assertion analysis for bytecode-only input."
+                )
+                log.warning("To analyze assertions, provide a Solidity source file instead of bytecode.")
 
         if g_src_map:
             log_info()

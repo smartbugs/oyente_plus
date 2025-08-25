@@ -199,7 +199,9 @@ class InputHelper:
         inputs = []
         if self.input_type == InputHelper.BYTECODE:
             with open(self.source) as f:
-                bytecode = f.read()
+                bytecode = f.read().strip()
+            # Validate bytecode format
+            self._validate_bytecode(bytecode)
             self._prepare_disasm_file(self.source, bytecode)
 
             disasm_file = self._get_temporary_files(self.source)["disasm"]
@@ -599,6 +601,32 @@ class InputHelper:
 
         with open(disasm_file, "w") as of:
             of.write(disasm_out)
+
+    def _validate_bytecode(self, bytecode: str) -> None:
+        """Validate bytecode format and content.
+
+        Args:
+            bytecode: EVM bytecode string to validate
+
+        Raises:
+            ValueError: If bytecode format is invalid
+        """
+        if not bytecode:
+            raise ValueError("Bytecode cannot be empty")
+
+        # Remove 0x prefix if present
+        clean_bytecode = bytecode[2:] if bytecode.startswith("0x") else bytecode
+
+        if not clean_bytecode:
+            raise ValueError("Bytecode cannot be empty after removing prefix")
+
+        # Check if all characters are valid hexadecimal
+        if not all(c in "0123456789abcdefABCDEF" for c in clean_bytecode):
+            raise ValueError("Bytecode contains invalid hexadecimal characters")
+
+        # Check if bytecode has even length (each byte needs 2 hex chars)
+        if len(clean_bytecode) % 2 != 0:
+            raise ValueError("Bytecode must have even length (each byte needs 2 hex characters)")
 
     def _rm_tmp_files_of_multiple_contracts(self, contracts: List[Tuple[str, str]]) -> None:
         """Remove temporary files for multiple contracts.
