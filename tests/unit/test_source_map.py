@@ -855,3 +855,113 @@ contract Test {
             func_params = sourcemap._get_func_name_to_params()
             assert "transfer" in func_params
             assert len(func_params["transfer"]) == 2
+
+
+@pytest.mark.unit
+class TestNewSolcVersionHandling:
+    """Test new solc version detection and command building functionality."""
+
+    def test_get_solc_version_successful_parsing(self):
+        """Test successful solc version parsing."""
+        mock_output = "solc, the solidity compiler commandline interface\nVersion: 0.8.19+commit.7dd6d404.Linux.g++\n"
+
+        with patch.object(source_map, "run_command_with_err", return_value=(mock_output, "")):
+            version = source_map.SourceMap._get_solc_version()
+            assert version == (0, 8, 19)
+
+    def test_get_solc_version_different_formats(self):
+        """Test parsing different version output formats."""
+        # Test with different version format
+        mock_output = "solc, the solidity compiler commandline interface\nVersion: 0.4.26+commit.4563c3fc.Linux.g++\n"
+
+        with patch.object(source_map, "run_command_with_err", return_value=(mock_output, "")):
+            version = source_map.SourceMap._get_solc_version()
+            assert version == (0, 4, 26)
+
+    def test_get_solc_version_error_conditions(self):
+        """Test error handling in solc version detection."""
+        # Test empty output
+        with patch.object(source_map, "run_command_with_err", return_value=("", "command not found")), pytest.raises(
+            RuntimeError, match="Failed to get solc version"
+        ):
+            source_map.SourceMap._get_solc_version()
+
+        # Test malformed output
+        with patch.object(source_map, "run_command_with_err", return_value=("invalid output", "")), pytest.raises(
+            RuntimeError, match="Could not parse solc version"
+        ):
+            source_map.SourceMap._get_solc_version()
+
+    def test_build_combined_json_cmd_version_awareness(self):
+        """Test version-aware command building."""
+        # Setup class variables
+        source_map.SourceMap.parent_filename = "test.sol"
+        source_map.SourceMap.remap = ""
+        source_map.SourceMap.allow_paths = ""
+
+        # Test with newer solc (>= 0.6.0) - should keep hashes
+        with patch.object(source_map.SourceMap, "_get_solc_version", return_value=(0, 8, 19)):
+            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+            assert "hashes" in cmd
+            assert "test.sol" in cmd
+
+        # Test with older solc (< 0.6.0) - should replace hashes with abi
+        with patch.object(source_map.SourceMap, "_get_solc_version", return_value=(0, 5, 17)):
+            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+            assert "abi" in cmd
+            assert "hashes" not in cmd
+
+    def test_build_combined_json_cmd_with_paths(self):
+        """Test command building with allow_paths."""
+        source_map.SourceMap.parent_filename = "test.sol"
+        source_map.SourceMap.remap = "src=contracts"
+        source_map.SourceMap.allow_paths = "/project/contracts"
+
+        with patch.object(source_map.SourceMap, "_get_solc_version", return_value=(0, 8, 19)):
+            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+            assert "--allow-paths /project/contracts" in cmd
+            assert "src=contracts" in cmd
+
+    def test_build_combined_json_cmd_fallback_on_version_error(self):
+        """Test fallback behavior when version detection fails."""
+        source_map.SourceMap.parent_filename = "test.sol"
+        source_map.SourceMap.remap = ""
+        source_map.SourceMap.allow_paths = ""
+
+        with patch.object(
+            source_map.SourceMap, "_get_solc_version", side_effect=RuntimeError("Version detection failed")
+        ):
+            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+            # Should fallback to abi
+            assert "abi" in cmd
+            assert "test.sol" in cmd
+
+    def test_get_sig_to_func_by_contract_improved_error_handling(self):
+        """Test improved error handling in compilation output parsing."""
+        source_map.SourceMap.parent_filename = "test.sol"
+
+        # Test empty output
+        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
+            source_map, "run_command", return_value=""
+        ), pytest.raises(RuntimeError, match="Solidity compilation failed"):
+            source_map.SourceMap._get_sig_to_func_by_contract()
+
+        # Test invalid JSON
+        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
+            source_map, "run_command", return_value="invalid json"
+        ), pytest.raises(RuntimeError, match="Failed to parse solc output as JSON"):
+            source_map.SourceMap._get_sig_to_func_by_contract()
+
+        # Test missing contracts key
+        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
+            source_map, "run_command", return_value='{"errors": []}'
+        ), pytest.raises(RuntimeError, match="Solc output does not contain 'contracts' key"):
+            source_map.SourceMap._get_sig_to_func_by_contract()
+
+        # Test successful parsing
+        valid_output = '{"contracts": {"test.sol:TestContract": {"hashes": {"test()": "0x123"}}}}'
+        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
+            source_map, "run_command", return_value=valid_output
+        ):
+            result = source_map.SourceMap._get_sig_to_func_by_contract()
+            assert "test.sol:TestContract" in result

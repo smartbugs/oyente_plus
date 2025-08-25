@@ -10,6 +10,7 @@ from typing import Optional
 import six
 from ast_helper import AstHelper
 from utils import run_command
+from utils import run_command_with_err
 
 
 class Source:
@@ -146,8 +147,18 @@ class SourceMap:
         except (ValueError, IndexError):
             return {"begin": 0, "end": 0}
 
-    def _get_sig_to_func(self):
-        func_to_sig = SourceMap.func_to_sig_by_contract[self.cname]["hashes"]
+    def _get_sig_to_func(self) -> Dict[str, str]:
+        """Get mapping from function signature hashes to function names.
+
+        Uses safe dictionary access to prevent KeyError when contract name
+        doesn't exist or has no 'hashes' key.
+
+        Returns:
+            Dictionary mapping function signature hashes to function names.
+            Returns empty dict if contract data or hashes are missing.
+        """
+        contract_data = SourceMap.func_to_sig_by_contract.get(self.cname, {})
+        func_to_sig = contract_data.get("hashes", {})
         return {sig: func for func, sig in six.iteritems(func_to_sig)}
 
     def _get_func_name_to_params(self):
@@ -186,13 +197,76 @@ class SourceMap:
         return func_call_names
 
     @classmethod
+    def _get_solc_version(cls) -> tuple[int, int, int]:
+        """Get the current solc version as a tuple (major, minor, patch)."""
+        try:
+            out, err = run_command_with_err("solc --version")
+            if err or not out:
+                raise RuntimeError(f"Failed to get solc version: {err}")
+
+            # Parse version from output like "solc, the solidity compiler commandline interface\nVersion: 0.4.11+..."
+            for line in out.split("\n"):
+                if line.startswith("Version:"):
+                    version_str = line.split(":")[1].strip()
+                    # Extract version numbers before '+' or other suffixes
+                    version_numbers = version_str.split("+")[0].strip()
+                    parts = version_numbers.split(".")
+                    if len(parts) >= 3:
+                        return (int(parts[0]), int(parts[1]), int(parts[2]))
+
+            raise RuntimeError(f"Could not parse solc version from: {out}")
+        except Exception as e:
+            raise RuntimeError(f"Error detecting solc version: {e}") from e
+
+    @classmethod
+    def _build_combined_json_cmd(cls, json_flags: str) -> str:
+        """Build solc combined-json command with version-aware flag support."""
+        try:
+            major, minor, _ = cls._get_solc_version()
+
+            # The 'hashes' flag was introduced in solc 0.6.0
+            if (major, minor) >= (0, 6) and "hashes" in json_flags:
+                # Use hashes flag for newer versions
+                flags = json_flags
+            elif "hashes" in json_flags:
+                # Fall back to available flags for older versions
+                # Use 'abi' as a basic alternative that's widely supported
+                flags = json_flags.replace("hashes", "abi")
+            else:
+                flags = json_flags
+
+            if cls.allow_paths:
+                return f"solc --combined-json {flags} {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
+            else:
+                return f"solc --combined-json {flags} {cls.remap} {cls.parent_filename}"
+
+        except Exception:
+            # Fallback to basic command if version detection fails
+            if cls.allow_paths:
+                return f"solc --combined-json abi {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
+            else:
+                return f"solc --combined-json abi {cls.remap} {cls.parent_filename}"
+
+    @classmethod
     def _get_sig_to_func_by_contract(cls):
-        if cls.allow_paths:
-            cmd = f"solc --combined-json hashes {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
-        else:
-            cmd = f"solc --combined-json hashes {cls.remap} {cls.parent_filename}"
+        cmd = cls._build_combined_json_cmd("hashes")
         out = run_command(cmd)
-        out = json.loads(out)
+
+        # Validate output before parsing JSON
+        if not out or out.strip() == "":
+            raise RuntimeError(
+                f"Solidity compilation failed. Command '{cmd}' produced empty output. "
+                f"This may be due to compilation errors or unsupported compiler flags."
+            )
+
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse solc output as JSON: {e}. Command was: {cmd}") from e
+
+        if "contracts" not in out:
+            raise RuntimeError(f"Solc output does not contain 'contracts' key. Available keys: {list(out.keys())}")
+
         return out["contracts"]
 
     @classmethod
