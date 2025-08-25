@@ -29,7 +29,6 @@ An Analysis Tool for Smart Contracts
 - **Python 3.8+** (excluding 3.12.0) - Modern type hints and features
 - **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
-- **[Go Ethereum (geth)](https://geth.ethereum.org/downloads/)** - EVM execution engine
 - **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
 
 ### Installation
@@ -91,17 +90,6 @@ solc-select install latest
 solc-select use latest
 ```
 
-#### Go Ethereum (for EVM execution)
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install software-properties-common
-sudo add-apt-repository -y ppa:ethereum/ethereum
-sudo apt-get update
-sudo apt-get install ethereum
-
-# Or download from https://geth.ethereum.org/downloads/
-```
 
 ## 🔧 Usage
 

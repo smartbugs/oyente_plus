@@ -125,39 +125,23 @@ class TestDependencyValidation:
 
     @patch("tests.unit.test_oyente.oyente.cmd_exists")
     @patch("z3.get_version_string")
-    @patch("tests.unit.test_oyente.oyente.run_command")
-    def test_has_dependencies_installed_success(self, mock_run_command, mock_z3_version, mock_cmd_exists):
+    def test_has_dependencies_installed_success(self, mock_z3_version, mock_cmd_exists):
         """Test successful dependency validation."""
         # Mock Z3 import and version
         mock_z3_version.return_value = "4.14.1.0"
 
         # Mock command existence checks
-        mock_cmd_exists.side_effect = lambda cmd: cmd in ["evm", "solc"]
-
-        # Mock evm version output
-        mock_run_command.return_value = "evm version 1.16.1-stable\n"
+        mock_cmd_exists.side_effect = lambda cmd: cmd in ["solc"]
 
         result = oyente.has_dependencies_installed()
         assert result is True
 
     @patch("tests.unit.test_oyente.oyente.cmd_exists")
     @patch("z3.get_version_string")
-    def test_has_dependencies_installed_no_evm(self, mock_z3_version, mock_cmd_exists):
-        """Test dependency validation when evm is missing."""
-        mock_z3_version.return_value = "4.14.1.0"
-        mock_cmd_exists.side_effect = lambda cmd: cmd == "solc"  # evm missing
-
-        result = oyente.has_dependencies_installed()
-        assert result is False
-
-    @patch("tests.unit.test_oyente.oyente.cmd_exists")
-    @patch("z3.get_version_string")
-    @patch("tests.unit.test_oyente.oyente.run_command")
-    def test_has_dependencies_installed_no_solc(self, mock_run_command, mock_z3_version, mock_cmd_exists):
+    def test_has_dependencies_installed_no_solc(self, mock_z3_version, mock_cmd_exists):
         """Test dependency validation when solc is missing."""
         mock_z3_version.return_value = "4.14.1.0"
-        mock_cmd_exists.side_effect = lambda cmd: cmd == "evm"  # solc missing
-        mock_run_command.return_value = "evm version 1.16.1-stable\n"
+        mock_cmd_exists.side_effect = lambda cmd: False  # solc missing
 
         result = oyente.has_dependencies_installed()
         assert result is False
@@ -172,21 +156,17 @@ class TestDependencyValidation:
 
     @patch("tests.unit.test_oyente.oyente.cmd_exists")
     @patch("z3.get_version_string")
-    @patch("tests.unit.test_oyente.oyente.run_command")
-    def test_has_dependencies_installed_version_warnings(self, mock_run_command, mock_z3_version, mock_cmd_exists):
+    def test_has_dependencies_installed_version_warnings(self, mock_z3_version, mock_cmd_exists):
         """Test version warnings for newer dependencies."""
         # Mock newer Z3 version
         mock_z3_version.return_value = "4.15.0.0"
 
-        mock_cmd_exists.side_effect = lambda cmd: cmd in ["evm", "solc"]
-
-        # Mock newer evm version
-        mock_run_command.return_value = "evm version 1.17.0-stable\n"
+        mock_cmd_exists.side_effect = lambda cmd: cmd in ["solc"]
 
         with patch("logging.warning") as mock_warning:
             result = oyente.has_dependencies_installed()
             assert result is True
-            # Should have warnings for both Z3 and evm
+            # Should have warning for Z3
             assert mock_warning.call_count >= 1
 
 
@@ -204,8 +184,8 @@ class TestBytecodeAnalysis:
         mock_input_helper.return_value = mock_helper
 
         # Mock symExec run
-        mock_result = {"vulnerabilities": {}}
-        mock_symexec_run.return_value = (mock_result, 0)
+        mock_result = {"vulnerabilities": {}, "vulnerability_count": 0}
+        mock_symexec_run.return_value = mock_result
 
         # Create mock args
         args = Mock()
@@ -235,8 +215,8 @@ class TestBytecodeAnalysis:
         mock_input_helper.return_value = mock_helper
 
         # Mock symExec run
-        mock_result = {"vulnerabilities": {"reentrancy": []}}
-        mock_symexec_run.return_value = (mock_result, 1)
+        mock_result = {"vulnerabilities": {"reentrancy": []}, "vulnerability_count": 1}
+        mock_symexec_run.return_value = mock_result
 
         args = Mock()
         args.source = "test.bin"
@@ -261,7 +241,10 @@ class TestSolidityAnalysis:
     def test_run_solidity_analysis_success(self, mock_symexec_run):
         """Test successful Solidity analysis of multiple contracts."""
         # Mock symExec results
-        mock_symexec_run.side_effect = [({"vulnerabilities": {}}, 0), ({"vulnerabilities": {"reentrancy": []}}, 1)]
+        mock_symexec_run.side_effect = [
+            {"vulnerabilities": {}, "vulnerability_count": 0},
+            {"vulnerabilities": {"reentrancy": []}, "vulnerability_count": 1},
+        ]
 
         inputs = [
             {
@@ -579,8 +562,8 @@ class TestIntegration:
         mock_input_helper.return_value = mock_helper
 
         # Mock symExec result
-        mock_result = {"vulnerabilities": {"reentrancy": ["Warning: Potential reentrancy"]}}
-        mock_symexec_run.return_value = (mock_result, 1)
+        mock_result = {"vulnerabilities": {"reentrancy": ["Warning: Potential reentrancy"]}, "vulnerability_count": 1}
+        mock_symexec_run.return_value = mock_result
 
         with patch("sys.argv", ["oyente.py", "--source", "test.sol"]):
             result = oyente.main()
