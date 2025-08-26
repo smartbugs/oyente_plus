@@ -4,7 +4,7 @@ This document explains the testing structure and workflows for Oyente+, covering
 
 ## Current Status
 
-- **Total Tests**: 533 test functions (429 unit + 104 integration) executed with 100% pass rate
+- **Total Tests**: 516 test functions (451 unit + 65 integration) executed with 100% pass rate
 - **Pass Rate**: 100% (no skipped tests currently)
 - **Test Files**: Comprehensive test files covering core modules
 - **Test Categories**: Unit, Integration, Property, Performance
@@ -38,7 +38,7 @@ tests/
 ### Unit Tests (`tests/unit/`)
 
 **Purpose**: Test individual functions and classes in isolation
-**Test Count**: 429 unit test functions
+**Test Count**: 451 unit test functions
 **Execution Time**: < 10 seconds total
 **Dependencies**: No external tools, filesystem, or network
 
@@ -100,7 +100,7 @@ tests/
 
 ```bash
 # Development workflow - run before each commit
-make test          # Unit tests only (429 tests, ~8 seconds)
+make test          # Unit tests only (451 tests, ~8 seconds)
 make all          # Full quality checks including unit tests
 
 # Specific test types

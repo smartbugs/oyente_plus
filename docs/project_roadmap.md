@@ -10,41 +10,13 @@ Oyente+ is a symbolic execution tool for Ethereum smart contract security analys
 
 ### 🔄 Remaining Work
 
-#### Critical Priority (1 week)
-
-- **Source Map KeyError** (source_map.py) - ✅ FIXED
-- **Hardcoded API Key** (ethereum_data.py) - Security issue
-
-#### Medium Priority (3-4 weeks)
+#### Medium Priority
 
 - **Architecture**: Refactor large files (symExec.py: 2,671 lines)
 - **Performance**: Optimize Z3 solver usage
 - **Documentation**: API docs and user guides
 
-## Focused Roadmap
-
-### Phase 1: Final Critical Issues [1 week]
-
-**Goal**: Complete tool reliability
-
-#### Tasks
-
-1. **Source Map KeyError Fix**
-   - Add defensive checks in source_map.py
-   - Handle missing contract names gracefully
-   - Test with multi-contract files
-
-2. **Security Cleanup**
-   - Move hardcoded API key to environment variable
-   - Add configuration documentation
-
-#### Success Metrics
-
-- [ ] Zero crashes on existing test suite
-- [ ] All .sol files analyze successfully
-- [ ] No hardcoded secrets
-
-### Phase 2: Architecture & Performance [4-5 weeks]
+### Phase 1: Architecture & Performance
 
 **Goal**: Improve maintainability and performance
 
@@ -73,7 +45,7 @@ Oyente+ is a symbolic execution tool for Ethereum smart contract security analys
 - [ ] 30% performance improvement
 - [ ] Plugin system operational
 
-### Phase 3: Documentation & Polish [2-3 weeks]
+### Phase 2: Documentation & Polish [2-3 weeks]
 
 **Goal**: Professional-grade documentation
 

@@ -2705,6 +2705,15 @@ def detect_assertion_failure() -> None:
     global results
     global assertion_failure
 
+    # AssertionFailure requires source_map to generate meaningful warnings
+    # Skip assertion failure detection when source mapping is unavailable
+    if g_src_map is None:
+        log.warning("Skipping assertion failure detection: source mapping unavailable")
+        results["vulnerabilities"]["assertion_failure"] = []
+        assertion_failure = None
+        log.info("\t  Assertion Failure: \t\t\t False (source map unavailable)")
+        return
+
     assertion_failure = AssertionFailure(g_src_map, global_problematic_pcs["assertion_failure"])
 
     results["vulnerabilities"]["assertion_failure"] = assertion_failure.get_warnings()

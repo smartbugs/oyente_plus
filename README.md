@@ -17,7 +17,7 @@ An Analysis Tool for Smart Contracts
 - **Symbolic Execution**: Deep analysis using Z3 constraint solving
 - **Multi-format Support**: Analyze Solidity source code, EVM bytecode, or remote contracts
 - **Modern Python**: Built for Python 3.8+ with comprehensive type hints
-- **Comprehensive Testing**: 533 test functions with 100% pass rate and property-based testing
+- **Comprehensive Testing**: 516 test functions with 100% pass rate and property-based testing
 - **Code Quality**: Enforced with Black, Ruff, mypy, and pytest
 - **Complete Type Safety**: 0 mypy errors across 15/17 modules
 - **Latest EVM Support**: Compatible with recent opcodes (PUSH0, TLOAD, TSTORE)
@@ -128,7 +128,7 @@ make test-cov    # Run tests with coverage
 
 ## 🧪 Testing
 
-**Status**: 533 test functions executed with 100% pass rate across comprehensive test infrastructure
+**Status**: 516 test functions executed with 100% pass rate across comprehensive test infrastructure
 
 ```bash
 # Quick commands
