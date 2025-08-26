@@ -61,12 +61,6 @@ standard_json_output
 # Keep test contracts
 !oyente/tests/contracts/*/*
 
-# Ruby/Rails (web interface)
-web/vendor/
-web/log/
-web/tmp/
-web/node_modules/
-web/.bundle/
 
 # Temporary files
 tmp/

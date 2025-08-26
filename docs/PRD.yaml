@@ -70,7 +70,7 @@ phase_3_performance:
 phase_4_features:
   title: "Advanced Features"
   timeline: "6+ weeks"
-  scope: "Web interface, ML integration, cross-chain support"
+  scope: "ML integration, cross-chain support"
 
 # =============================================================================
 # CONCLUSION

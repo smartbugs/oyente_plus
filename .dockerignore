@@ -53,12 +53,6 @@ current_test.pickle
 *.report
 *.log
 
-# Ruby/Rails
-web/vendor/
-web/log/
-web/tmp/
-web/node_modules/
-web/.bundle/
 
 # Documentation (reduce image size)
 *.md
