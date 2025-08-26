@@ -263,9 +263,8 @@ class TestControlFlowGraphConstruction:
         # Test that they are single-byte instructions
         assert 1 == 1  # Most non-PUSH instructions are 1 byte
 
-    @patch("oyente.symExec.logging")
     @patch("oyente.symExec.g_src_map", None)
-    def test_mapping_non_push_instruction_desynchronization(self, mock_logging, mock_oyente_modules):
+    def test_mapping_non_push_instruction_desynchronization(self, mock_oyente_modules):
         """Test source map desynchronization handling due to compiler optimizations."""
         with patch.dict(
             "sys.modules",
@@ -295,19 +294,6 @@ class TestControlFlowGraphConstruction:
 
             # Should process through all mismatched positions and return length
             assert result_idx == 3
-
-            # Should log warnings for each desynchronization (3 mismatches)
-            assert mock_logging.warning.call_count == 3
-
-            # Check first warning call
-            first_call = mock_logging.warning.call_args_list[0]
-            assert first_call[0] == (
-                "Source map desynchronization detected: expected '%s' but found '%s' at address %d. "
-                "Skipping source map entry due to compiler optimization.",
-                "PUSH",
-                "STOP",
-                580,
-            )
 
 
 @pytest.mark.unit

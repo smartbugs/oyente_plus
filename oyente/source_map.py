@@ -6,6 +6,7 @@ from typing import ClassVar
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 from ast_helper import AstHelper
 from utils import run_command
@@ -196,7 +197,7 @@ class SourceMap:
         return func_call_names
 
     @classmethod
-    def _get_solc_version(cls) -> tuple[int, int, int]:
+    def _get_solc_version(cls) -> Tuple[int, int, int]:
         """Get the current solc version as a tuple (major, minor, patch)."""
         try:
             out, err = run_command_with_err("solc --version")
