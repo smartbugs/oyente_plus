@@ -22,12 +22,6 @@ RUN apt-get update && \
     wget && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Ethereum repository and package
-RUN add-apt-repository -y ppa:ethereum/ethereum && \
-    apt-get update && \
-    apt-get install -y ethereum && \
-    rm -rf /var/lib/apt/lists/*
-
 # Upgrade pip, install Python wheels and required Python libraries
 RUN pip install --no-cache-dir --upgrade pip wheel && \
     pip install --no-cache-dir \
