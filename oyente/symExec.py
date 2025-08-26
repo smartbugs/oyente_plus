@@ -1752,11 +1752,10 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     start = code_from * 2
                     end = start + no_bytes * 2
                     code = evm[start:end]
-                    # Fix: Handle empty code slices and invalid hex
-                    if code and all(c in "0123456789abcdefABCDEF" for c in code):
+                    try:
                         mem[mem_location] = int(code, 16)
-                    else:
-                        # If code is empty or invalid, store 0 (common EVM behavior)
+                    except (ValueError, TypeError):
+                        # If code is empty or invalid, store 0
                         mem[mem_location] = 0
             else:
                 assert gen is not None, "Generator must be initialized"

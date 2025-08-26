@@ -1,47 +1,33 @@
-FROM ubuntu:jammy
+FROM python:3.11-slim AS base
 LABEL maintainer="SmartBugs Project <https://github.com/smartbugs/oyente"
 
-# crytic-compile does not seem to work inside a container
-# so we need to set the solc version manually
-ARG SOLC_VERSION=0.8.29
-ENV SOLC_VERSION=${SOLC_VERSION}
-
-# Install relevant basic tools
 SHELL ["/bin/bash", "-c"]
+
+# Upgrade pip, install required Python packages
 RUN apt-get update && \
-    apt-get -y upgrade && \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends \
-    git \
-    gnupg \
-    python-is-python3 \
-    python3 \
-    python3-pip \
-    software-properties-common \
-    tzdata \
-    wget && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        git && \
+    pip install --no-cache-dir --upgrade pip wheel && \
+    pip install --no-cache-dir \
+        cbor2 \
+        crytic-compile==0.3.8 \
+        requests \
+        six \
+        solc-select \
+        typing_extensions \
+        z3-solver==4.14.1.0 && \
+    pip install --no-cache-dir git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils && \
+    apt-get purge -y --auto-remove git && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip, install Python wheels and required Python libraries
-RUN pip install --no-cache-dir --upgrade pip wheel && \
-    pip install --no-cache-dir \
-    cbor2 \
-    crytic-compile==0.3.8 \
-    requests \
-    solc-select \
-    z3-solver==4.14.1.0 && \
-    pip install --no-cache-dir git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils
-
-# set solidity version & explicitly install the specified
-# version of solidity. This is needed because solc needs
-# a solidity version to be set via solc-select, otherwise
-# it will not work.
-RUN solc-select install ${SOLC_VERSION}
+# Install chosen solidity compiler version
+ARG SOLC_VERSION=0.8.29
 ENV SOLC_VERSION=${SOLC_VERSION}
+RUN solc-select install ${SOLC_VERSION}
 
-# Copy the Oyente code into the container
-COPY . /oyente/
-WORKDIR /oyente/
+# Copy and initialize Oyente
+COPY ./oyente /oyente/
+WORKDIR /oyente
+RUN python3 -O -m compileall -f /oyente
 
-# Entrypoint: run Oyente
-ENTRYPOINT ["python3", "/oyente/oyente/oyente.py"]
+ENTRYPOINT ["python3", "/oyente/oyente.py"]
