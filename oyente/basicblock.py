@@ -9,8 +9,6 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-import six
-
 
 class BasicBlock:
     """Represents a basic block in the control flow graph.
@@ -115,7 +113,7 @@ class BasicBlock:
             address: The target address for jump instructions.
                     If not an integer, sets jump_target to -1.
         """
-        if isinstance(address, six.integer_types):
+        if isinstance(address, int):
             self.jump_target = address
         else:
             self.jump_target = -1
@@ -150,10 +148,10 @@ class BasicBlock:
         Prints the block's start/end addresses, type, and instructions
         to standard output for debugging purposes.
         """
-        six.print_("================")
-        six.print_(f"start address: {self.start}")
-        six.print_(f"end address: {self.end}")
+        print("================")
+        print(f"start address: {self.start}")
+        print(f"end address: {self.end}")
         if self.type:
-            six.print_("end statement type: " + self.type)
+            print(f"end statement type: {self.type}")
         for instr in self.instructions:
-            six.print_(instr)
+            print(instr)

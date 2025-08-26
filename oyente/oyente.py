@@ -7,7 +7,6 @@ for security vulnerabilities using symbolic execution.
 """
 
 import argparse
-import json
 import logging
 import re
 import shutil
@@ -18,7 +17,6 @@ from typing import Tuple
 
 import global_params
 import requests
-import six
 import symExec
 from crytic_compile import InvalidCompilation  # type: ignore[attr-defined]
 from input_helper import InputHelper
@@ -107,9 +105,6 @@ def analyze_bytecode(args: argparse.Namespace) -> int:
         exit_code = 1 if result.get("vulnerability_count", 0) > 0 else 0
         helper.rm_tmp_files()
 
-        if global_params.WEB:
-            six.print_(json.dumps(result))
-
         return int(exit_code)
     except OSError as e:
         # File not found or can't be read
@@ -193,8 +188,6 @@ def analyze_solidity(args: argparse.Namespace, input_type: str = "solidity") -> 
         results, exit_code = run_solidity_analysis(inputs)
         helper.rm_tmp_files()
 
-        if global_params.WEB:
-            six.print_(json.dumps(results))
         return int(exit_code)
     except InvalidCompilation:
         # Compilation failed (including file not found)
@@ -286,7 +279,6 @@ def main() -> int:
     )
 
     parser.add_argument("-e", "--evm", help="Do not remove the .evm file.", action="store_true")
-    parser.add_argument("-w", "--web", help="Run Oyente for web service", action="store_true")
     parser.add_argument("-j", "--json", help="Redirect results to a json file.", action="store_true")
     parser.add_argument("-p", "--paths", help="Print path condition information.", action="store_true")
     parser.add_argument("-db", "--debug", help="Display debug information", action="store_true")
@@ -363,7 +355,6 @@ def main() -> int:
     global_params.REPORT_MODE = 1 if args.report else 0
     global_params.USE_GLOBAL_BLOCKCHAIN = 1 if args.globalblockchain else 0
     global_params.INPUT_STATE = 1 if args.state else 0
-    global_params.WEB = 1 if args.web else 0
     global_params.STORE_RESULT = 1 if args.json else 0
     global_params.CHECK_ASSERTIONS = 1 if args.assertion else 0
     global_params.DEBUG_MODE = 1 if args.debug else 0
@@ -382,12 +373,8 @@ def main() -> int:
         global_params.GAS_LIMIT = args.gas_limit
     if args.loop_limit:
         global_params.LOOP_LIMIT = args.loop_limit
-    if global_params.WEB:
-        if args.global_timeout and args.global_timeout < global_params.GLOBAL_TIMEOUT:
-            global_params.GLOBAL_TIMEOUT = args.global_timeout
-    else:
-        if args.global_timeout:
-            global_params.GLOBAL_TIMEOUT = args.global_timeout
+    if args.global_timeout:
+        global_params.GLOBAL_TIMEOUT = args.global_timeout
 
     if not has_dependencies_installed():
         return 1

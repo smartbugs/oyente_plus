@@ -9,7 +9,6 @@ This module tests the main CLI functionality including:
 """
 
 import argparse
-import json
 import logging
 from unittest.mock import Mock
 from unittest.mock import mock_open
@@ -23,7 +22,6 @@ with patch.dict(
     "sys.modules",
     {
         "global_params": Mock(
-            WEB=False,
             TIMEOUT=30000,
             PRINT_PATHS=0,
             REPORT_MODE=0,
@@ -43,7 +41,6 @@ with patch.dict(
         "symExec": Mock(),
         "input_helper": Mock(),
         "utils": Mock(run_command=Mock()),
-        "six": Mock(print_=Mock()),
         "z3": Mock(get_version_string=Mock(return_value="4.14.1.0")),
         "z3.z3util": Mock(),
     },
@@ -200,38 +197,6 @@ class TestBytecodeAnalysis:
         mock_symexec_run.assert_called_once_with(disasm_file="test.disasm")
         mock_helper.rm_tmp_files.assert_called_once()
 
-    @patch("tests.unit.test_oyente.oyente.InputHelper")
-    @patch("tests.unit.test_oyente.oyente.symExec.run")
-    @patch("tests.unit.test_oyente.oyente.global_params")
-    @patch("tests.unit.test_oyente.oyente.six.print_")
-    def test_analyze_bytecode_web_mode(self, mock_print, mock_global_params, mock_symexec_run, mock_input_helper):
-        """Test bytecode analysis in web mode."""
-        # Mock global params
-        mock_global_params.WEB = True
-
-        # Mock input helper
-        mock_helper = Mock()
-        mock_helper.get_inputs.return_value = [{"disasm_file": "test.disasm"}]
-        mock_input_helper.return_value = mock_helper
-
-        # Mock symExec run
-        mock_result = {"vulnerabilities": {"reentrancy": []}, "vulnerability_count": 1}
-        mock_symexec_run.return_value = mock_result
-
-        args = Mock()
-        args.source = "test.bin"
-        args.evm = True
-
-        result = oyente.analyze_bytecode(args)
-
-        assert result == 1
-        mock_print.assert_called_once()
-        # Check that JSON was printed
-        call_args = mock_print.call_args[0][0]
-        assert isinstance(call_args, str)
-        # Should be valid JSON
-        json.loads(call_args)
-
 
 @pytest.mark.unit
 class TestSolidityAnalysis:
@@ -274,50 +239,6 @@ class TestSolidityAnalysis:
 
         # Check symExec was called correctly
         assert mock_symexec_run.call_count == 2
-
-    @patch("tests.unit.test_oyente.oyente.run_solidity_analysis")
-    @patch("tests.unit.test_oyente.oyente.InputHelper")
-    @patch("tests.unit.test_oyente.oyente.global_params")
-    @patch("tests.unit.test_oyente.oyente.six.print_")
-    def test_analyze_solidity_success(self, mock_print, mock_global_params, mock_input_helper, mock_run_analysis):
-        """Test analyze_solidity function."""
-        # Mock global params
-        mock_global_params.WEB = True
-
-        # Mock input helper
-        mock_helper = Mock()
-        mock_inputs = [{"contract": "TestContract"}]
-        mock_helper.get_inputs.return_value = mock_inputs
-        mock_input_helper.return_value = mock_helper
-
-        # Mock run_solidity_analysis
-        mock_results = {"contract.sol": {"TestContract": {}}}
-        mock_run_analysis.return_value = (mock_results, 0)
-
-        args = Mock()
-        args.source = "test.sol"
-        args.target_contracts = None
-        args.evm = False
-        args.compilation_error = False
-        args.root_path = ""
-        args.remap = ""
-        args.allow_paths = ""
-
-        result = oyente.analyze_solidity(args)
-
-        assert result == 0
-        mock_input_helper.assert_called_once_with(
-            oyente.InputHelper.SOLIDITY,
-            source="test.sol",
-            evm=False,
-            compilation_err=False,
-            root_path="",
-            remap="",
-            allow_paths="",
-        )
-        mock_run_analysis.assert_called_once_with(mock_inputs)
-        mock_helper.rm_tmp_files.assert_called_once()
-        mock_print.assert_called_once()
 
     @patch("tests.unit.test_oyente.oyente.InputHelper")
     def test_analyze_solidity_standard_json(self, mock_input_helper):

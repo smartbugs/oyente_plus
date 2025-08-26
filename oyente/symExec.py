@@ -26,7 +26,6 @@ from typing import Union
 from typing import cast
 
 import global_params
-import six
 
 # Import specific functions from analysis
 from analysis import display_analysis
@@ -217,7 +216,7 @@ class Parameter:
             "global_state": {},
             "path_conditions_and_vars": {},
         }
-        for attr, default in six.iteritems(attr_defaults):
+        for attr, default in attr_defaults.items():
             setattr(self, attr, kwargs.get(attr, default))
 
     def copy(self) -> "Parameter":
@@ -780,7 +779,7 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
 def get_start_block_to_func_sig() -> Dict[int, str]:
     state = 0
     func_sig = None
-    for _pc, instr in six.iteritems(instructions):
+    for _pc, instr in instructions.items():
         if state == 0 and instr.startswith("PUSH4"):
             state += 1
             func_sig = instr.split(" ")[1][2:]
@@ -1621,7 +1620,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 data = [str(x) for x in memory[s0 : s0 + s1]]
                 position_str = "".join(data)
                 position_str = re.sub(r"\s+", "", position_str)
-                position_bytes = zlib.compress(six.b(position_str), 9)
+                position_bytes = zlib.compress(position_str.encode("latin-1"), 9)
                 position_encoded = base64.b64encode(position_bytes)
                 position = position_encoded.decode("utf-8", "strict")
                 if position in sha3_list:

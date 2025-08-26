@@ -28,7 +28,6 @@ RUN pip install --no-cache-dir --upgrade pip wheel && \
     cbor2 \
     crytic-compile==0.3.8 \
     requests \
-    six \
     solc-select \
     z3-solver==4.14.1.0 && \
     pip install --no-cache-dir git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils

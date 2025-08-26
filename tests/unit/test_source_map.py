@@ -18,7 +18,6 @@ with patch.dict(
     {
         "ast_helper": Mock(AstHelper=Mock()),
         "utils": Mock(run_command=Mock(return_value='{"contracts":{}}')),
-        "six": Mock(),
     },
 ):
     from oyente import source_map

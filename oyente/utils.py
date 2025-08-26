@@ -15,7 +15,6 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-import six
 from z3 import BitVec
 from z3 import BitVecVal
 from z3 import Z3Exception
@@ -30,11 +29,11 @@ def ceil32(x: int) -> int:
 
 
 def isSymbolic(value: Any) -> bool:  # noqa: N802
-    return not isinstance(value, six.integer_types)
+    return not isinstance(value, int)
 
 
 def isReal(value: Any) -> bool:  # noqa: N802
-    return isinstance(value, six.integer_types)
+    return isinstance(value, int)
 
 
 def isAllReal(*args: Any) -> bool:  # noqa: N802
@@ -214,7 +213,7 @@ def run_re_file(re_str: str, fn: str) -> List[Any]:
 
 
 def get_contract_info(contract_addr: str) -> Tuple[Union[str, List[Any]], Union[str, List[Any]]]:
-    six.print_("Getting info for contracts... " + contract_addr)
+    print(f"Getting info for contracts... {contract_addr}")
     file_name1 = "tmp/" + contract_addr + "_txs.html"
     file_name2 = "tmp/" + contract_addr + ".html"
     # get number of txs
@@ -279,7 +278,7 @@ def get_distinct_contracts(list_of_contracts: str = "concurr.csv") -> None:
             npath_i = int(contracts[i].decode().split(",")[1])
             npair_i = int(contracts[i].decode().split(",")[2])
             file_i = "stats/tmp_" + contract_i + ".evm"
-            six.print_(" reading file " + file_i)
+            print(f" reading file {file_i}")
             for j in range(i + 1, n):
                 if flag[j] != j:
                     continue
@@ -301,7 +300,7 @@ def get_distinct_contracts(list_of_contracts: str = "concurr.csv") -> None:
                                 ndiff += 1
                         if ndiff < 10:
                             flag[j] = i
-    six.print_(flag)
+    print(flag)
 
 
 def run_command(cmd: str) -> str:

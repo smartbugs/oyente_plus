@@ -33,7 +33,6 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 
-import global_params
 from crytic_compile import CryticCompile  # type: ignore[attr-defined]
 from crytic_compile import InvalidCompilation  # type: ignore[attr-defined]
 from ethutils.metadata import zeroMetadata
@@ -355,14 +354,10 @@ class InputHelper:
         except InvalidCompilation as err:
             if not self.compilation_err:
                 logging.critical("Solidity compilation failed. Please use -ce flag to see the detail.")
-                if global_params.WEB:
-                    print({"error": "Solidity compilation failed."})
             else:
                 logging.critical("solc output:\n" + self.source)
                 logging.critical(err)
                 logging.critical("Solidity compilation failed.")
-                if global_params.WEB:
-                    print({"error": err})
             # Re-raise the exception instead of calling exit(1) directly
             raise
 

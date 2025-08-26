@@ -7,7 +7,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-import six
 from ast_helper import AstHelper
 from utils import run_command
 from utils import run_command_with_err
@@ -159,7 +158,7 @@ class SourceMap:
         """
         contract_data = SourceMap.func_to_sig_by_contract.get(self.cname, {})
         func_to_sig = contract_data.get("hashes", {})
-        return {sig: func for func, sig in six.iteritems(func_to_sig)}
+        return {sig: func for func, sig in func_to_sig.items()}
 
     def _get_func_name_to_params(self):
         func_name_to_params = SourceMap.ast_helper.get_func_name_to_params(self.cname)
