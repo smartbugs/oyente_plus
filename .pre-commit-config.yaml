@@ -67,7 +67,6 @@ exclude: |
   (?x)^(
     samples/.*|
     bytecode_cgt/.*|
-    web/.*|
     venv/.*|
     build/.*|
     dist/.*|
@@ -77,5 +76,3 @@ exclude: |
     coverage.*|
     standard_json_output
   )$
-
-# TODO: Remove web/.* exclusion when web interface is re-implemented for Oyente+

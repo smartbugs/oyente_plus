@@ -20,7 +20,6 @@ with patch.dict(
     "sys.modules",
     {
         "global_params": Mock(WEB=False, DEBUG=False),
-        "six": Mock(iteritems=lambda d: d.items(), print_=print),
         "crytic_compile": Mock(CryticCompile=MockCryticCompile, InvalidCompilation=MockInvalidCompilationError),
         "ethutils.metadata": Mock(zeroMetadata=lambda bytecode: (bytecode, None)),
         "opcodes": Mock(INSTRUCTIONS={}),

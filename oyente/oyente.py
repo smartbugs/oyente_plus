@@ -7,7 +7,6 @@ for security vulnerabilities using symbolic execution.
 """
 
 import argparse
-import json
 import logging
 import re
 import shutil
@@ -18,11 +17,9 @@ from typing import Tuple
 
 import global_params
 import requests
-import six
 import symExec
 from crytic_compile import InvalidCompilation  # type: ignore[attr-defined]
 from input_helper import InputHelper
-from utils import run_command
 
 
 def cmd_exists(cmd: str) -> bool:
@@ -63,7 +60,7 @@ def compare_versions(version1: str, version2: str) -> int:
 def has_dependencies_installed() -> bool:
     """Check if all required dependencies are installed.
 
-    Verifies that Z3 solver, EVM, and Solidity compiler are available
+    Verifies that Z3 solver and Solidity compiler are available
     and checks their versions for compatibility.
 
     Returns:
@@ -83,17 +80,6 @@ def has_dependencies_installed() -> bool:
         logging.critical(e)
         logging.critical("Z3 is not available. Please install z3 from https://github.com/Z3Prover/z3.")
         return False
-
-    if not cmd_exists("evm"):
-        logging.critical("Please install evm from go-ethereum and make sure it is in the path.")
-        return False
-    else:
-        cmd = "evm --version"
-        out = run_command(cmd).strip()
-        evm_version = re.findall(r"evm version (\d*.\d*.\d*)", out)[0]
-        tested_evm_version = "1.16.2"
-        if compare_versions(evm_version, tested_evm_version) > 0:
-            logging.warning(f"You are using evm version {evm_version}. The supported version is {tested_evm_version}")
 
     if not cmd_exists("solc"):
         logging.critical("solc is missing. Please install the solidity compiler and make sure solc is in the path.")
@@ -115,16 +101,19 @@ def analyze_bytecode(args: argparse.Namespace) -> int:
     helper = InputHelper(InputHelper.BYTECODE, source=args.source, evm=args.evm)
     try:
         inp = helper.get_inputs()[0]
-        result, exit_code = symExec.run(disasm_file=inp["disasm_file"])
+        result = symExec.run(disasm_file=inp["disasm_file"])
+        exit_code = 1 if result.get("vulnerability_count", 0) > 0 else 0
         helper.rm_tmp_files()
-
-        if global_params.WEB:
-            six.print_(json.dumps(result))
 
         return int(exit_code)
     except OSError as e:
         # File not found or can't be read
         logging.critical(f"Error reading bytecode file '{args.source}': {e}")
+        helper.rm_tmp_files()
+        return 1
+    except ValueError as e:
+        # Invalid bytecode format
+        logging.critical(f"Invalid bytecode format in '{args.source}': {e}")
         helper.rm_tmp_files()
         return 1
 
@@ -143,7 +132,7 @@ def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any],
 
     for inp in inputs:
         logging.info("contract %s:", inp["contract"])
-        result, return_code = symExec.run(
+        result = symExec.run(
             disasm_file=inp["disasm_file"],
             source_map=inp["source_map"],
             source_file=inp["source"],
@@ -155,7 +144,7 @@ def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any],
             results[c_source] = {}
         results[c_source][c_name] = result
 
-        if return_code == 1:
+        if result.get("vulnerability_count", 0) > 0:
             exit_code = 1
     return results, exit_code
 
@@ -199,8 +188,6 @@ def analyze_solidity(args: argparse.Namespace, input_type: str = "solidity") -> 
         results, exit_code = run_solidity_analysis(inputs)
         helper.rm_tmp_files()
 
-        if global_params.WEB:
-            six.print_(json.dumps(results))
         return int(exit_code)
     except InvalidCompilation:
         # Compilation failed (including file not found)
@@ -292,7 +279,6 @@ def main() -> int:
     )
 
     parser.add_argument("-e", "--evm", help="Do not remove the .evm file.", action="store_true")
-    parser.add_argument("-w", "--web", help="Run Oyente for web service", action="store_true")
     parser.add_argument("-j", "--json", help="Redirect results to a json file.", action="store_true")
     parser.add_argument("-p", "--paths", help="Print path condition information.", action="store_true")
     parser.add_argument("-db", "--debug", help="Display debug information", action="store_true")
@@ -369,7 +355,6 @@ def main() -> int:
     global_params.REPORT_MODE = 1 if args.report else 0
     global_params.USE_GLOBAL_BLOCKCHAIN = 1 if args.globalblockchain else 0
     global_params.INPUT_STATE = 1 if args.state else 0
-    global_params.WEB = 1 if args.web else 0
     global_params.STORE_RESULT = 1 if args.json else 0
     global_params.CHECK_ASSERTIONS = 1 if args.assertion else 0
     global_params.DEBUG_MODE = 1 if args.debug else 0
@@ -388,12 +373,8 @@ def main() -> int:
         global_params.GAS_LIMIT = args.gas_limit
     if args.loop_limit:
         global_params.LOOP_LIMIT = args.loop_limit
-    if global_params.WEB:
-        if args.global_timeout and args.global_timeout < global_params.GLOBAL_TIMEOUT:
-            global_params.GLOBAL_TIMEOUT = args.global_timeout
-    else:
-        if args.global_timeout:
-            global_params.GLOBAL_TIMEOUT = args.global_timeout
+    if args.global_timeout:
+        global_params.GLOBAL_TIMEOUT = args.global_timeout
 
     if not has_dependencies_installed():
         return 1

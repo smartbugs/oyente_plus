@@ -39,10 +39,6 @@ GLOBAL_TIMEOUT: int = 50
 PRINT_PATHS: int = 0
 """Enable printing of path conditions (0=disabled, 1=enabled)."""
 
-# WEB = 1 means that we are using Oyente for web service
-WEB: int = 0
-"""Web service mode for JSON output (0=CLI mode, 1=web service mode)."""
-
 # Redirect results to a json file.
 STORE_RESULT: int = 0
 """Store analysis results in JSON file (0=disabled, 1=enabled)."""

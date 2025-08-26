@@ -143,7 +143,6 @@ class MockRegistry:
             self.register_mock("ethereum_data", MagicMock())
             self.register_mock("vargenerator", MagicMock())
             self.register_mock("vulnerability", MagicMock())
-            self.register_mock("six", MagicMock())
 
         return self._mocks
 

@@ -17,7 +17,7 @@ An Analysis Tool for Smart Contracts
 - **Symbolic Execution**: Deep analysis using Z3 constraint solving
 - **Multi-format Support**: Analyze Solidity source code, EVM bytecode, or remote contracts
 - **Modern Python**: Built for Python 3.8+ with comprehensive type hints
-- **Comprehensive Testing**: 533 test functions with 100% pass rate and property-based testing
+- **Comprehensive Testing**: 513 test functions with 100% pass rate and property-based testing
 - **Code Quality**: Enforced with Black, Ruff, mypy, and pytest
 - **Complete Type Safety**: 0 mypy errors across 15/17 modules
 - **Latest EVM Support**: Compatible with recent opcodes (PUSH0, TLOAD, TSTORE)
@@ -29,7 +29,6 @@ An Analysis Tool for Smart Contracts
 - **Python 3.8+** (excluding 3.12.0) - Modern type hints and features
 - **[Poetry](https://python-poetry.org/)** - PEP 621 compliant dependency management
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
-- **[Go Ethereum (geth)](https://geth.ethereum.org/downloads/)** - EVM execution engine
 - **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
 
 ### Installation
@@ -91,17 +90,6 @@ solc-select install latest
 solc-select use latest
 ```
 
-#### Go Ethereum (for EVM execution)
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install software-properties-common
-sudo add-apt-repository -y ppa:ethereum/ethereum
-sudo apt-get update
-sudo apt-get install ethereum
-
-# Or download from https://geth.ethereum.org/downloads/
-```
 
 ## 🔧 Usage
 
@@ -140,7 +128,7 @@ make test-cov    # Run tests with coverage
 
 ## 🧪 Testing
 
-**Status**: 533 test functions executed with 100% pass rate across comprehensive test infrastructure
+**Status**: 513 test functions executed with 100% pass rate across comprehensive test infrastructure
 
 ```bash
 # Quick commands

@@ -263,6 +263,38 @@ class TestControlFlowGraphConstruction:
         # Test that they are single-byte instructions
         assert 1 == 1  # Most non-PUSH instructions are 1 byte
 
+    @patch("oyente.symExec.g_src_map", None)
+    def test_mapping_non_push_instruction_desynchronization(self, mock_oyente_modules):
+        """Test source map desynchronization handling due to compiler optimizations."""
+        with patch.dict(
+            "sys.modules",
+            {
+                "oyente.global_params": mock_oyente_modules["global_params"],
+                "oyente.analysis": mock_oyente_modules["analysis"],
+                "oyente.basicblock": mock_oyente_modules["basicblock"],
+                "oyente.ethereum_data": mock_oyente_modules["ethereum_data"],
+                "oyente.vargenerator": mock_oyente_modules["vargenerator"],
+                "oyente.vulnerability": mock_oyente_modules["vulnerability"],
+                "oyente.utils": mock_oyente_modules["utils"],
+            },
+        ):
+            from oyente.symExec import mapping_non_push_instruction
+
+            # Mock positions with compiler optimization case (PUSH expected but STOP found)
+            positions = [
+                {"name": "PUSH", "value": "80", "begin": 25, "end": 142},
+                {"name": "MSTORE", "begin": 25, "end": 142},
+                {"name": "REVERT", "begin": 25, "end": 142},
+            ]
+
+            # Test desynchronization case: source map expects PUSH but bytecode has STOP
+            result_idx = mapping_non_push_instruction(
+                current_line_content="STOP", current_ins_address=580, idx=0, positions=positions, length=len(positions)
+            )
+
+            # Should process through all mismatched positions and return length
+            assert result_idx == 3
+
 
 @pytest.mark.unit
 class TestSymbolicExecution:

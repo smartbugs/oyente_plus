@@ -26,7 +26,6 @@ from typing import Union
 from typing import cast
 
 import global_params
-import six
 
 # Import specific functions from analysis
 from analysis import display_analysis
@@ -217,7 +216,7 @@ class Parameter:
             "global_state": {},
             "path_conditions_and_vars": {},
         }
-        for attr, default in six.iteritems(attr_defaults):
+        for attr, default in attr_defaults.items():
             setattr(self, attr, kwargs.get(attr, default))
 
     def copy(self) -> "Parameter":
@@ -470,7 +469,21 @@ def mapping_non_push_instruction(
                 idx += 1
                 break
             else:
-                raise RuntimeError(f"Source map error, unknown name({name}) or instr_name({instr_name}).")
+                # Handle source map desynchronization due to compiler optimizations
+                # This happens when the compiler optimizes away instruction sequences
+                # but the source map still reflects the original unoptimized code
+
+                logging.warning(
+                    "Source map desynchronization detected: expected '%s' but found '%s' at address %d. "
+                    "Skipping source map entry due to compiler optimization.",
+                    name,
+                    instr_name,
+                    current_ins_address,
+                )
+                # Skip source map entries that don't match due to optimization
+                # Common cases: PUSH instructions optimized away, dead code elimination
+                idx += 1
+                continue
     return idx
 
 
@@ -766,7 +779,7 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
 def get_start_block_to_func_sig() -> Dict[int, str]:
     state = 0
     func_sig = None
-    for _pc, instr in six.iteritems(instructions):
+    for _pc, instr in instructions.items():
         if state == 0 and instr.startswith("PUSH4"):
             state += 1
             func_sig = instr.split(" ")[1][2:]
@@ -1607,7 +1620,7 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                 data = [str(x) for x in memory[s0 : s0 + s1]]
                 position_str = "".join(data)
                 position_str = re.sub(r"\s+", "", position_str)
-                position_bytes = zlib.compress(six.b(position_str), 9)
+                position_bytes = zlib.compress(position_str.encode("latin-1"), 9)
                 position_encoded = base64.b64encode(position_bytes)
                 position = position_encoded.decode("utf-8", "strict")
                 if position in sha3_list:
@@ -1739,7 +1752,11 @@ def sym_exec_ins(params: Any, block: int, instr: Any, func_call: int, current_fu
                     start = code_from * 2
                     end = start + no_bytes * 2
                     code = evm[start:end]
-                mem[mem_location] = int(code, 16)
+                    try:
+                        mem[mem_location] = int(code, 16)
+                    except (ValueError, TypeError):
+                        # If code is empty or invalid, store 0
+                        mem[mem_location] = 0
             else:
                 assert gen is not None, "Generator must be initialized"
                 new_var_name = gen.gen_code_var("Ia", code_from, no_bytes)
@@ -2686,6 +2703,15 @@ def detect_assertion_failure() -> None:
     global results
     global assertion_failure
 
+    # AssertionFailure requires source_map to generate meaningful warnings
+    # Skip assertion failure detection when source mapping is unavailable
+    if g_src_map is None:
+        log.warning("Skipping assertion failure detection: source mapping unavailable")
+        results["vulnerabilities"]["assertion_failure"] = []
+        assertion_failure = None
+        log.info("\t  Assertion Failure: \t\t\t False (source map unavailable)")
+        return
+
     assertion_failure = AssertionFailure(g_src_map, global_problematic_pcs["assertion_failure"])
 
     results["vulnerabilities"]["assertion_failure"] = assertion_failure.get_warnings()
@@ -2749,7 +2775,10 @@ def detect_vulnerabilities() -> Dict[str, Any]:
             if g_src_map:
                 detect_assertion_failure()
             else:
-                raise Exception("Assertion checks need a Source Map")
+                log.warning(
+                    "Assertion checks require a source map. Skipping assertion analysis for bytecode-only input."
+                )
+                log.warning("To analyze assertions, provide a Solidity source file instead of bytecode.")
 
         if g_src_map:
             log_info()

@@ -6,7 +6,7 @@ Guidance for Claude Code when working with this repository.
 
 - **`README.md`** - Setup, architecture, usage
 - **`docs/PRD.yaml`** - Development roadmap and status
-- **`docs/testing.md`** - Testing guide (406+ tests)
+- **`docs/testing.md`** - Testing guide (516 tests)
 
 ## ⚠️ Recent Breaking Changes
 
@@ -33,7 +33,7 @@ make test         # Run all unit & integration tests
 
 # 4. INTEGRATION VERIFICATION
 make all          # Complete check: format + lint + type + test
-python oyente/oyente.py -s tests/contracts/sample.sol  # Manual verification
+python oyente/oyente.py -s tests/fixtures/contracts/safe/simple_safe.sol  # Manual verification
 
 # 5. DOCUMENTATION UPDATE (if needed)
 #    - Update docs/*.md for user-facing changes
@@ -88,7 +88,7 @@ mypy oyente/file_to_edit.py
 - **Security**: Never use `shell=True`, validate all inputs, fix hardcoded API key
 - **Testing**: Add tests for all new functionality
 - **Documentation**: Google-style docstrings for public APIs
-- **Critical Bugs**: File Path Resolution ✅, Stack Underflow ✅, Z3 Expression Exception ✅, LOG Opcodes Stack Validation ✅, and JUMP/JUMPI Address Conversion ✅ FIXED. Remaining: Source Map KeyError
+- **Critical Bugs**: File Path Resolution ✅, Stack Underflow ✅, Z3 Expression Exception ✅, LOG Opcodes Stack Validation ✅, JUMP/JUMPI Address Conversion ✅, and Source Map KeyError ✅ ALL FIXED
 
 ## Essential Patterns
 

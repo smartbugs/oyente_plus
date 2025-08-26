@@ -276,15 +276,6 @@ class TestBasicBlockJumpTarget:
         assert block.jump_target == large_int
         assert block.get_jump_target() == large_int
 
-    @patch("six.integer_types", (int,))
-    def test_set_jump_target_six_integer_types(self):
-        """Test that set_jump_target uses six.integer_types correctly."""
-        block = BasicBlock(0, 10)
-
-        # This should work with the patched six.integer_types
-        block.set_jump_target(42)
-        assert block.jump_target == 42
-
 
 @pytest.mark.unit
 class TestBasicBlockBranchExpression:
@@ -339,7 +330,7 @@ class TestBasicBlockBranchExpression:
 class TestBasicBlockDisplay:
     """Test the display functionality."""
 
-    @patch("six.print_")
+    @patch("builtins.print")
     def test_display_basic_block(self, mock_print):
         """Test display method prints basic block information."""
         block = BasicBlock(100, 200)
@@ -359,7 +350,7 @@ class TestBasicBlockDisplay:
         assert "PUSH1 0x01" in calls
         assert "PUSH1 0x02" in calls
 
-    @patch("six.print_")
+    @patch("builtins.print")
     def test_display_block_without_type(self, mock_print):
         """Test display method when block has no type."""
         block = BasicBlock(50, 100)
@@ -375,7 +366,7 @@ class TestBasicBlockDisplay:
         # Should not print type line
         assert not any("end statement type:" in call for call in calls)
 
-    @patch("six.print_")
+    @patch("builtins.print")
     def test_display_empty_block(self, mock_print):
         """Test display method with empty block."""
         block = BasicBlock(0, 0)
@@ -389,7 +380,7 @@ class TestBasicBlockDisplay:
         assert "end address: 0" in calls
         # No instructions should be printed
 
-    @patch("six.print_")
+    @patch("builtins.print")
     def test_display_block_with_many_instructions(self, mock_print):
         """Test display method with many instructions."""
         block = BasicBlock(0, 100)
