@@ -10,7 +10,7 @@ An Analysis Tool for Smart Contracts
 
 *This repository is currently maintained by Thomas Fenninger ([@zariliv](https://github.com/zariliv)). If you encounter any bugs or usage issues, please feel free to create an issue on [our issue tracker](https://github.com/smartbugs/oyente_plus/issues).*
 
-**Oyente+** is a modernized version of the original Oyente symbolic execution tool for Ethereum smart contracts. It performs comprehensive security analysis to detect vulnerabilities including reentrancy, integer overflow, timestamp dependence, and more.
+**Oyente+** is a modernized version of the [original Oyente](https://github.com/enzymefinance/oyente) symbolic execution tool for Ethereum smart contracts. It performs a comprehensive security analysis to detect vulnerabilities including reentrancy, integer overflow, timestamp dependence, and more.
 
 ## ✨ Features
 
@@ -33,13 +33,15 @@ An Analysis Tool for Smart Contracts
 
 ### Installation
 
-#### Option 1: Using Setup Script (Recommended)
-
 ```bash
 # Clone the repository
 git clone https://github.com/smartbugs/oyente_plus.git
 cd oyente_plus
+```
 
+#### Option 1: Using Setup Script
+
+```bash
 # Setup development environment with virtual environment and all dependencies
 ./setup-venv.sh
 
@@ -80,14 +82,14 @@ docker run -it smartbugs/oyente_plus
 #### Solidity Compiler
 
 ```bash
+# Use solc-select for version management (recommended)
+solc-select install latest
+solc-select use latest
+
 # Ubuntu/Debian
 sudo add-apt-repository ppa:ethereum/ethereum
 sudo apt-get update
 sudo apt-get install solc
-
-# Or use solc-select for version management
-solc-select install latest
-solc-select use latest
 ```
 
 
