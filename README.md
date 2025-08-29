@@ -185,7 +185,7 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 
 **✅ Completed**:
 - **Code Quality**: 0 linting errors (fully resolved from 483)
-- **Testing Infrastructure**: 533 tests with 100% pass rate
+- **Testing Infrastructure**: 513 tests with 100% pass rate
 - **PEP 621 compliant packaging** with Poetry integration
 - **Comprehensive pyproject.toml configuration** for all tools
 - **Security-first code quality tooling** (Black, Ruff, mypy)
@@ -294,7 +294,7 @@ The project uses a focused GitHub Actions pipeline with three essential stages:
 
 2. **Unit Tests** (~5 minutes)
    - Matrix testing across Python 3.8-3.11
-   - 533 test functions with 100% pass rate
+   - 513 test functions with 100% pass rate
    - Coverage reporting via Codecov
 
 3. **Integration Tests** (~10 minutes)

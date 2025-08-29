@@ -6,7 +6,7 @@ Guidance for Claude Code when working with this repository.
 
 - **`README.md`** - Setup, architecture, usage
 - **`docs/PRD.yaml`** - Development roadmap and status
-- **`docs/testing.md`** - Testing guide (516 tests)
+- **`docs/testing.md`** - Testing guide (513 tests)
 
 ## ⚠️ Recent Breaking Changes
 

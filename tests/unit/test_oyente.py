@@ -181,7 +181,7 @@ class TestBytecodeAnalysis:
         mock_input_helper.return_value = mock_helper
 
         # Mock symExec run
-        mock_result = {"vulnerabilities": {}, "vulnerability_count": 0}
+        mock_result = {"vulnerability_count": 0, "vulnerabilities": {}}
         mock_symexec_run.return_value = mock_result
 
         # Create mock args
@@ -207,8 +207,8 @@ class TestSolidityAnalysis:
         """Test successful Solidity analysis of multiple contracts."""
         # Mock symExec results
         mock_symexec_run.side_effect = [
-            {"vulnerabilities": {}, "vulnerability_count": 0},
-            {"vulnerabilities": {"reentrancy": []}, "vulnerability_count": 1},
+            {"vulnerability_count": 0, "vulnerabilities": {}},
+            {"vulnerability_count": 1, "vulnerabilities": {"reentrancy": []}},
         ]
 
         inputs = [
@@ -483,7 +483,7 @@ class TestIntegration:
         mock_input_helper.return_value = mock_helper
 
         # Mock symExec result
-        mock_result = {"vulnerabilities": {"reentrancy": ["Warning: Potential reentrancy"]}, "vulnerability_count": 1}
+        mock_result = {"vulnerability_count": 1, "vulnerabilities": {"reentrancy": ["Warning: Potential reentrancy"]}}
         mock_symexec_run.return_value = mock_result
 
         with patch("sys.argv", ["oyente.py", "--source", "test.sol"]):
