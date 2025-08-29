@@ -31,6 +31,8 @@ An Analysis Tool for Smart Contracts
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
 - **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
 
+Note: Python 3.12.0 is excluded due to upstream library incompatibilities in that specific initial release; patch releases (3.12.1+) resolve these issues and are allowed.
+
 ### Installation
 
 ```bash
@@ -118,7 +120,7 @@ python oyente/oyente.py --help
 
 ```bash
 # Format, lint, type-check, and test (run before commits)
-make all
+make all && pre-commit run -a
 
 # Individual commands
 make format      # Format with Black

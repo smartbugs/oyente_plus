@@ -9,6 +9,9 @@ description = "An analysis tool for smart contracts"
 authors = [{ name = "Thomas Fenninger" }]
 readme = "README.md"
 license = { text = "GPL-3.0" }
+# Python 3.12.0 is excluded due to upstream library incompatibilities present
+# specifically in the initial 3.12.0 release; patch releases (3.12.1+) resolve
+# these issues and are allowed.
 requires-python = ">=3.8,!=3.12.0,<4.0"
 dependencies = [
     "requests>=2.25.0",
@@ -31,7 +34,7 @@ Documentation = "https://github.com/smartbugs/oyente_plus/blob/main/README.md"
 
 [tool.poetry]
 name = "oyente_plus"
-version = "2.0.0"
+version = "1.0.0"
 description = "An analysis tool for smart contracts"
 authors = ["Thomas Fenninger"]
 readme = "README.md"
@@ -41,6 +44,9 @@ packages = [{ include = "oyente" }]
 package-mode = true
 
 [tool.poetry.dependencies]
+# Keep in sync with [project.requires-python]. Exclude 3.12.0 due to
+# transient upstream incompatibilities in that specific patch release; 3.12.1+
+# are permitted.
 python = ">=3.8,!=3.12.0,<4.0"
 requests = ">=2.25.0"
 web3 = ">=6.0.0"
