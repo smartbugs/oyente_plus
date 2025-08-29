@@ -102,10 +102,11 @@ def analyze_bytecode(args: argparse.Namespace) -> int:
     try:
         inp = helper.get_inputs()[0]
         result = symExec.run(disasm_file=inp["disasm_file"])
-        exit_code = 1 if result.get("vulnerability_count", 0) > 0 else 0
         helper.rm_tmp_files()
 
-        return int(exit_code)
+        # Return 1 if vulnerabilities found, 0 otherwise
+        exit_code = 1 if result.get("vulnerability_count", 0) > 0 else 0
+        return exit_code
     except OSError as e:
         # File not found or can't be read
         logging.critical(f"Error reading bytecode file '{args.source}': {e}")
@@ -144,6 +145,7 @@ def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any],
             results[c_source] = {}
         results[c_source][c_name] = result
 
+        # Set exit code to 1 if vulnerabilities found in this contract
         if result.get("vulnerability_count", 0) > 0:
             exit_code = 1
     return results, exit_code

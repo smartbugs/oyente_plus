@@ -13,7 +13,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help format lint type-check test test-unit test-integration test-performance test-property test-cov test-unit-cov test-integration-cov all clean install install-dev setup
+.PHONY: help format lint type-check test test-unit test-integration test-performance test-property test-cov test-unit-cov test-integration-cov all clean install install-dev setup libs-bump-latest libs-bump-dev libs-bump-all
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -116,3 +116,17 @@ clean: ## Clean up temporary files and caches
 clean-all: clean ## Remove virtual environment and all generated files
 	@rm -rf $(VENV_DIR)
 	@echo "✅ Virtual environment and caches removed"
+
+##@ Dependencies
+
+libs-bump-latest: ## Bump main libraries to latest with validation
+	@echo "⬆️  Bumping main libraries to latest..."
+	@bash scripts/update-libs.sh
+
+libs-bump-dev: ## Bump dev libraries to latest with validation
+	@echo "⬆️  Bumping dev libraries to latest..."
+	@bash scripts/update-libs.sh --dev-only
+
+libs-bump-all: ## Bump main+dev libraries to latest with validation
+	@echo "⬆️  Bumping main+dev libraries to latest..."
+	@bash scripts/update-libs.sh --include-dev

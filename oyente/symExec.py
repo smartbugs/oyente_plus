@@ -469,21 +469,19 @@ def mapping_non_push_instruction(
                 idx += 1
                 break
             else:
-                # Handle source map desynchronization due to compiler optimizations
-                # This happens when the compiler optimizes away instruction sequences
-                # but the source map still reflects the original unoptimized code
-
-                logging.warning(
-                    "Source map desynchronization detected: expected '%s' but found '%s' at address %d. "
-                    "Skipping source map entry due to compiler optimization.",
+                # Handle source map and instruction stream being out of sync.
+                # If the source map is missing an entry for this instruction,
+                # do NOT advance the source-map index; skip mapping this EVM
+                # instruction so alignment can be re-attempted on the next one.
+                # Advancing here would drift alignment and dramatically reduce
+                # how many instructions receive a source position (hurting coverage).
+                logging.debug(
+                    "Source map mismatch: expected '%s' but found '%s' at address %d. Skipping instruction mapping.",
                     name,
                     instr_name,
                     current_ins_address,
                 )
-                # Skip source map entries that don't match due to optimization
-                # Common cases: PUSH instructions optimized away, dead code elimination
-                idx += 1
-                continue
+                return idx
     return idx
 
 

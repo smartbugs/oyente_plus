@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up development environment
-        run: ./setup-venv.sh
+        run: ./scripts/setup-venv.sh
 
       - name: Check for outdated dependencies
         id: check-deps

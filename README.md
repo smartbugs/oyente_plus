@@ -31,6 +31,8 @@ An Analysis Tool for Smart Contracts
 - **[Solidity compiler (solc)](https://docs.soliditylang.org/en/latest/installing-solidity.html)** - Contract compilation
 - **[Docker](https://docs.docker.com/get-docker/)** (optional) - For containerized deployment
 
+Note: Python 3.12.0 is excluded due to upstream library incompatibilities in that specific initial release; patch releases (3.12.1+) resolve these issues and are allowed.
+
 ### Installation
 
 ```bash
@@ -43,7 +45,7 @@ cd oyente_plus
 
 ```bash
 # Setup development environment with virtual environment and all dependencies
-./setup-venv.sh
+./scripts/setup-venv.sh
 
 # Activate the environment
 source venv/bin/activate
@@ -118,7 +120,7 @@ python oyente/oyente.py --help
 
 ```bash
 # Format, lint, type-check, and test (run before commits)
-make all
+make all && pre-commit run -a
 
 # Individual commands
 make format      # Format with Black
@@ -185,7 +187,7 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 
 **✅ Completed**:
 - **Code Quality**: 0 linting errors (fully resolved from 483)
-- **Testing Infrastructure**: 533 tests with 100% pass rate
+- **Testing Infrastructure**: 513 tests with 100% pass rate
 - **PEP 621 compliant packaging** with Poetry integration
 - **Comprehensive pyproject.toml configuration** for all tools
 - **Security-first code quality tooling** (Black, Ruff, mypy)
@@ -215,7 +217,7 @@ make all  # Runs format, lint, type-check, test
 
 1. **Setup Development Environment**:
    ```bash
-   ./setup-venv.sh
+   ./scripts/setup-venv.sh
    source venv/bin/activate
    ```
 
@@ -239,7 +241,7 @@ Automated quality checks run before each commit to ensure consistent code qualit
 Pre-commit hooks are automatically installed when using the setup script:
 
 ```bash
-./setup-venv.sh  # Installs and configures pre-commit hooks
+./scripts/setup-venv.sh  # Installs and configures pre-commit hooks
 ```
 
 Or install manually:
@@ -294,7 +296,7 @@ The project uses a focused GitHub Actions pipeline with three essential stages:
 
 2. **Unit Tests** (~5 minutes)
    - Matrix testing across Python 3.8-3.11
-   - 533 test functions with 100% pass rate
+   - 513 test functions with 100% pass rate
    - Coverage reporting via Codecov
 
 3. **Integration Tests** (~10 minutes)
@@ -375,7 +377,7 @@ We welcome contributions! Please:
 ```bash
 git clone https://github.com/smartbugs/oyente_plus.git
 cd oyente_plus
-./setup-venv.sh
+./scripts/setup-venv.sh
 source venv/bin/activate
 make all  # Verify everything works
 ```

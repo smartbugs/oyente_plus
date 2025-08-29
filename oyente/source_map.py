@@ -220,32 +220,21 @@ class SourceMap:
 
     @classmethod
     def _build_combined_json_cmd(cls, json_flags: str) -> str:
-        """Build solc combined-json command with version-aware flag support."""
-        try:
-            major, minor, _ = cls._get_solc_version()
+        """Build solc combined-json command.
 
-            # The 'hashes' flag was introduced in solc 0.6.0
-            if (major, minor) >= (0, 6) and "hashes" in json_flags:
-                # Use hashes flag for newer versions
-                flags = json_flags
-            elif "hashes" in json_flags:
-                # Fall back to available flags for older versions
-                # Use 'abi' as a basic alternative that's widely supported
-                flags = json_flags.replace("hashes", "abi")
-            else:
-                flags = json_flags
+        Always prefer requesting 'hashes' since it's available across the
+        Solidity compiler versions we support (0.4.x+). This mapping is used
+        to resolve function signatures for better source attribution.
+        """
+        # Ensure 'hashes' is requested if relevant
+        flags = json_flags
+        if "hashes" in json_flags:
+            flags = "hashes"
 
-            if cls.allow_paths:
-                return f"solc --combined-json {flags} {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
-            else:
-                return f"solc --combined-json {flags} {cls.remap} {cls.parent_filename}"
-
-        except Exception:
-            # Fallback to basic command if version detection fails
-            if cls.allow_paths:
-                return f"solc --combined-json abi {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
-            else:
-                return f"solc --combined-json abi {cls.remap} {cls.parent_filename}"
+        if cls.allow_paths:
+            return f"solc --combined-json {flags} {cls.remap} {cls.parent_filename} --allow-paths {cls.allow_paths}"
+        else:
+            return f"solc --combined-json {flags} {cls.remap} {cls.parent_filename}"
 
     @classmethod
     def _get_sig_to_func_by_contract(cls):

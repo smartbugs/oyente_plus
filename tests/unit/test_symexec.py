@@ -292,8 +292,8 @@ class TestControlFlowGraphConstruction:
                 current_line_content="STOP", current_ins_address=580, idx=0, positions=positions, length=len(positions)
             )
 
-            # Should process through all mismatched positions and return length
-            assert result_idx == 3
+            # Should return immediately without advancing idx to preserve alignment
+            assert result_idx == 0
 
 
 @pytest.mark.unit
