@@ -891,49 +891,52 @@ class TestNewSolcVersionHandling:
         ):
             source_map.SourceMap._get_solc_version()
 
-    def test_build_combined_json_cmd_version_awareness(self):
-        """Test version-aware command building."""
+    def test_build_combined_json_cmd_hashes_flag(self):
+        """Test that hashes flag is isolated when present."""
         # Setup class variables
         source_map.SourceMap.parent_filename = "test.sol"
         source_map.SourceMap.remap = ""
         source_map.SourceMap.allow_paths = ""
 
-        # Test with newer solc (>= 0.6.0) - should keep hashes
-        with patch.object(source_map.SourceMap, "_get_solc_version", return_value=(0, 8, 19)):
-            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
-            assert "hashes" in cmd
-            assert "test.sol" in cmd
+        # When 'hashes' is the only flag, it should be preserved
+        cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+        assert cmd == "solc --combined-json hashes  test.sol"
 
-        # Test with older solc (< 0.6.0) - should replace hashes with abi
-        with patch.object(source_map.SourceMap, "_get_solc_version", return_value=(0, 5, 17)):
-            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
-            assert "abi" in cmd
-            assert "hashes" not in cmd
+        # When 'hashes' is part of multiple flags, only 'hashes' should be used
+        cmd = source_map.SourceMap._build_combined_json_cmd("abi,hashes,bin")
+        assert cmd == "solc --combined-json hashes  test.sol"
+
+        # When 'hashes' is not present, use the flags as-is
+        cmd = source_map.SourceMap._build_combined_json_cmd("abi,bin")
+        assert cmd == "solc --combined-json abi,bin  test.sol"
 
     def test_build_combined_json_cmd_with_paths(self):
-        """Test command building with allow_paths."""
+        """Test command building with allow_paths and remap."""
         source_map.SourceMap.parent_filename = "test.sol"
         source_map.SourceMap.remap = "src=contracts"
         source_map.SourceMap.allow_paths = "/project/contracts"
 
-        with patch.object(source_map.SourceMap, "_get_solc_version", return_value=(0, 8, 19)):
-            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
-            assert "--allow-paths /project/contracts" in cmd
-            assert "src=contracts" in cmd
+        # Test with hashes flag
+        cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+        assert cmd == "solc --combined-json hashes src=contracts test.sol --allow-paths /project/contracts"
 
-    def test_build_combined_json_cmd_fallback_on_version_error(self):
-        """Test fallback behavior when version detection fails."""
-        source_map.SourceMap.parent_filename = "test.sol"
-        source_map.SourceMap.remap = ""
+        # Test with other flags
+        cmd = source_map.SourceMap._build_combined_json_cmd("abi")
+        assert cmd == "solc --combined-json abi src=contracts test.sol --allow-paths /project/contracts"
+
+    def test_build_combined_json_cmd_with_remap_only(self):
+        """Test command building with remap but no allow_paths."""
+        source_map.SourceMap.parent_filename = "contract.sol"
+        source_map.SourceMap.remap = "@openzeppelin=node_modules/@openzeppelin"
         source_map.SourceMap.allow_paths = ""
 
-        with patch.object(
-            source_map.SourceMap, "_get_solc_version", side_effect=RuntimeError("Version detection failed")
-        ):
-            cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
-            # Should fallback to abi
-            assert "abi" in cmd
-            assert "test.sol" in cmd
+        # Test with hashes
+        cmd = source_map.SourceMap._build_combined_json_cmd("hashes")
+        assert cmd == "solc --combined-json hashes @openzeppelin=node_modules/@openzeppelin contract.sol"
+
+        # Test with multiple flags containing hashes
+        cmd = source_map.SourceMap._build_combined_json_cmd("bin,hashes,metadata")
+        assert cmd == "solc --combined-json hashes @openzeppelin=node_modules/@openzeppelin contract.sol"
 
     def test_get_sig_to_func_by_contract_improved_error_handling(self):
         """Test improved error handling in compilation output parsing."""
