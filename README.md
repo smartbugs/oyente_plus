@@ -43,7 +43,7 @@ cd oyente_plus
 
 ```bash
 # Setup development environment with virtual environment and all dependencies
-./setup-venv.sh
+./scripts/setup-venv.sh
 
 # Activate the environment
 source venv/bin/activate
@@ -215,7 +215,7 @@ make all  # Runs format, lint, type-check, test
 
 1. **Setup Development Environment**:
    ```bash
-   ./setup-venv.sh
+   ./scripts/setup-venv.sh
    source venv/bin/activate
    ```
 
@@ -239,7 +239,7 @@ Automated quality checks run before each commit to ensure consistent code qualit
 Pre-commit hooks are automatically installed when using the setup script:
 
 ```bash
-./setup-venv.sh  # Installs and configures pre-commit hooks
+./scripts/setup-venv.sh  # Installs and configures pre-commit hooks
 ```
 
 Or install manually:
@@ -375,7 +375,7 @@ We welcome contributions! Please:
 ```bash
 git clone https://github.com/smartbugs/oyente_plus.git
 cd oyente_plus
-./setup-venv.sh
+./scripts/setup-venv.sh
 source venv/bin/activate
 make all  # Verify everything works
 ```

@@ -33,7 +33,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up development environment
-        run: ./setup-venv.sh
+        run: ./scripts/setup-venv.sh
 
       - name: Run code quality checks
         timeout-minutes: 5
@@ -72,7 +72,7 @@ jobs:
       - name: Set up development environment
         env:
           CI_SKIP_INSTALL: true
-        run: ./setup-venv.sh
+        run: ./scripts/setup-venv.sh
 
       - name: Regenerate lock file for Python ${{ matrix.python-version }}
         run: |
@@ -162,7 +162,7 @@ jobs:
       - name: Set up development environment
         env:
           CI_SKIP_INSTALL: true
-        run: ./setup-venv.sh
+        run: ./scripts/setup-venv.sh
 
       - name: Regenerate lock file for Python ${{ matrix.python-version }}
         run: |

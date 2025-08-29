@@ -2,19 +2,26 @@
 # Setup virtual environment for Oyente+ development using Poetry
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root to ensure venv is created there
+cd "$PROJECT_ROOT"
+
 echo "🚀 Setting up Python development environment with Poetry..."
 
 # Check if Poetry is already installed
 if ! command -v poetry &> /dev/null; then
     echo "📦 Setting up Python venv with Poetry..."
-    python3 -m venv venv
-    source venv/bin/activate
+    python3 -m venv "$PROJECT_ROOT/venv"
+    source "$PROJECT_ROOT/venv/bin/activate"
     pip install --upgrade pip wheel
     pip install poetry
 else
     echo "✅ Poetry already installed, creating venv..."
-    python3 -m venv venv
-    source venv/bin/activate
+    python3 -m venv "$PROJECT_ROOT/venv"
+    source "$PROJECT_ROOT/venv/bin/activate"
     pip install --upgrade pip wheel
 fi
 
@@ -38,7 +45,7 @@ fi
 echo "✅ Setup complete!"
 echo ""
 echo "To activate the environment, run:"
-echo "   . venv/bin/activate"
+echo "   source $PROJECT_ROOT/venv/bin/activate"
 echo ""
 echo "Or run commands directly with:"
 echo "   poetry run <command>"
