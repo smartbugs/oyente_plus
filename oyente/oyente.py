@@ -187,7 +187,7 @@ def analyze_solidity(args: argparse.Namespace, input_type: str = "solidity") -> 
         )
     try:
         inputs = helper.get_inputs(global_params.TARGET_CONTRACTS)
-        results, exit_code = run_solidity_analysis(inputs)
+        _results, exit_code = run_solidity_analysis(inputs)
         helper.rm_tmp_files()
 
         return int(exit_code)
