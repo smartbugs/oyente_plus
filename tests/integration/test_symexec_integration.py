@@ -81,9 +81,12 @@ class TestSymbolicExecutionWorkflows:
         import symExec
 
         # Mock vulnerability detectors and helper functions
-        with patch.object(symExec, "detect_vulnerabilities"), patch.object(symExec, "closing_message"), patch.object(
-            symExec, "init_global_vars"
-        ), patch.object(symExec, "build_cfg_and_analyze"):
+        with (
+            patch.object(symExec, "detect_vulnerabilities"),
+            patch.object(symExec, "closing_message"),
+            patch.object(symExec, "init_global_vars"),
+            patch.object(symExec, "build_cfg_and_analyze"),
+        ):
             # Run the analysis
             symExec.run(disasm_file=temp_disasm_file)
 

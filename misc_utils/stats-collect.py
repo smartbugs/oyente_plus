@@ -4,16 +4,14 @@ import re
 from subprocess import PIPE
 from subprocess import Popen
 from typing import Any
-from typing import Dict
-from typing import List
 
 from tqdm import tqdm
 
 
-contracts: Dict[str, Any] = {}
-opcodes: Dict[str, Any] = {}
-callstack_error_contracts: List[str] = []
-cterror_balances: List[float] = []
+contracts: dict[str, Any] = {}
+opcodes: dict[str, Any] = {}
+callstack_error_contracts: list[str] = []
+cterror_balances: list[float] = []
 
 with open("../contracts/contract_data/contract_balance.json") as f:
     cbalancefile = json.load(f)
@@ -29,7 +27,7 @@ def get_contract_disasm(inp: str) -> bytes:
     return process.communicate()[0]
 
 
-def check_callstack_attack(disasm: List[List[str]]) -> bool:
+def check_callstack_attack(disasm: list[list[str]]) -> bool:
     problematic_instructions = ["CALL", "CALLCODE"]
     for i in range(0, len(disasm)):
         instruction = disasm[i]

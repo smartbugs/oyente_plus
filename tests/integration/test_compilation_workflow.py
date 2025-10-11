@@ -50,8 +50,9 @@ contract TestContract {
 }
 """
 
-        with temp_solidity_file(contract_code, "test_contract.sol") as sol_file, mock_crytic_compile_context(
-            success=True, contracts=["TestContract"]
+        with (
+            temp_solidity_file(contract_code, "test_contract.sol") as sol_file,
+            mock_crytic_compile_context(success=True, contracts=["TestContract"]),
         ):
             helper = InputHelper(InputHelper.SOLIDITY, source=str(sol_file), evm=False, root_path=str(temp_dir))
 
@@ -81,9 +82,11 @@ contract SimpleToken {
         # Create expected output
         output_content = create_mock_compilation_result("SimpleToken", "608060405234801561001057600080fd5b50")
 
-        with temp_json_file(output_content, "output.json") as output_file, MockSubprocessContext(
-            {"solc": {"returncode": 0, "stdout": json.dumps(output_content), "stderr": ""}}
-        ), patch("builtins.open", create=True) as mock_open:
+        with (
+            temp_json_file(output_content, "output.json") as output_file,
+            MockSubprocessContext({"solc": {"returncode": 0, "stdout": json.dumps(output_content), "stderr": ""}}),
+            patch("builtins.open", create=True) as mock_open,
+        ):
             mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(output_content)
 
             helper = InputHelper(InputHelper.STANDARD_JSON_OUTPUT, source=str(output_file), evm=False)
@@ -165,9 +168,10 @@ class TestCompilationErrorHandling:
         )
 
         # Mock the MockCryticCompile to raise an error when called
-        with patch.object(
-            MockCryticCompile, "__init__", side_effect=MockInvalidCompilationError("Syntax error")
-        ), pytest.raises(MockInvalidCompilationError, match="Syntax error"):
+        with (
+            patch.object(MockCryticCompile, "__init__", side_effect=MockInvalidCompilationError("Syntax error")),
+            pytest.raises(MockInvalidCompilationError, match="Syntax error"),
+        ):
             # This should handle the compilation error and raise the exception
             helper._compile_solidity()
 

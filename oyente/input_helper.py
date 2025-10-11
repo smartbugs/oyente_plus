@@ -27,11 +27,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
 from typing import Optional
-from typing import Set
-from typing import Tuple
 
 from crytic_compile import CryticCompile  # type: ignore[attr-defined]
 from crytic_compile import InvalidCompilation  # type: ignore[attr-defined]
@@ -115,14 +111,14 @@ class InputHelper:
         self.source: str
         self.evm: bool
         self.root_path: str
-        self.compiled_contracts: List[Tuple[str, str]]
+        self.compiled_contracts: list[tuple[str, str]]
         self.compilation_err: bool
         self.remap: str
         self.allow_paths: str
         self.input_type = input_type
 
         if input_type == InputHelper.BYTECODE:
-            attr_defaults: Dict[str, Any] = {
+            attr_defaults: dict[str, Any] = {
                 "source": None,
                 "evm": False,
             }
@@ -163,7 +159,7 @@ class InputHelper:
             else:
                 setattr(self, attr, val)
 
-    def get_inputs(self, target_contracts: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    def get_inputs(self, target_contracts: Optional[list[str]] = None) -> list[dict[str, Any]]:
         """Get processed input data for analysis.
 
         Compiles contracts (if needed), generates disassembly files, and returns
@@ -254,7 +250,7 @@ class InputHelper:
         else:
             self._rm_tmp_files_of_multiple_contracts(self.compiled_contracts)
 
-    def _get_compiled_contracts(self) -> List[Tuple[str, str]]:
+    def _get_compiled_contracts(self) -> list[tuple[str, str]]:
         """Get compiled contracts, performing compilation if needed.
 
         Returns cached compiled contracts or triggers compilation based on
@@ -278,7 +274,7 @@ class InputHelper:
 
         return self.compiled_contracts
 
-    def _extract_bin_obj(self, com: CryticCompile) -> List[Tuple[str, str]]:
+    def _extract_bin_obj(self, com: CryticCompile) -> list[tuple[str, str]]:
         """Extract bytecode objects from CryticCompile result.
 
         Processes compilation results to extract runtime bytecode for each
@@ -307,7 +303,7 @@ class InputHelper:
                         bin_objs.append((filename.used + ":" + name, bytecode_runtime))
         return bin_objs
 
-    def _compile_solidity(self) -> List[Tuple[str, str]]:
+    def _compile_solidity(self) -> list[tuple[str, str]]:
         """Compile Solidity source code using CryticCompile.
 
         Compiles Solidity source with configured remapping and allow-paths,
@@ -361,7 +357,7 @@ class InputHelper:
             # Re-raise the exception instead of calling exit(1) directly
             raise
 
-    def _compile_standard_json(self) -> List[Tuple[str, str]]:
+    def _compile_standard_json(self) -> list[tuple[str, str]]:
         """Compile standard JSON input using solc directly.
 
         Reads JSON compilation input, validates paths for security, and
@@ -417,7 +413,7 @@ class InputHelper:
 
         return self._compile_standard_json_output("standard_json_output")
 
-    def _compile_standard_json_output(self, json_output_file: str) -> List[Tuple[str, str]]:
+    def _compile_standard_json_output(self, json_output_file: str) -> list[tuple[str, str]]:
         """Process pre-compiled standard JSON output.
 
         Parses JSON compilation output file and extracts deployed bytecode
@@ -449,7 +445,7 @@ class InputHelper:
                 contracts.append((cname, evm))
         return contracts
 
-    def _link_libraries(self, filename: str, libs: Set[str]) -> List[Tuple[str, str]]:
+    def _link_libraries(self, filename: str, libs: set[str]) -> list[tuple[str, str]]:
         """Link external libraries to contracts during compilation.
 
         Generates deterministic library addresses and recompiles contracts
@@ -481,7 +477,7 @@ class InputHelper:
 
         return self._extract_bin_obj(com)
 
-    def _prepare_disasm_files_for_analysis(self, contracts: List[Tuple[str, str]]) -> None:
+    def _prepare_disasm_files_for_analysis(self, contracts: list[tuple[str, str]]) -> None:
         """Prepare disassembly files for all contracts.
 
         Creates disassembly files for each contract in the list by calling
@@ -513,7 +509,7 @@ class InputHelper:
         """
         self._write_disasm_file(target, bytecode)
 
-    def _get_temporary_files(self, target: str) -> Dict[str, str]:
+    def _get_temporary_files(self, target: str) -> dict[str, str]:
         """Get temporary file paths for a contract target.
 
         Generates standardized temporary file paths for disassembly and
@@ -623,7 +619,7 @@ class InputHelper:
         if len(clean_bytecode) % 2 != 0:
             raise ValueError("Bytecode must have even length (each byte needs 2 hex characters)")
 
-    def _rm_tmp_files_of_multiple_contracts(self, contracts: List[Tuple[str, str]]) -> None:
+    def _rm_tmp_files_of_multiple_contracts(self, contracts: list[tuple[str, str]]) -> None:
         """Remove temporary files for multiple contracts.
 
         Cleans up temporary files created during multi-contract analysis,

@@ -14,13 +14,10 @@ import zlib
 from collections import namedtuple
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
 from typing import Optional
 
 # Type aliases for complex types
 from typing import Protocol
-from typing import Set
 from typing import TypedDict
 from typing import Union
 from typing import cast
@@ -85,9 +82,9 @@ from z3 import unsat
 Z3Expr: TypeAlias = Any  # Until Z3 stubs are available
 Z3Model: TypeAlias = Any
 Z3Solver: TypeAlias = Any
-Stack: TypeAlias = List[Union[int, str, Z3Expr]]
-PathConditions: TypeAlias = List[Z3Expr]
-GlobalState: TypeAlias = Dict[str, Any]
+Stack: TypeAlias = list[Union[int, str, Z3Expr]]
+PathConditions: TypeAlias = list[Z3Expr]
+GlobalState: TypeAlias = dict[str, Any]
 
 
 # Protocol for Z3 Solver interface
@@ -109,8 +106,8 @@ class GlobalStateDict(TypedDict, total=False):
     balance: BalanceState
     pc: int
     stack: Stack
-    memory: Dict[int, Union[int, str, Z3Expr]]
-    storage: Dict[Union[int, Z3Expr], Union[int, Z3Expr]]
+    memory: dict[int, Union[int, str, Z3Expr]]
+    storage: dict[Union[int, Z3Expr], Union[int, Z3Expr]]
 
 
 # Global variables with type annotations
@@ -118,12 +115,12 @@ g_disasm_file: Optional[str] = None
 g_src_map: Optional[Any] = None  # SourceMap type from ast_helper
 g_source_file: Optional[str] = None
 solver: Any = None  # Z3 Solver type - initialized in init_global_vars()
-results: Dict[str, Any] = {}
-visited_pcs: Set[int] = set()
-vertices: Dict[int, BasicBlock] = {}
-edges: Dict[int, List[int]] = {}
-blocks: Dict[int, BasicBlock] = {}
-instructions: Dict[int, str] = {}
+results: dict[str, Any] = {}
+visited_pcs: set[int] = set()
+vertices: dict[int, BasicBlock] = {}
+edges: dict[int, list[int]] = {}
+blocks: dict[int, BasicBlock] = {}
+instructions: dict[int, str] = {}
 callstack: Optional[CallStack] = None
 money_concurrency: Optional[MoneyConcurrency] = None
 
@@ -171,21 +168,21 @@ assertion_failure: Optional[AssertionFailure] = None
 integer_overflow: Optional[IntegerOverflow] = None
 integer_underflow: Optional[IntegerUnderflow] = None
 parity_multisig_bug_2: Optional[ParityMultisigBug2] = None
-recipients: Set[str] = set()
+recipients: set[str] = set()
 data_source: Optional[EthereumData] = None
-jump_type: Dict[int, str] = {}
+jump_type: dict[int, str] = {}
 MSIZE: bool = False
 g_timeout: Optional[bool] = None
-revertible_overflow_pcs: Set[int] = set()
-start_block_to_func_sig: Dict[int, str] = {}
-calls_affect_state: Dict[str, bool] = {}
-end_ins_dict: Dict[int, int] = {}
-visited_edges: Dict[Any, int] = {}  # Maps edge representations to visit counts
-money_flow_all_paths: List[List[Any]] = []
-reentrancy_all_paths: List[List[Any]] = []
-path_conditions: List[Any] = []
-global_problematic_pcs: Dict[str, List[Any]] = {}
-all_gs: List[Dict[str, Any]] = []
+revertible_overflow_pcs: set[int] = set()
+start_block_to_func_sig: dict[int, str] = {}
+calls_affect_state: dict[str, bool] = {}
+end_ins_dict: dict[int, int] = {}
+visited_edges: dict[Any, int] = {}  # Maps edge representations to visit counts
+money_flow_all_paths: list[list[Any]] = []
+reentrancy_all_paths: list[list[Any]] = []
+path_conditions: list[Any] = []
+global_problematic_pcs: dict[str, list[Any]] = {}
+all_gs: list[dict[str, Any]] = []
 begin: int = 0
 gen: Optional[Any] = None  # Generator type from vargenerator
 no_of_test_cases: int = 0
@@ -204,7 +201,7 @@ Overflow = namedtuple("Overflow", ["pc", "model"])
 
 class Parameter:
     def __init__(self, **kwargs: Any) -> None:
-        attr_defaults: Dict[str, Any] = {
+        attr_defaults: dict[str, Any] = {
             "stack": [],
             "calls": [],
             "memory": [],
@@ -382,7 +379,7 @@ def print_cfg() -> None:
 
 
 def mapping_push_instruction(
-    current_line_content: str, current_ins_address: int, idx: int, positions: List[Any], length: int
+    current_line_content: str, current_ins_address: int, idx: int, positions: list[Any], length: int
 ) -> Optional[int]:
     global g_src_map
 
@@ -412,7 +409,7 @@ def mapping_push_instruction(
 
 
 def mapping_non_push_instruction(
-    current_line_content: str, current_ins_address: int, idx: int, positions: List[Any], length: int
+    current_line_content: str, current_ins_address: int, idx: int, positions: list[Any], length: int
 ) -> Optional[int]:
     global g_src_map
 
@@ -488,7 +485,7 @@ def mapping_non_push_instruction(
 # 1. Parse the disassembled file
 # 2. Then identify each basic block (i.e. one-in, one-out)
 # 3. Store them in vertices
-def collect_vertices(lines: List[str]) -> None:
+def collect_vertices(lines: list[str]) -> None:
     global g_src_map
     if g_src_map:
         idx = 0
@@ -623,7 +620,7 @@ def add_falls_to() -> None:
             vertices[key].set_falls_to(target)
 
 
-def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str, Any]:
+def get_init_global_state(path_conditions_and_vars: dict[str, Any]) -> dict[str, Any]:
     global_state = {"balance": {}, "pc": 0, "It": {}}
     init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = current_coinbase = (
         current_number
@@ -688,7 +685,7 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
         path_conditions_and_vars["path_condition"].append(constraint)
 
     # update the balances of the "caller" and "callee"
-    balance_state = cast(Dict[str, Union[int, Z3Expr]], global_state["balance"])
+    balance_state = cast(dict[str, Union[int, Z3Expr]], global_state["balance"])
     if init_is is not None and deposited_value is not None:
         balance_state["Is"] = init_is - deposited_value
     if init_ia is not None and deposited_value is not None:
@@ -774,7 +771,7 @@ def get_init_global_state(path_conditions_and_vars: Dict[str, Any]) -> Dict[str,
     return global_state
 
 
-def get_start_block_to_func_sig() -> Dict[int, str]:
+def get_start_block_to_func_sig() -> dict[int, str]:
     state = 0
     func_sig = None
     for _pc, instr in instructions.items():
@@ -796,7 +793,7 @@ def get_start_block_to_func_sig() -> Dict[int, str]:
 
 def full_sym_exec() -> Any:
     # executing, starting from beginning
-    path_conditions_and_vars: Dict[str, Any] = {"path_condition": []}
+    path_conditions_and_vars: dict[str, Any] = {"path_condition": []}
     global_state = get_init_global_state(path_conditions_and_vars)
     analysis = init_analysis()
     params = Parameter(path_conditions_and_vars=path_conditions_and_vars, global_state=global_state, analysis=analysis)
@@ -808,7 +805,7 @@ def full_sym_exec() -> Any:
 # Symbolically executing a block from the start address
 def sym_exec_block(
     params: Any, block: int, pre_block: int, depth: int, func_call: int, current_func_name: str
-) -> Union[List[str], Stack]:
+) -> Union[list[str], Stack]:
     global solver
     global visited_edges
     global money_flow_all_paths
@@ -2592,7 +2589,7 @@ def detect_parity_multisig_bug_2() -> None:
     log.info(s)
 
 
-def check_callstack_attack(disasm: Any) -> List[int]:
+def check_callstack_attack(disasm: Any) -> list[int]:
     problematic_instructions = ["CALL", "CALLCODE"]
     pcs = []
     for i in range(0, len(disasm)):
@@ -2717,7 +2714,7 @@ def detect_assertion_failure() -> None:
     log.info(s)
 
 
-def detect_vulnerabilities() -> Dict[str, Any]:
+def detect_vulnerabilities() -> dict[str, Any]:
     global results
     global g_src_map
     global visited_pcs
@@ -2888,7 +2885,7 @@ def run_build_cfg_and_analyze(timeout_cb: Callable[[], None] = do_nothing) -> No
         timeout_cb()
 
 
-def get_recipients(disasm_file: str, contract_address: str) -> Dict[str, Any]:
+def get_recipients(disasm_file: str, contract_address: str) -> dict[str, Any]:
     global recipients
     global data_source
     global g_src_map
@@ -2920,7 +2917,7 @@ def analyze() -> None:
 
 def run(
     disasm_file: Optional[str] = None, source_file: Optional[str] = None, source_map: Optional[str] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     global g_disasm_file
     global g_source_file
     global g_src_map

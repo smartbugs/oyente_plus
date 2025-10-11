@@ -5,16 +5,13 @@ including their hexadecimal values, stack effects, and gas costs. It provides
 functions to look up opcode information and calculate instruction costs.
 """
 
-from typing import Dict
-from typing import List
-from typing import Sequence
-from typing import Tuple
+from collections.abc import Sequence
 from typing import Union
 
 
 # list of all opcodes except the SWAPi, PUSHi and DUPi
 # opcodes[name] has a list of [value (index), no. of items removed from stack, no. of items added to stack]
-opcodes: Dict[str, List[int]] = {
+opcodes: dict[str, list[int]] = {
     "STOP": [0x00, 0, 0],
     "ADD": [0x01, 2, 1],
     "MUL": [0x02, 2, 1],
@@ -112,7 +109,7 @@ opcodes: Dict[str, List[int]] = {
 
 # TO BE UPDATED IF ETHEREUM VM CHANGES their fee structure
 
-GCOST: Dict[str, int] = {
+GCOST: dict[str, int] = {
     "Gzero": 0,
     "Gbase": 2,
     "Gverylow": 3,
@@ -152,7 +149,7 @@ GCOST: Dict[str, int] = {
     "GTransientStorage": 100,
 }
 
-INSTRUCTIONS: List[str] = [
+INSTRUCTIONS: list[str] = [
     "STOP",
     "ADD",
     "MUL",
@@ -411,9 +408,9 @@ INSTRUCTIONS: List[str] = [
     "SELFDESTRUCT",  # 0xF8-0xFF
 ]
 
-Wzero: Tuple[str, ...] = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
+Wzero: tuple[str, ...] = ("STOP", "RETURN", "REVERT", "ASSERTFAIL")
 
-Wbase: Tuple[str, ...] = (
+Wbase: tuple[str, ...] = (
     "ADDRESS",
     "ORIGIN",
     "CALLER",
@@ -434,7 +431,7 @@ Wbase: Tuple[str, ...] = (
     "PUSH0",
 )
 
-Wverylow: Tuple[str, ...] = (
+Wverylow: tuple[str, ...] = (
     "ADD",
     "SUB",
     "NOT",
@@ -461,15 +458,15 @@ Wverylow: Tuple[str, ...] = (
     "BLOBBASEFEE",
 )
 
-Wlow: Tuple[str, ...] = ("MUL", "DIV", "SDIV", "MOD", "SMOD", "SIGNEXTEND")
+Wlow: tuple[str, ...] = ("MUL", "DIV", "SDIV", "MOD", "SMOD", "SIGNEXTEND")
 
-Wmid: Tuple[str, ...] = ("ADDMOD", "MULMOD", "JUMP")
+Wmid: tuple[str, ...] = ("ADDMOD", "MULMOD", "JUMP")
 
 Whigh: str = "JUMPI"
 
 Wext: str = "EXTCODESIZE"
 
-Wtransientstorage: Tuple[str, ...] = ("TLOAD", "TSTORE")
+Wtransientstorage: tuple[str, ...] = ("TLOAD", "TSTORE")
 
 
 def get_opcode(opcode: str) -> Sequence[Union[str, int]]:

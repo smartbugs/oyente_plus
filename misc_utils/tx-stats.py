@@ -2,18 +2,16 @@ import json
 import os
 import re
 from typing import Any
-from typing import Dict
-from typing import List
 
 from tqdm import tqdm
 
 
-def get_transactions(fname: str) -> List[Dict[str, Any]]:
+def get_transactions(fname: str) -> list[dict[str, Any]]:
     pattern = r"(>(0x[\da-f]+)<|block\/(\d+)|<td>(\d.+?)</td>)"
     with open(fname) as f:
         res = re.findall(pattern, f.read(), re.IGNORECASE)
-    txs: List[Dict[str, Any]] = []
-    curtx: Dict[str, Any] = {}
+    txs: list[dict[str, Any]] = []
+    curtx: dict[str, Any] = {}
 
     for match in res:
         if match[2] != "":
@@ -37,11 +35,11 @@ def get_transactions(fname: str) -> List[Dict[str, Any]]:
     return txs
 
 
-def load_txdir(path: str) -> List[Dict[str, Any]]:
+def load_txdir(path: str) -> list[dict[str, Any]]:
     files = os.listdir(path)
     if path[-1] != "/":
         path += "/"
-    txs: List[Dict[str, Any]] = []
+    txs: list[dict[str, Any]] = []
     for f in tqdm(files):
         if f.endswith(".html"):
             txs += get_transactions(path + f)

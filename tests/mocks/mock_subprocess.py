@@ -286,9 +286,11 @@ def patch_subprocess(commands: Union[dict[str, dict[str, Any]], None] = None):
         def wrapper(*args, **kwargs):
             mock = create_mock_subprocess(commands)
 
-            with patch("subprocess.run", side_effect=mock.run), patch(
-                "subprocess.check_output", side_effect=mock.check_output
-            ), patch("subprocess.check_call", side_effect=mock.check_call):
+            with (
+                patch("subprocess.run", side_effect=mock.run),
+                patch("subprocess.check_output", side_effect=mock.check_output),
+                patch("subprocess.check_call", side_effect=mock.check_call),
+            ):
                 # Add mock to function arguments
                 return func(mock, *args, **kwargs)
 

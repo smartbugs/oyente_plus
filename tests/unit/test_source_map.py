@@ -80,12 +80,12 @@ class TestSourceMapInitialization:
         test_content = "pragma solidity ^0.4.0;\ncontract TestContract {}"
 
         # Mock position groups to avoid KeyError
-        with patch("builtins.open", mock_open(read_data=test_content.encode("utf-8"))), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=test_content.encode("utf-8"))),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             sm = source_map.SourceMap(
                 cname="TestContract", parent_filename="test.sol", input_type="solidity", root_path="/path/to/project"
@@ -105,12 +105,12 @@ class TestSourceMapInitialization:
         source_map.SourceMap.allow_paths = ""
 
         # Mock position groups to avoid initialization issues
-        with patch("builtins.open", mock_open(read_data=test_json.encode("utf-8"))), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=test_json.encode("utf-8"))),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             sm = source_map.SourceMap(
                 cname="TestContract",
@@ -150,12 +150,12 @@ class TestSourceCodeExtraction:
         source_map.SourceMap.parent_filename = ""
 
         # Create SourceMap with mocked dependencies
-        with patch("builtins.open", mock_open(read_data=self.test_source.encode("utf-8"))), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=self.test_source.encode("utf-8"))),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             self.sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -208,12 +208,12 @@ class TestBuggyLineExtraction:
         source_map.SourceMap.parent_filename = ""
 
         # Create SourceMap with mocked dependencies
-        with patch("builtins.open", mock_open(read_data=b"test content")), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=b"test content")),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             self.sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -274,12 +274,12 @@ class TestLocationConversion:
         source_map.SourceMap.parent_filename = ""
 
         # Create SourceMap with mocked dependencies
-        with patch("builtins.open", mock_open(read_data=b"test content")), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=b"test content")),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             self.sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -309,8 +309,9 @@ class TestLocationConversion:
 
     def test_get_location_from_src_valid(self):
         """Test location extraction from source reference."""
-        with patch.object(self.sourcemap, "_convert_src_to_pos", return_value=(15, 25)), patch.object(
-            self.sourcemap, "_convert_offset_to_line_column", return_value=(3, 8)
+        with (
+            patch.object(self.sourcemap, "_convert_src_to_pos", return_value=(15, 25)),
+            patch.object(self.sourcemap, "_convert_offset_to_line_column", return_value=(3, 8)),
         ):
 
             result = self.sourcemap.get_location_from_src("15:10:0")
@@ -355,12 +356,12 @@ class TestPositionHandling:
         source_map.SourceMap.parent_filename = ""
 
         # Create SourceMap with mocked dependencies
-        with patch("builtins.open", mock_open(read_data=b"test content")), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=b"test content")),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             self.sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -439,12 +440,12 @@ class TestASTIntegration:
         source_map.SourceMap.parent_filename = ""
 
         # Create SourceMap with mocked dependencies
-        with patch("builtins.open", mock_open(read_data=b"test content")), patch.object(
-            source_map.SourceMap, "_get_positions", return_value={}
-        ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=b"test content")),
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             self.sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -521,12 +522,12 @@ class TestStandardJsonHandling:
         with patch.object(source_map.SourceMap, "_load_position_groups_standard_json") as mock_load:
             mock_load.return_value = {}
 
-            with patch("builtins.open", mock_open(read_data=b'{"contracts":{}}')), patch.object(
-                source_map.SourceMap, "_get_positions", return_value={}
-            ), patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]), patch.object(
-                source_map.SourceMap, "_get_func_name_to_params", return_value={}
-            ), patch.object(
-                source_map.SourceMap, "_get_sig_to_func", return_value={}
+            with (
+                patch("builtins.open", mock_open(read_data=b'{"contracts":{}}')),
+                patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+                patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+                patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+                patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
             ):
                 source_map.SourceMap(cname="Test", parent_filename="test.json", input_type="standard json")
 
@@ -549,14 +550,13 @@ class TestStandardJsonHandling:
             "sources": {"test.sol": {"id": 0}},
         }
 
-        with patch("builtins.open", mock_open(read_data=json.dumps(test_json).encode("utf-8"))), patch.object(
-            source_map.SourceMap, "_load_position_groups_standard_json"
-        ) as mock_load, patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(
-            source_map.SourceMap, "_get_func_name_to_params", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
+        with (
+            patch("builtins.open", mock_open(read_data=json.dumps(test_json).encode("utf-8"))),
+            patch.object(source_map.SourceMap, "_load_position_groups_standard_json") as mock_load,
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
         ):
             mock_load.return_value = {}
 
@@ -601,12 +601,12 @@ class TestFilenameHandling:
     def test_get_filename_with_root_path(self):
         """Test filename resolution with root path."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(
                 cname="Test", parent_filename="contracts/test.sol", input_type="solidity", root_path="/project/"
@@ -618,12 +618,12 @@ class TestFilenameHandling:
     def test_get_filename_without_root_path(self):
         """Test filename resolution without root path."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -633,12 +633,12 @@ class TestFilenameHandling:
     def test_get_filename_relative_path_normalization(self):
         """Test filename path normalization."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(
                 cname="Test", parent_filename="./contracts/../test.sol", input_type="solidity", root_path="/project"
@@ -656,12 +656,12 @@ class TestEdgeCasesAndErrorHandling:
     def test_sourcemap_with_none_values(self):
         """Test SourceMap handling of None values."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -684,12 +684,12 @@ class TestEdgeCasesAndErrorHandling:
         source_map.SourceMap.position_groups = {}
 
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -699,12 +699,12 @@ class TestEdgeCasesAndErrorHandling:
     def test_convert_src_to_pos_malformed_input(self):
         """Test source position conversion with malformed input."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -717,12 +717,12 @@ class TestEdgeCasesAndErrorHandling:
     def test_binary_search_edge_cases(self):
         """Test binary search with edge cases."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
@@ -758,17 +758,18 @@ contract Test {
         mock_source.line_break_positions = [23, 24, 41, 61, 62, 126, 148]
 
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap = source_map.SourceMap(cname="Test", parent_filename="test.sol", input_type="solidity")
 
-            with patch.object(sourcemap, "_get_positions", return_value={"100": "126:21:0"}), patch.object(
-                sourcemap, "_get_source", return_value=mock_source
+            with (
+                patch.object(sourcemap, "_get_positions", return_value={"100": "126:21:0"}),
+                patch.object(sourcemap, "_get_source", return_value=mock_source),
             ):
                 # Set up instr_positions and source for the test
                 # "value = _value" starts around position 104 in the contract content
@@ -796,12 +797,12 @@ contract Test {
     def test_multiple_contract_source_mapping(self):
         """Test source mapping with multiple contracts."""
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(source_map.SourceMap, "_get_func_name_to_params", return_value={}),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
         ):
             sourcemap1 = source_map.SourceMap(cname="Contract1", parent_filename="contract1.sol", input_type="solidity")
 
@@ -828,21 +829,20 @@ contract Test {
         source_map.SourceMap.ast_helper = mock_ast_helper
 
         # Mock dependencies to avoid KeyError when creating SourceMap
-        with patch.object(source_map.SourceMap, "_get_positions", return_value={}), patch.object(
-            source_map.SourceMap, "_get_func_call_names", return_value=[]
-        ), patch.object(
-            source_map.SourceMap,
-            "_get_func_name_to_params",
-            return_value={
-                "transfer": ["address to", "uint256 amount"],
-                "approve": ["address spender", "uint256 amount"],
-            },
-        ), patch.object(
-            source_map.SourceMap, "_get_sig_to_func", return_value={}
-        ), patch.object(
-            source_map.SourceMap, "_get_source", return_value=""
-        ), patch.object(
-            source_map.SourceMap, "_get_var_names", return_value=["balance", "owner"]
+        with (
+            patch.object(source_map.SourceMap, "_get_positions", return_value={}),
+            patch.object(source_map.SourceMap, "_get_func_call_names", return_value=[]),
+            patch.object(
+                source_map.SourceMap,
+                "_get_func_name_to_params",
+                return_value={
+                    "transfer": ["address to", "uint256 amount"],
+                    "approve": ["address spender", "uint256 amount"],
+                },
+            ),
+            patch.object(source_map.SourceMap, "_get_sig_to_func", return_value={}),
+            patch.object(source_map.SourceMap, "_get_source", return_value=""),
+            patch.object(source_map.SourceMap, "_get_var_names", return_value=["balance", "owner"]),
         ):
             sourcemap = source_map.SourceMap(cname="Token", parent_filename="token.sol", input_type="solidity")
 
@@ -880,14 +880,16 @@ class TestNewSolcVersionHandling:
     def test_get_solc_version_error_conditions(self):
         """Test error handling in solc version detection."""
         # Test empty output
-        with patch.object(source_map, "run_command_with_err", return_value=("", "command not found")), pytest.raises(
-            RuntimeError, match="Failed to get solc version"
+        with (
+            patch.object(source_map, "run_command_with_err", return_value=("", "command not found")),
+            pytest.raises(RuntimeError, match="Failed to get solc version"),
         ):
             source_map.SourceMap._get_solc_version()
 
         # Test malformed output
-        with patch.object(source_map, "run_command_with_err", return_value=("invalid output", "")), pytest.raises(
-            RuntimeError, match="Could not parse solc version"
+        with (
+            patch.object(source_map, "run_command_with_err", return_value=("invalid output", "")),
+            pytest.raises(RuntimeError, match="Could not parse solc version"),
         ):
             source_map.SourceMap._get_solc_version()
 
@@ -943,27 +945,34 @@ class TestNewSolcVersionHandling:
         source_map.SourceMap.parent_filename = "test.sol"
 
         # Test empty output
-        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
-            source_map, "run_command", return_value=""
-        ), pytest.raises(RuntimeError, match="Solidity compilation failed"):
+        with (
+            patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"),
+            patch.object(source_map, "run_command", return_value=""),
+            pytest.raises(RuntimeError, match="Solidity compilation failed"),
+        ):
             source_map.SourceMap._get_sig_to_func_by_contract()
 
         # Test invalid JSON
-        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
-            source_map, "run_command", return_value="invalid json"
-        ), pytest.raises(RuntimeError, match="Failed to parse solc output as JSON"):
+        with (
+            patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"),
+            patch.object(source_map, "run_command", return_value="invalid json"),
+            pytest.raises(RuntimeError, match="Failed to parse solc output as JSON"),
+        ):
             source_map.SourceMap._get_sig_to_func_by_contract()
 
         # Test missing contracts key
-        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
-            source_map, "run_command", return_value='{"errors": []}'
-        ), pytest.raises(RuntimeError, match="Solc output does not contain 'contracts' key"):
+        with (
+            patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"),
+            patch.object(source_map, "run_command", return_value='{"errors": []}'),
+            pytest.raises(RuntimeError, match="Solc output does not contain 'contracts' key"),
+        ):
             source_map.SourceMap._get_sig_to_func_by_contract()
 
         # Test successful parsing
         valid_output = '{"contracts": {"test.sol:TestContract": {"hashes": {"test()": "0x123"}}}}'
-        with patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"), patch.object(
-            source_map, "run_command", return_value=valid_output
+        with (
+            patch.object(source_map.SourceMap, "_build_combined_json_cmd", return_value="solc cmd"),
+            patch.object(source_map, "run_command", return_value=valid_output),
         ):
             result = source_map.SourceMap._get_sig_to_func_by_contract()
             assert "test.sol:TestContract" in result

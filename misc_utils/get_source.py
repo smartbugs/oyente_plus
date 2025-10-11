@@ -2,13 +2,11 @@ import json
 import os
 import re
 import subprocess
-from typing import List
-from typing import Tuple
 
 from tqdm import tqdm
 
 
-def get_contract_code(cadd: str) -> Tuple[List[str], List[str]]:
+def get_contract_code(cadd: str) -> tuple[list[str], list[str]]:
     sourcepattern = r"style='max-height: 250px; margin-top: 5px;'>([\s\S]+?)<\/pre>"
     namepattern = r"<td>Contract Name:[\n.]<\/td>[\n.]<td>[.\n]([\s\S]+?)[\n.]<\/td>"
     command = f"wget -S -O - 'https://etherscan.io/address/{cadd}#code'"
@@ -20,7 +18,7 @@ def get_contract_code(cadd: str) -> Tuple[List[str], List[str]]:
         return ([], [])
 
 
-savedcontracts: List[Tuple[str, str, float]] = []
+savedcontracts: list[tuple[str, str, float]] = []
 
 
 def save_callstack_source(dirname: str) -> None:
