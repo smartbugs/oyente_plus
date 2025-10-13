@@ -13,7 +13,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help format lint type-check test test-unit test-integration test-performance test-property test-cov test-unit-cov test-integration-cov all clean install install-dev setup libs-bump-latest libs-bump-dev libs-bump-all
+.PHONY: help format lint type-check test test-unit test-integration test-cov test-unit-cov test-integration-cov all clean install install-dev setup libs-bump-latest libs-bump-dev libs-bump-all
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -65,15 +65,6 @@ test-unit: ## Run only unit tests
 test-integration: ## Run only integration tests
 	@echo "🧪 Running integration tests..."
 	@$(POETRY_RUN) pytest tests/integration/ -v -m integration && echo "✅ Integration tests complete" || (echo "❌ Integration tests failed" && exit 1)
-
-test-performance: ## Run only performance tests
-	@echo "🧪 Running performance tests..."
-	@$(POETRY_RUN) pytest tests/performance/ -v && echo "✅ Performance tests complete" || (echo "❌ Performance tests failed" && exit 1)
-
-test-property: ## Run only property-based tests
-	@echo "🧪 Running property-based tests..."
-	@$(POETRY_RUN) pytest tests/property/ -v && echo "✅ Property tests complete" || (echo "❌ Property tests failed" && exit 1)
-
 
 test-cov: ## Run tests with coverage (specify file with: make test-cov TEST=path/to/test_file.py)
 ifdef TEST
