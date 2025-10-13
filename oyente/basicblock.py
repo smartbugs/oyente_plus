@@ -5,7 +5,6 @@ in the control flow graph of EVM bytecode during analysis.
 """
 
 from typing import Any
-from typing import List
 from typing import Optional
 from typing import Union
 
@@ -36,7 +35,7 @@ class BasicBlock:
         """
         self.start = start_address
         self.end = end_address
-        self.instructions: List[str] = []  # each instruction is a string
+        self.instructions: list[str] = []  # each instruction is a string
         self.jump_target: int = 0
         self.type: Optional[str] = None
         self.falls_to: Optional[int] = None
@@ -66,7 +65,7 @@ class BasicBlock:
         """
         self.instructions.append(instruction)
 
-    def get_instructions(self) -> List[str]:
+    def get_instructions(self) -> list[str]:
         """Get all instructions in the block.
 
         Returns:

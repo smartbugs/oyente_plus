@@ -297,9 +297,11 @@ def patch_filesystem(files: dict[str, str]):
                 fs.add_file(path, content)
 
             patches = create_mock_filesystem_patches(fs)
-            with patch.multiple("builtins", **{"open": patches["builtins.open"]}), patch.multiple(
-                "os.path", **{k: v for k, v in patches.items() if k.startswith("os.path.")}
-            ), patch.multiple("pathlib.Path", **{k: v for k, v in patches.items() if k.startswith("pathlib.Path.")}):
+            with (
+                patch.multiple("builtins", **{"open": patches["builtins.open"]}),
+                patch.multiple("os.path", **{k: v for k, v in patches.items() if k.startswith("os.path.")}),
+                patch.multiple("pathlib.Path", **{k: v for k, v in patches.items() if k.startswith("pathlib.Path.")}),
+            ):
                 return func(fs, *args, **kwargs)
 
         return wrapper

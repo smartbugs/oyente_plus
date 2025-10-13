@@ -25,10 +25,7 @@ import contextlib
 import logging
 import math
 from typing import Any
-from typing import Dict
-from typing import List
 from typing import Optional
-from typing import Tuple
 
 import global_params
 from opcodes import GCOST
@@ -73,7 +70,7 @@ def set_cur_file(c_file: str) -> None:
     cur_file = c_file
 
 
-def init_analysis() -> Dict[str, Any]:
+def init_analysis() -> dict[str, Any]:
     """Initialize analysis data structure.
 
     Creates a new analysis state dictionary to track various metrics
@@ -88,7 +85,7 @@ def init_analysis() -> Dict[str, Any]:
         - money_concurrency_bug: List of potential concurrency issues
         - time_dependency_bug: Dictionary of timestamp dependency issues
     """
-    analysis: Dict[str, Any] = {
+    analysis: dict[str, Any] = {
         "gas": 0,
         "gas_mem": 0,
         "money_flow": [("Is", "Ia", "Iv")],  # (source, destination, amount)
@@ -99,7 +96,7 @@ def init_analysis() -> Dict[str, Any]:
     return analysis
 
 
-def display_analysis(analysis: Dict[str, Any]) -> None:
+def display_analysis(analysis: dict[str, Any]) -> None:
     """Display analysis results for debugging.
 
     Args:
@@ -109,7 +106,7 @@ def display_analysis(analysis: Dict[str, Any]) -> None:
 
 
 def check_reentrancy_bug(
-    path_conditions_and_vars: Dict[str, Any], stack: List[Any], global_state: Dict[str, Any]
+    path_conditions_and_vars: dict[str, Any], stack: list[Any], global_state: dict[str, Any]
 ) -> bool:
     """Check if a CALL instruction has reentrancy vulnerability.
 
@@ -181,12 +178,12 @@ def check_reentrancy_bug(
 
 def calculate_gas(
     opcode: str,
-    stack: Optional[List[Any]],
-    mem: Optional[Dict[Any, Any]],
-    global_state: Dict[str, Any],
-    analysis: Dict[str, Any],
+    stack: Optional[list[Any]],
+    mem: Optional[dict[Any, Any]],
+    global_state: dict[str, Any],
+    analysis: dict[str, Any],
     solver: Any,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Calculate gas cost for EVM opcode execution.
 
     Computes both the instruction gas cost and memory expansion cost
@@ -321,12 +318,12 @@ def calculate_gas(
 
 
 def update_analysis(
-    analysis: Dict[str, Any],
+    analysis: dict[str, Any],
     opcode: str,
-    stack: List[Any],
-    mem: Dict[Any, Any],
-    global_state: Dict[str, Any],
-    path_conditions_and_vars: Dict[str, Any],
+    stack: list[Any],
+    mem: dict[Any, Any],
+    global_state: dict[str, Any],
+    path_conditions_and_vars: dict[str, Any],
     solver: Any,
 ) -> None:
     """Update analysis state based on opcode execution.
@@ -384,7 +381,7 @@ def update_analysis(
         analysis["money_flow"].append(("Ia", str(recipient), "all_remaining"))
 
 
-def is_feasible(prev_pc: List[Any], gstate: Optional[Dict[Any, Any]], curr_pc: List[Any]) -> bool:
+def is_feasible(prev_pc: list[Any], gstate: Optional[dict[Any, Any]], curr_pc: list[Any]) -> bool:
     """Check if execution path is feasible after a previous path.
 
     Determines whether it's possible to execute a current path after
@@ -438,7 +435,7 @@ def is_feasible(prev_pc: List[Any], gstate: Optional[Dict[Any, Any]], curr_pc: L
     return result
 
 
-def is_false_positive(i: int, j: int, all_gs: List[Dict[Any, Any]], path_conditions: List[List[Any]]) -> bool:
+def is_false_positive(i: int, j: int, all_gs: list[dict[Any, Any]], path_conditions: list[list[Any]]) -> bool:
     """Detect if two execution paths don't have a real race condition.
 
     Analyzes whether executing path j after path i is actually possible,
@@ -472,7 +469,7 @@ def is_false_positive(i: int, j: int, all_gs: List[Dict[Any, Any]], path_conditi
     return not is_feasible(set_of_pcs, statei, pathj)
 
 
-def is_diff(flow1: List[Tuple[Any, Any, Any]], flow2: List[Tuple[Any, Any, Any]]) -> int:
+def is_diff(flow1: list[tuple[Any, Any, Any]], flow2: list[tuple[Any, Any, Any]]) -> int:
     """Check if two money flows are different.
 
     Compares two sequences of money transfer operations to determine

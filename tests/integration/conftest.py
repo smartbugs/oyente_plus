@@ -8,7 +8,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict
 
 import pytest
 
@@ -20,7 +19,7 @@ if oyente_path not in sys.path:
 
 
 @pytest.fixture(scope="session")
-def integration_fixtures() -> Dict[str, Path]:
+def integration_fixtures() -> dict[str, Path]:
     """Provide paths to integration test fixtures.
 
     Returns:
@@ -39,7 +38,7 @@ def integration_fixtures() -> Dict[str, Path]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_integration_fixtures(integration_fixtures: Dict[str, Path]) -> None:
+def setup_integration_fixtures(integration_fixtures: dict[str, Path]) -> None:
     """Set up integration test fixtures if they don't exist.
 
     Creates the fixture directory structure and basic test files

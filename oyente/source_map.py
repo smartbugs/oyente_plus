@@ -3,10 +3,7 @@ import ast
 import json
 from typing import Any
 from typing import ClassVar
-from typing import Dict
-from typing import List
 from typing import Optional
-from typing import Tuple
 
 from ast_helper import AstHelper
 from utils import run_command
@@ -24,16 +21,16 @@ class Source:
             content = f.read().decode("UTF-8")
         return content
 
-    def _load_line_break_positions(self) -> List[int]:
+    def _load_line_break_positions(self) -> list[int]:
         return [i for i, letter in enumerate(self.content) if letter == "\n"]
 
 
 class SourceMap:
     parent_filename: ClassVar[str] = ""
-    position_groups: ClassVar[Dict[str, Any]] = {}
-    sources: ClassVar[Dict[str, Any]] = {}
+    position_groups: ClassVar[dict[str, Any]] = {}
+    sources: ClassVar[dict[str, Any]] = {}
     ast_helper: ClassVar[Optional[Any]] = None
-    func_to_sig_by_contract: ClassVar[Dict[str, Any]] = {}
+    func_to_sig_by_contract: ClassVar[dict[str, Any]] = {}
     remap: ClassVar[str] = ""
     allow_paths: ClassVar[str] = ""
 
@@ -66,7 +63,7 @@ class SourceMap:
             SourceMap.func_to_sig_by_contract = SourceMap._get_sig_to_func_by_contract()
         self.source = self._get_source()  # type: ignore[assignment]
         self.positions = self._get_positions()  # type: ignore[assignment]
-        self.instr_positions: Dict[Any, Any] = {}
+        self.instr_positions: dict[Any, Any] = {}
         self.var_names = self._get_var_names()  # type: ignore[assignment]
         self.func_call_names = self._get_func_call_names()  # type: ignore[assignment]
         self.callee_src_pairs = self._get_callee_src_pairs()  # type: ignore[assignment]
@@ -147,7 +144,7 @@ class SourceMap:
         except (ValueError, IndexError):
             return {"begin": 0, "end": 0}
 
-    def _get_sig_to_func(self) -> Dict[str, str]:
+    def _get_sig_to_func(self) -> dict[str, str]:
         """Get mapping from function signature hashes to function names.
 
         Uses safe dictionary access to prevent KeyError when contract name
@@ -197,7 +194,7 @@ class SourceMap:
         return func_call_names
 
     @classmethod
-    def _get_solc_version(cls) -> Tuple[int, int, int]:
+    def _get_solc_version(cls) -> tuple[int, int, int]:
         """Get the current solc version as a tuple (major, minor, patch)."""
         try:
             out, err = run_command_with_err("solc --version")

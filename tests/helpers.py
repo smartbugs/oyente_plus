@@ -8,12 +8,10 @@ import json
 import subprocess
 import sys
 import tempfile
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import Generator
-from typing import List
 from typing import Optional
 from typing import Union
 from unittest.mock import Mock
@@ -21,7 +19,7 @@ from unittest.mock import patch
 
 
 def run_oyente_cli(
-    args: List[str],
+    args: list[str],
     cwd: Optional[Path] = None,
     check: bool = False,
     timeout: Optional[int] = None,
@@ -100,7 +98,7 @@ def temp_bytecode_file(bytecode: str, filename: str = "contract.bin") -> Generat
 
 
 @contextmanager
-def temp_json_file(data: Dict[str, Any], filename: str = "data.json") -> Generator[Path, None, None]:
+def temp_json_file(data: dict[str, Any], filename: str = "data.json") -> Generator[Path, None, None]:
     """Create a temporary JSON file with given data.
 
     Args:
@@ -120,7 +118,7 @@ def create_mock_compilation_result(
     contract_name: str = "TestContract",
     bytecode: str = "608060405234801561001057600080fd5b50",
     source_map: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create a mock compilation result structure.
 
     Args:
@@ -147,7 +145,7 @@ def create_mock_compilation_result(
     }
 
 
-def create_standard_json_input(contract_name: str, contract_code: str, version: str = "0.8.0") -> Dict[str, Any]:
+def create_standard_json_input(contract_name: str, contract_code: str, version: str = "0.8.0") -> dict[str, Any]:
     """Create a standard JSON input structure for Solidity compilation.
 
     Args:
@@ -167,8 +165,8 @@ def create_standard_json_input(contract_name: str, contract_code: str, version: 
 
 def compile_contract_mock(
     source_file: Union[str, Path],
-    allow_paths: Optional[List[str]] = None,
-    libraries: Optional[Dict[str, str]] = None,
+    allow_paths: Optional[list[str]] = None,
+    libraries: Optional[dict[str, str]] = None,
 ) -> Mock:
     """Create a mock crytic-compile result for testing.
 
@@ -200,7 +198,7 @@ def compile_contract_mock(
 @contextmanager
 def mock_crytic_compile_context(
     success: bool = True,
-    contracts: Optional[List[str]] = None,
+    contracts: Optional[list[str]] = None,
     bytecode: str = "608060405234801561001057600080fd5b50",
 ) -> Generator[Mock, None, None]:
     """Context manager for mocking crytic-compile.
@@ -279,7 +277,7 @@ def assert_no_vulnerabilities(output: str) -> None:
     assert not found_vulns, f"Unexpected vulnerabilities found: {found_vulns}"
 
 
-def create_test_bytecode(opcodes: List[str], with_metadata: bool = False) -> str:
+def create_test_bytecode(opcodes: list[str], with_metadata: bool = False) -> str:
     """Create test EVM bytecode from opcode list.
 
     Args:

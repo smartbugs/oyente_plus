@@ -15,7 +15,6 @@ Test Coverage:
 
 import json
 from typing import Any
-from typing import Dict
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -86,7 +85,7 @@ class TestAstHelper:
     """Test cases for AstHelper class."""
 
     @pytest.fixture
-    def mock_solidity_ast(self) -> Dict[str, Any]:
+    def mock_solidity_ast(self) -> dict[str, Any]:
         """Create mock Solidity AST structure."""
         return {
             "sources": {
@@ -110,7 +109,7 @@ class TestAstHelper:
         }
 
     @pytest.fixture
-    def mock_v5_ast(self) -> Dict[str, Any]:
+    def mock_v5_ast(self) -> dict[str, Any]:
         """Create mock Solidity v5+ AST structure."""
         return {
             "sources": {
@@ -132,7 +131,7 @@ class TestAstHelper:
         }
 
     @pytest.fixture
-    def mock_standard_json(self) -> Dict[str, Any]:
+    def mock_standard_json(self) -> dict[str, Any]:
         """Create mock standard JSON output."""
         return {
             "sources": {
@@ -609,7 +608,7 @@ class TestAstHelperIntegration:
     """Integration tests for AstHelper with more realistic data."""
 
     @pytest.fixture
-    def complex_ast(self) -> Dict[str, Any]:
+    def complex_ast(self) -> dict[str, Any]:
         """Create a more complex, realistic AST structure."""
         return {
             "sources": {

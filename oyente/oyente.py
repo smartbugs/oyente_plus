@@ -11,9 +11,6 @@ import logging
 import re
 import shutil
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 
 import global_params
 import requests
@@ -48,7 +45,7 @@ def compare_versions(version1: str, version2: str) -> int:
          1 if version1 > version2
     """
 
-    def normalize(v: str) -> List[int]:
+    def normalize(v: str) -> list[int]:
         return [int(x) for x in re.sub(r"(\.0+)*$", "", v).split(".")]
 
     v1_normalized = normalize(version1)
@@ -119,7 +116,7 @@ def analyze_bytecode(args: argparse.Namespace) -> int:
         return 1
 
 
-def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], int]:
+def run_solidity_analysis(inputs: list[dict[str, Any]]) -> tuple[dict[str, Any], int]:
     """Run analysis on multiple Solidity contracts.
 
     Args:
@@ -128,7 +125,7 @@ def run_solidity_analysis(inputs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any],
     Returns:
         Tuple of (results dictionary, exit code)
     """
-    results: Dict[str, Any] = {}
+    results: dict[str, Any] = {}
     exit_code = 0
 
     for inp in inputs:

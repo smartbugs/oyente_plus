@@ -171,8 +171,9 @@ def patch_crytic_compile(
 
     def decorator(func):
         def wrapper(*args, **kwargs):
-            with patch("crytic_compile.CryticCompile") as mock_class, patch(
-                "crytic_compile.InvalidCompilation", MockInvalidCompilationError
+            with (
+                patch("crytic_compile.CryticCompile") as mock_class,
+                patch("crytic_compile.InvalidCompilation", MockInvalidCompilationError),
             ):
 
                 if should_fail:

@@ -28,9 +28,6 @@ import copy
 import json
 import logging
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 from typing import Union
 
 from ast_walker import AstWalker
@@ -86,7 +83,7 @@ class AstHelper:
             raise ValueError(f"Unsupported input type: {input_type}. Expected 'solidity' or 'standard json'")
         self.contracts = self.extract_contract_definitions(self.source_list)
 
-    def get_source_list_standard_json(self, filename: str) -> Dict[str, Any]:
+    def get_source_list_standard_json(self, filename: str) -> dict[str, Any]:
         """Extract source list from standard JSON compiler output.
 
         Args:
@@ -101,11 +98,11 @@ class AstHelper:
         """
         with open("standard_json_output") as f:
             out = f.read()
-        parsed_out: Dict[str, Any] = json.loads(out)
-        sources: Dict[str, Any] = parsed_out["sources"]
+        parsed_out: dict[str, Any] = json.loads(out)
+        sources: dict[str, Any] = parsed_out["sources"]
         return sources
 
-    def get_source_list(self, filename: str) -> Dict[str, Dict[str, Any]]:
+    def get_source_list(self, filename: str) -> dict[str, dict[str, Any]]:
         """Extract source list from Solidity file using solc compiler.
 
         Args:
@@ -140,7 +137,7 @@ class AstHelper:
         normalized = {path: {"AST": entry["AST"]} for path, entry in out["sources"].items()}
         return normalized
 
-    def extract_contract_definitions(self, sources_list: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    def extract_contract_definitions(self, sources_list: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
         """Extract and index all contract definitions from source ASTs.
 
         Args:
@@ -152,11 +149,11 @@ class AstHelper:
             - contractsByName: Maps "file:name" to contract nodes
             - sourcesByContract: Maps contract IDs to source file paths
         """
-        ret: Dict[str, Dict[str, Any]] = {"contractsById": {}, "contractsByName": {}, "sourcesByContract": {}}
+        ret: dict[str, dict[str, Any]] = {"contractsById": {}, "contractsByName": {}, "sourcesByContract": {}}
         walker = AstWalker()
         for k in sources_list:
             ast = sources_list[k]["AST"] if self.input_type == "solidity" else sources_list[k]["legacyAST"]
-            nodes: List[Dict[str, Any]] = []
+            nodes: list[dict[str, Any]] = []
             walker.walk(ast, {"name": "ContractDefinition"}, nodes)
             for node in nodes:
                 ret["contractsById"][node["id"]] = node
@@ -164,7 +161,7 @@ class AstHelper:
                 ret["contractsByName"][k + ":" + node["attributes"]["name"]] = node
         return ret
 
-    def get_linearized_base_contracts(self, contract_id: str, contracts_by_id: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def get_linearized_base_contracts(self, contract_id: str, contracts_by_id: dict[str, Any]) -> list[dict[str, Any]]:
         """Get linearized inheritance chain for a contract.
 
         Args:
@@ -179,7 +176,7 @@ class AstHelper:
             for base_id in contracts_by_id[contract_id]["attributes"]["linearizedBaseContracts"]
         ]
 
-    def extract_state_definitions(self, c_name: str) -> List[Dict[str, Any]]:
+    def extract_state_definitions(self, c_name: str) -> list[dict[str, Any]]:
         """Extract state variable definitions for a contract.
 
         Args:
@@ -189,7 +186,7 @@ class AstHelper:
             List of state variable declaration nodes
         """
         node = self.contracts["contractsByName"].get(c_name)
-        state_vars: List[Dict[str, Any]] = []
+        state_vars: list[dict[str, Any]] = []
         if node:
             base_contracts = self.get_linearized_base_contracts(node["id"], self.contracts["contractsById"])
             base_contracts = list(base_contracts)
@@ -201,13 +198,13 @@ class AstHelper:
                             state_vars.append(item)
         return state_vars
 
-    def extract_states_definitions(self) -> Dict[str, List[Dict[str, Any]]]:
+    def extract_states_definitions(self) -> dict[str, list[dict[str, Any]]]:
         """Extract state definitions for all contracts.
 
         Returns:
             Dictionary mapping full contract names to lists of state variable nodes
         """
-        ret: Dict[str, List[Dict[str, Any]]] = {}
+        ret: dict[str, list[dict[str, Any]]] = {}
         for contract in self.contracts["contractsById"]:
             name = self.contracts["contractsById"][contract]["attributes"]["name"]
             source = self.contracts["sourcesByContract"][contract]
@@ -215,7 +212,7 @@ class AstHelper:
             ret[full_name] = self.extract_state_definitions(full_name)
         return ret
 
-    def extract_func_call_definitions(self, c_name: str) -> List[Dict[str, Any]]:
+    def extract_func_call_definitions(self, c_name: str) -> list[dict[str, Any]]:
         """Extract function call definitions for a contract.
 
         Args:
@@ -226,18 +223,18 @@ class AstHelper:
         """
         node = self.contracts["contractsByName"][c_name]
         walker = AstWalker()
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         if node:
             walker.walk(node, {"name": "FunctionCall"}, nodes)
         return nodes
 
-    def extract_func_calls_definitions(self) -> Dict[str, List[Dict[str, Any]]]:
+    def extract_func_calls_definitions(self) -> dict[str, list[dict[str, Any]]]:
         """Extract function call definitions for all contracts.
 
         Returns:
             Dictionary mapping full contract names to lists of function call nodes
         """
-        ret: Dict[str, List[Dict[str, Any]]] = {}
+        ret: dict[str, list[dict[str, Any]]] = {}
         for contract in self.contracts["contractsById"]:
             name = self.contracts["contractsById"][contract]["attributes"]["name"]
             source = self.contracts["sourcesByContract"][contract]
@@ -245,7 +242,7 @@ class AstHelper:
             ret[full_name] = self.extract_func_call_definitions(full_name)
         return ret
 
-    def extract_state_variable_names(self, c_name: str) -> List[str]:
+    def extract_state_variable_names(self, c_name: str) -> list[str]:
         """Extract names of state variables for a contract.
 
         Args:
@@ -255,12 +252,12 @@ class AstHelper:
             List of state variable names
         """
         state_variables = self.extract_states_definitions()[c_name]
-        var_names: List[str] = []
+        var_names: list[str] = []
         for var_name in state_variables:
             var_names.append(var_name["attributes"]["name"])
         return var_names
 
-    def extract_func_call_srcs(self, c_name: str) -> List[str]:
+    def extract_func_call_srcs(self, c_name: str) -> list[str]:
         """Extract source locations of function calls for a contract.
 
         Args:
@@ -270,12 +267,12 @@ class AstHelper:
             List of source location strings for function calls
         """
         func_calls = self.extract_func_calls_definitions()[c_name]
-        func_call_srcs: List[str] = []
+        func_call_srcs: list[str] = []
         for func_call in func_calls:
             func_call_srcs.append(func_call["src"])
         return func_call_srcs
 
-    def get_callee_src_pairs(self, c_name: str) -> List[Tuple[str, str]]:
+    def get_callee_src_pairs(self, c_name: str) -> list[tuple[str, str]]:
         """Get contract call source location pairs for external calls.
 
         Args:
@@ -286,7 +283,7 @@ class AstHelper:
         """
         node = self.contracts["contractsByName"][c_name]
         walker = AstWalker()
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         if node:
             list_of_attributes = [
                 {"attributes": {"member_name": "delegatecall"}},
@@ -295,7 +292,7 @@ class AstHelper:
             ]
             walker.walk(node, list_of_attributes, nodes)
 
-        callee_src_pairs: List[Tuple[str, str]] = []
+        callee_src_pairs: list[tuple[str, str]] = []
         for node in nodes:
             if node.get("children"):
                 type_of_first_child = node["children"][0]["attributes"]["type"]
@@ -305,7 +302,7 @@ class AstHelper:
                     callee_src_pairs.append((contract_path, node["src"]))
         return callee_src_pairs
 
-    def get_func_name_to_params(self, c_name: str) -> Dict[str, List[Dict[str, Union[str, int]]]]:
+    def get_func_name_to_params(self, c_name: str) -> dict[str, list[dict[str, Union[str, int]]]]:
         """Get function names mapped to their parameter information.
 
         Args:
@@ -317,25 +314,25 @@ class AstHelper:
         """
         node = self.contracts["contractsByName"][c_name]
         walker = AstWalker()
-        func_def_nodes: List[Dict[str, Any]] = []
+        func_def_nodes: list[dict[str, Any]] = []
         if node:
             walker.walk(node, {"name": "FunctionDefinition"}, func_def_nodes)
 
-        func_name_to_params: Dict[str, List[Dict[str, Union[str, int]]]] = {}
+        func_name_to_params: dict[str, list[dict[str, Union[str, int]]]] = {}
         for func_def_node in func_def_nodes:
             func_name = func_def_node["attributes"]["name"]
-            params_nodes: List[Dict[str, Any]] = []
+            params_nodes: list[dict[str, Any]] = []
             walker.walk(func_def_node, {"name": "ParameterList"}, params_nodes)
 
             params_node = params_nodes[0]
-            param_nodes: List[Dict[str, Any]] = []
+            param_nodes: list[dict[str, Any]] = []
             walker.walk(params_node, {"name": "VariableDeclaration"}, param_nodes)
 
             for param_node in param_nodes:
                 var_name = param_node["attributes"]["name"]
                 type_name = param_node["children"][0]["name"]
                 if type_name == "ArrayTypeName":
-                    literal_nodes: List[Dict[str, Any]] = []
+                    literal_nodes: list[dict[str, Any]] = []
                     walker.walk(param_node, {"name": "Literal"}, literal_nodes)
                     array_size = int(literal_nodes[0]["attributes"]["value"]) if literal_nodes else 1
                     param = {"name": var_name, "type": type_name, "value": array_size}
@@ -350,7 +347,7 @@ class AstHelper:
                     func_name_to_params[func_name].append(param)
         return func_name_to_params
 
-    def _find_contract_path(self, contract_paths: List[str], contract: str) -> str:
+    def _find_contract_path(self, contract_paths: list[str], contract: str) -> str:
         """Find the full path for a contract by name.
 
         Args:
@@ -366,7 +363,7 @@ class AstHelper:
                 return path
         return ""
 
-    def _semi_convert_new_to_old_ast_format(self, ast_tree: Dict[str, Any]) -> Dict[str, Any]:
+    def _semi_convert_new_to_old_ast_format(self, ast_tree: dict[str, Any]) -> dict[str, Any]:
         """
         Semi-convert solc v5+ AST (nodeType/nodes) to solc v4 AST structure,
         with keys ordered as Oyente expects ist.
@@ -382,8 +379,8 @@ class AstHelper:
             """Check if an object is an AST node (has nodeType field)."""
             return isinstance(obj, dict) and "nodeType" in obj
 
-        def leaf_attrs(node: Dict[str, Any]) -> Dict[str, Any]:
-            out: Dict[str, Any] = {}
+        def leaf_attrs(node: dict[str, Any]) -> dict[str, Any]:
+            out: dict[str, Any] = {}
             skip = {"nodeType", "nodes", "id", "src", "parameters", "returnParameters", "body"}
 
             for k, v in node.items():
@@ -396,9 +393,9 @@ class AstHelper:
             logging.debug(f"Converted leaf attributes: {out}")
             return out
 
-        def collect_children(node: Dict[str, Any]) -> List[Dict[str, Any]]:
+        def collect_children(node: dict[str, Any]) -> list[dict[str, Any]]:
             ntype = node["nodeType"]
-            kids: List[Dict[str, Any]] = []
+            kids: list[dict[str, Any]] = []
 
             if ntype == "FunctionDefinition":
                 for key in ("parameters", "returnParameters", "body"):
@@ -418,7 +415,7 @@ class AstHelper:
             logging.debug(f"Converted children: {kids}")
             return kids
 
-        def convert(node: Dict[str, Any]) -> Dict[str, Any]:
+        def convert(node: dict[str, Any]) -> dict[str, Any]:
             ntype = node["nodeType"]
             children = collect_children(node)
             attrs = leaf_attrs(node)
@@ -452,7 +449,7 @@ class AstHelper:
                     attrs["type"] = td["typeString"]
                 attrs.setdefault("value", None)
 
-            new_node: Dict[str, Any] = {
+            new_node: dict[str, Any] = {
                 "name": ntype,
                 "attributes": attrs,
             }

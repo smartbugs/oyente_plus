@@ -5,7 +5,6 @@ the behavior of the Oyente smart contract analyzer. These parameters
 can be modified at runtime based on command-line arguments.
 """
 
-from typing import List
 from typing import Optional
 
 
@@ -76,5 +75,5 @@ PARALLEL: int = 0
 """Enable parallel symbolic execution (0=disabled, 1=enabled)."""
 
 # Iterable of targeted smart contract names
-TARGET_CONTRACTS: Optional[List[str]] = None
+TARGET_CONTRACTS: Optional[list[str]] = None
 """List of specific contract names to analyze (None=analyze all)."""

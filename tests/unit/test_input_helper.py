@@ -159,9 +159,10 @@ class TestInputHelperBytecodeProcessing:
 
         helper = InputHelper(InputHelper.BYTECODE, source=str(bytecode_file), evm=False)
 
-        with patch.object(helper, "_prepare_disasm_file") as mock_disasm, patch.object(
-            helper, "_get_temporary_files"
-        ) as mock_temp:
+        with (
+            patch.object(helper, "_prepare_disasm_file") as mock_disasm,
+            patch.object(helper, "_get_temporary_files") as mock_temp,
+        ):
             mock_temp.return_value = {"disasm": str(bytecode_file) + ".evm.disasm"}
 
             inputs = helper.get_inputs()
@@ -486,9 +487,10 @@ class TestInputHelperStandardJson:
         output_file = temp_dir / "standard_json_output"
         output_file.write_text(output_content)
 
-        with MockSubprocessContext({"solc": {"returncode": 0, "stdout": output_content, "stderr": ""}}), patch(
-            "builtins.open", mock_open(read_data=output_content)
-        ) as mock_file:
+        with (
+            MockSubprocessContext({"solc": {"returncode": 0, "stdout": output_content, "stderr": ""}}),
+            patch("builtins.open", mock_open(read_data=output_content)) as mock_file,
+        ):
             # Change working directory to temp_dir so output file is created there
             import os
 
@@ -558,9 +560,10 @@ class TestInputHelperContractFiltering:
             allow_paths="",
         )
 
-        with patch.object(helper, "_prepare_disasm_files_for_analysis"), patch.object(
-            helper, "_get_temporary_files"
-        ) as mock_temp:
+        with (
+            patch.object(helper, "_prepare_disasm_files_for_analysis"),
+            patch.object(helper, "_get_temporary_files") as mock_temp,
+        ):
 
             mock_temp.return_value = {"disasm": "test.evm.disasm"}
 
@@ -582,9 +585,10 @@ class TestInputHelperContractFiltering:
             allow_paths="",
         )
 
-        with patch.object(helper, "_prepare_disasm_files_for_analysis"), patch.object(
-            helper, "_get_temporary_files"
-        ) as mock_temp:
+        with (
+            patch.object(helper, "_prepare_disasm_files_for_analysis"),
+            patch.object(helper, "_get_temporary_files") as mock_temp,
+        ):
 
             mock_temp.return_value = {"disasm": "test.evm.disasm"}
 
@@ -976,8 +980,9 @@ class TestInputHelperIntegration:
         # Setup mock compilation with enhanced mock
         mock_instance = MockCryticCompile(source="token.sol", contracts={"SimpleToken": CommonBytecodes.ERC20_TOKEN})
 
-        with patch("crytic_compile.CryticCompile", return_value=mock_instance), patch(
-            "pathlib.Path.exists", return_value=True
+        with (
+            patch("crytic_compile.CryticCompile", return_value=mock_instance),
+            patch("pathlib.Path.exists", return_value=True),
         ):
 
             helper = InputHelper(
@@ -991,9 +996,10 @@ class TestInputHelperIntegration:
                 allow_paths="",
             )
 
-            with patch.object(helper, "_prepare_disasm_files_for_analysis"), patch.object(
-                helper, "_get_temporary_files"
-            ) as mock_temp:
+            with (
+                patch.object(helper, "_prepare_disasm_files_for_analysis"),
+                patch.object(helper, "_get_temporary_files") as mock_temp,
+            ):
 
                 mock_temp.return_value = {"disasm": "token.sol.evm.disasm"}
 

@@ -82,7 +82,7 @@ def gen_txnesting_hist(tfile):
         of.flush()
         of.close()
 
-    hist = np.histogram()
+    np.histogram()
 
     # with open('txnesting.dat','w') as of:
     #     of.write('txid nesting\n')
@@ -99,15 +99,14 @@ def gen_txworth_hist(tfile):
     txworth = sorted(txworth, key=lambda k: k[1], reverse=True)
     txvalues = [element[1] for element in txworth]
     print(
-        "Transaction value - min:%f, max:%f, mean:%f, median:%f"
-        % (np.min(txvalues), np.max(txvalues), np.mean(txvalues), np.median(txvalues))
+        f"Transaction value - min:{np.min(txvalues):f}, max:{np.max(txvalues):f}, mean:{np.mean(txvalues):f}, median:{np.median(txvalues):f}"
     )
     with open("txvalueslog.csv", "w") as of:
         i = 0
         for element in txworth:
             if element[1] > 0:
                 i += 1
-                of.write("%f\n" % np.log(element[1]))
+                of.write(f"{np.log(element[1]):f}\n")
         of.flush()
         of.close()
     print("Wrote %d elements." % i)
@@ -134,7 +133,6 @@ def gen_txworth_hist(tfile):
 def gen_contract_tx(tfile):
     # Build unique transaction count for contracts
     txcount = {}
-    contract_balance = {}
     print("Collecting transaction count...")
     for transaction in tqdm(tfile):
         for tx in transaction["transactions"]:
@@ -165,7 +163,7 @@ def gen_contract_tx(tfile):
     print("Writing...")
     with open("ctxcount.csv", "w") as of:
         for tcount in transactions:
-            of.write("%f\n" % tcount)
+            of.write(f"{tcount:f}\n")
         of.flush()
         of.close()
     print("loading balances..")
@@ -190,7 +188,7 @@ def gen_contract_tx(tfile):
 
     with open("cbalance.csv", "w") as of:
         for tbalance in balances:
-            of.write("%f\n" % tbalance)
+            of.write(f"{tbalance:f}\n")
         of.flush()
         of.close()
     print("Done.")
@@ -225,7 +223,7 @@ def load_report(filen, contract_name, contract_sats, failed):
             )
     except ValueError:
         return
-        print("ValueError in file %s. contents - " % filen)
+        print(f"ValueError in file {filen}. contents - ")
         with open(filen) as f:
             print(f.read())
 
@@ -262,12 +260,12 @@ def load_sat_stats():
         paths.append(entry[1])
         if entry[3] > 0:
             transaction_race += 1
-        if entry[4] == True:
+        if entry[4]:
             timestamp += 1
     print("Average number of paths: %d" % np.mean(paths))
     print("Transaction Race: %d" % transaction_race)
     print("TimeStamp Dependence: %d" % timestamp)
-    print("Average time: %f" % np.mean([entry[5] for entry in contract_sats]))
+    print(f"Average time: {np.mean([entry[5] for entry in contract_sats]):f}")
 
 
 # load_sat_stats()
@@ -356,7 +354,7 @@ def get_all():
             # if entry[0] == '0xbb9bc244d798123fde783fcc1c72d3bb8c189413': print("first")
             t_race.append(entry[0])
             all_problematic.append(entry[0])
-        if entry[4] == True:
+        if entry[4]:
             # if entry[0] == '0xbb9bc244d798123fde783fcc1c72d3bb8c189413': print("second")
             ts_depend.append(entry[0])
             if entry[0] not in all_problematic:
@@ -398,7 +396,6 @@ def get_all():
 
     # cmains_sorted = sorted(cmains_sorted, lamda k: k[1])
 
-    threshold = 99
 
     print("Removing duplicates...")
 
@@ -486,7 +483,7 @@ def get_source_timestamp():
     source_list = []
 
     for entry in sats:
-        if entry[4] == True:
+        if entry[4]:
             source_list.append(entry[0])
 
     from get_source import get_contract_code

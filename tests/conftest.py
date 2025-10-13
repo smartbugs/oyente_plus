@@ -13,10 +13,10 @@ from __future__ import annotations
 import logging
 import shutil
 import tempfile
+from collections.abc import Generator
 from io import StringIO
 from pathlib import Path
 from typing import Any
-from typing import Generator
 from unittest.mock import Mock
 from unittest.mock import patch
 

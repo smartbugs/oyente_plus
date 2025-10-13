@@ -11,19 +11,18 @@ cd "$PROJECT_ROOT"
 
 echo "🚀 Setting up Python development environment with Poetry..."
 
-# Check if Poetry is already installed
-if ! command -v poetry &> /dev/null; then
-    echo "📦 Setting up Python venv with Poetry..."
-    python3 -m venv "$PROJECT_ROOT/venv"
-    source "$PROJECT_ROOT/venv/bin/activate"
-    pip install --upgrade pip wheel
-    pip install poetry
-else
-    echo "✅ Poetry already installed, creating venv..."
-    python3 -m venv "$PROJECT_ROOT/venv"
-    source "$PROJECT_ROOT/venv/bin/activate"
-    pip install --upgrade pip wheel
-fi
+# Create virtual environment with the current Python version
+echo "📦 Creating virtual environment with $(python3 --version)..."
+python3 -m venv "$PROJECT_ROOT/venv"
+source "$PROJECT_ROOT/venv/bin/activate"
+
+# Upgrade pip and install Poetry in the venv
+echo "📦 Installing pip, wheel, and Poetry..."
+pip install --upgrade pip wheel
+pip install "poetry>=2.0.0"
+
+POETRY_VERSION=$(poetry --version)
+echo "✅ Installed $POETRY_VERSION"
 
 echo "📦 Installing all dependencies with Poetry..."
 # In CI with matrix builds, skip initial install to allow per-version lock regeneration

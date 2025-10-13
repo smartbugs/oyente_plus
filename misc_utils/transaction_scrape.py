@@ -52,7 +52,7 @@ def get_tx_from_dir(dirn):
     txs = []
     print("")
     for filen in os.listdir(dirn):
-        sys.stdout.write("Loaded File %s.\r" % filen)
+        sys.stdout.write(f"Loaded File {filen}.\r")
         txs += get_tx_from_file(dirn + "/" + filen)
     print("")
     return txs
@@ -70,11 +70,10 @@ def get_contracts_info(contracts, clean):
             if not os.path.isfile(tmp_tmp_dir + "/" + contract):
                 tfile.write((template % contract) + "\n")
             else:
-                sys.stdout.write("Skipped contract %s\r" % contract)
+                sys.stdout.write(f"Skipped contract {contract}\r")
     print(" ")
     os.system(
-        "cat %s | parallel --will-cite --progress --bar -j 60 wget --quiet --directory-prefix=%s"
-        % (tmp_file, tmp_tmp_dir)
+        f"cat {tmp_file} | parallel --will-cite --progress --bar -j 60 wget --quiet --directory-prefix={tmp_tmp_dir}"
     )
     print("Loading values...")
     values = []
@@ -128,15 +127,15 @@ def load_contractfile(fn):
     re_str_value = r"<td>ETH Balance:\n<\/td>\n<td>\n(.+?)\n<\/td>"
 
     if len(run_re_file(re_str_value, fn)) < 1:
-        print("Balance retrieval failed for file %s" % fn)
+        print(f"Balance retrieval failed for file {fn}")
         print("Downloading again...")
         os.system("rm %s" + fn)
-        os.system("wget -O %s https://etherscan.io/address/%s" % (fn, path_leaf(fn)))
+        os.system(f"wget -O {fn} https://etherscan.io/address/{path_leaf(fn)}")
         if len(run_re_file(re_str_value, fn)) < 1:
-            print("Balance retrieval failed hopelessly for file %s" % fn)
+            print(f"Balance retrieval failed hopelessly for file {fn}")
 
     if not os.path.exists(code_dir):
-        os.system("mkdir %s" % code_dir)
+        os.system(f"mkdir {code_dir}")
     code_url = run_re_file(re_code_url, fn)
     retval = []
     try:
@@ -148,7 +147,7 @@ def load_contractfile(fn):
                 cfile.write(code[0])
         retval = [code_url[0], process_value(run_re_file(re_str_value, fn)[0])]
     except IndexError:
-        print("IndexError in transaction %s" % (path_leaf(fn)))
+        print(f"IndexError in transaction {path_leaf(fn)}")
         retval = ["", ""]
     return retval
 
@@ -177,28 +176,28 @@ def get_txinfo(txs, fn, dirn, clean):
     with open(fn, "w") as urlfile:
         for tx in txs:
             if not os.path.isfile(dirn + "/" + tx):
-                urlfile.write("https://etherscan.io/tx/%s\n" % tx)
+                urlfile.write(f"https://etherscan.io/tx/{tx}\n")
             else:
-                sys.stdout.write("Skipping file %s\r" % tx)
-    os.system("mkdir %s" % dirn)
-    os.system("cat %s | parallel --will-cite --progress --bar -j 60 wget --quiet --directory-prefix=%s" % (fn, dirn))
+                sys.stdout.write(f"Skipping file {tx}\r")
+    os.system(f"mkdir {dirn}")
+    os.system(f"cat {fn} | parallel --will-cite --progress --bar -j 60 wget --quiet --directory-prefix={dirn}")
     print("downloaded files. reading data...")
     tx_data = []
     to_contracts = []
     for filen in os.listdir(dirn):
         if filen.find(".") != -1:
             continue
-        sys.stdout.write("Reading file %s\r" % (filen))
+        sys.stdout.write(f"Reading file {filen}\r")
         try:
-            tx_data_file = [filen] + (load_txfile(dirn + "/" + filen))
+            tx_data_file = [filen, *load_txfile(dirn + "/" + filen)]
         except IndexError:
-            print("IndexError in file %s\t\t\t." % filen)
+            print(f"IndexError in file {filen}\t\t\t.")
             continue
         tx_data.append(tx_data_file)
         to_contracts.append(tx_data_file[txinfo_headers.index("to")])
     print("")
     if clean:
-        os.system("rm -r %s" % dirn)
+        os.system(f"rm -r {dirn}")
     print("loading contract info...")
     cinfo = get_contracts_info(to_contracts, clean)
     return (tx_data, cinfo)

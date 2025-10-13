@@ -495,9 +495,10 @@ class TestIntegration:
     @patch("tests.unit.test_oyente.oyente.has_dependencies_installed", return_value=False)
     def test_workflow_missing_dependencies(self, mock_has_dependencies):
         """Test workflow when dependencies are missing."""
-        with patch("sys.argv", ["oyente.py", "--source", "test.sol"]), patch(
-            "tests.unit.test_oyente.oyente.analyze_solidity"
-        ) as mock_analyze:
+        with (
+            patch("sys.argv", ["oyente.py", "--source", "test.sol"]),
+            patch("tests.unit.test_oyente.oyente.analyze_solidity") as mock_analyze,
+        ):
             result = oyente.main()
 
             # Should return 1 and not call analyze functions
@@ -516,8 +517,9 @@ class TestErrorHandling:
         mock_has_dependencies.return_value = True
         mock_analyze_solidity.side_effect = Exception("Analysis failed")
 
-        with patch("sys.argv", ["oyente.py", "--source", "test.sol"]), pytest.raises(
-            Exception, match="Analysis failed"
+        with (
+            patch("sys.argv", ["oyente.py", "--source", "test.sol"]),
+            pytest.raises(Exception, match="Analysis failed"),
         ):
             oyente.main()
 

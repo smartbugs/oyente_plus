@@ -13,8 +13,6 @@ Test Coverage:
 """
 
 from typing import Any
-from typing import Dict
-from typing import List
 
 import pytest
 
@@ -39,7 +37,7 @@ class TestAstWalker:
         # Create mock AST node
         ast_node = {"name": "ContractDefinition", "id": "1", "attributes": {"name": "TestContract"}}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, {"name": "ContractDefinition"}, nodes)
 
         assert len(nodes) == 1
@@ -49,7 +47,7 @@ class TestAstWalker:
         """Test walking AST with single attribute that doesn't match."""
         ast_node = {"name": "FunctionDefinition", "id": "1", "attributes": {"name": "testFunc"}}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, {"name": "ContractDefinition"}, nodes)
 
         assert len(nodes) == 0
@@ -65,7 +63,7 @@ class TestAstWalker:
             "children": [child_node],
         }
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(parent_node, {"name": "FunctionDefinition"}, nodes)
 
         assert len(nodes) == 1
@@ -84,7 +82,7 @@ class TestAstWalker:
             "children": [child1, child2],
         }
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(parent_node, {"name": "FunctionDefinition"}, nodes)
 
         assert len(nodes) == 2
@@ -101,7 +99,7 @@ class TestAstWalker:
             {"attributes": {"member_name": "callcode"}},
         ]
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, list_of_attributes, nodes)
 
         assert len(nodes) == 1
@@ -117,7 +115,7 @@ class TestAstWalker:
             {"attributes": {"member_name": "callcode"}},
         ]
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, list_of_attributes, nodes)
 
         assert len(nodes) == 0
@@ -128,7 +126,7 @@ class TestAstWalker:
 
         attributes = {"name": "ContractDefinition", "attributes": {"contractKind": "contract"}}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, attributes, nodes)
 
         assert len(nodes) == 1
@@ -140,7 +138,7 @@ class TestAstWalker:
 
         attributes = {"name": "ContractDefinition", "attributes": {"contractKind": "contract"}}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, attributes, nodes)
 
         assert len(nodes) == 0
@@ -154,7 +152,7 @@ class TestAstWalker:
             "children": [{"name": "FunctionDefinition", "children": [{"name": "Block", "children": [target_node]}]}],
         }
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(deep_nested, {"name": "Literal"}, nodes)
 
         assert len(nodes) == 1
@@ -164,7 +162,7 @@ class TestAstWalker:
         """Test walking node with empty children list."""
         ast_node = {"name": "ContractDefinition", "children": []}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, {"name": "FunctionDefinition"}, nodes)
 
         assert len(nodes) == 0
@@ -173,7 +171,7 @@ class TestAstWalker:
         """Test walking node without children property."""
         ast_node = {"name": "Literal", "attributes": {"value": "test"}}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_node, {"name": "FunctionDefinition"}, nodes)
 
         assert len(nodes) == 0
@@ -261,7 +259,7 @@ class TestAstWalker:
         """Test that walk modifies the nodes list in place."""
         ast_node = {"name": "ContractDefinition", "id": "1"}
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         original_id = id(nodes)
 
         self.walker.walk(ast_node, {"name": "ContractDefinition"}, nodes)
@@ -305,7 +303,7 @@ class TestAstWalker:
         }
 
         # Find all function definitions
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(ast_tree, {"name": "FunctionDefinition"}, nodes)
 
         assert len(nodes) == 2
@@ -313,7 +311,7 @@ class TestAstWalker:
         assert nodes[1]["id"] == "3"
 
         # Find specific function call patterns
-        call_nodes: List[Dict[str, Any]] = []
+        call_nodes: list[dict[str, Any]] = []
         call_patterns = [{"attributes": {"member_name": "call"}}, {"attributes": {"member_name": "delegatecall"}}]
         self.walker.walk(ast_tree, call_patterns, call_nodes)
 
@@ -331,7 +329,7 @@ class TestAstWalkerEdgeCases:
 
     def test_walk_with_none_node(self) -> None:
         """Test walking with None node returns no results."""
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
 
         # Should not raise an exception, just return empty results
         self.walker.walk(None, {"name": "Test"}, nodes)
@@ -340,7 +338,7 @@ class TestAstWalkerEdgeCases:
     def test_walk_with_malformed_node(self) -> None:
         """Test walking with malformed node structure."""
         malformed_node = "not_a_dict"
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
 
         with pytest.raises(AttributeError):
             self.walker.walk(malformed_node, {"name": "Test"}, nodes)
@@ -352,7 +350,7 @@ class TestAstWalkerEdgeCases:
         node2 = {"name": "Node2", "children": [node1]}
         node1["children"] = [node2]  # Create cycle
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
 
         # This should cause infinite recursion due to the cycle
         # Note: Current implementation doesn't have cycle detection,
@@ -399,7 +397,7 @@ class TestAstWalkerEdgeCases:
                 child["children"].append(grandchild)
             root["children"].append(child)
 
-        nodes: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
         self.walker.walk(root, {"name": "GrandChild"}, nodes)
 
         # Should find 50 grandchildren (every other one)

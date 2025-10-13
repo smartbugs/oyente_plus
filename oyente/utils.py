@@ -10,9 +10,6 @@ import re
 import shlex
 import subprocess
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 from typing import Union
 
 from z3 import BitVec
@@ -71,8 +68,8 @@ def check_sat(solver: Any, pop_if_exception: bool = True) -> Any:
     return ret
 
 
-def custom_deepcopy(input: Dict[str, Any]) -> Dict[str, Any]:
-    output: Dict[str, Any] = {}
+def custom_deepcopy(input: dict[str, Any]) -> dict[str, Any]:
+    output: dict[str, Any] = {}
     for key in input:
         if isinstance(input[key], list):
             output[key] = list(input[key])
@@ -90,7 +87,7 @@ def is_storage_var(var: Any) -> bool:
 
 # copy only storage values/ variables from a given global state
 # TODO: add balance in the future
-def copy_global_values(global_state: Dict[str, Any]) -> Any:
+def copy_global_values(global_state: dict[str, Any]) -> Any:
     return global_state["Ia"]
 
 
@@ -102,12 +99,12 @@ def is_in_expr(var: str, expr: Any) -> bool:
 
 
 # check if an expression has any storage variables
-def has_storage_vars(expr: Any, storage_vars: List[Any]) -> bool:
+def has_storage_vars(expr: Any, storage_vars: list[Any]) -> bool:
     list_vars = get_vars(expr)
     return any(var in storage_vars for var in list_vars)
 
 
-def get_all_vars(exprs: List[Any]) -> List[Any]:
+def get_all_vars(exprs: list[Any]) -> list[Any]:
     ret_vars = []
     for expr in exprs:
         if is_expr(expr):
@@ -127,9 +124,9 @@ def get_storage_position(var: Any) -> Union[int, str]:
 # Rename variables to distinguish variables in two different paths.
 # e.g. Ia_store_0 in path i becomes Ia_store_0_old if Ia_store_0 is modified
 # else we must keep Ia_store_0 if its not modified
-def rename_vars(pcs: List[Any], global_states: Dict[Any, Any]) -> Tuple[List[Any], Dict[Any, Any]]:
+def rename_vars(pcs: list[Any], global_states: dict[Any, Any]) -> tuple[list[Any], dict[Any, Any]]:
     ret_pcs = []
-    vars_mapping: Dict[Any, Any] = {}
+    vars_mapping: dict[Any, Any] = {}
 
     for expr in pcs:
         if is_expr(expr):
@@ -205,20 +202,20 @@ def do_split_dicts() -> None:
         os.remove("contract" + str(i) + ".json")
 
 
-def run_re_file(re_str: str, fn: str) -> List[Any]:
+def run_re_file(re_str: str, fn: str) -> list[Any]:
     size = os.stat(fn).st_size
     with open(fn, "rb") as tf:
         data = mmap.mmap(tf.fileno(), size, access=mmap.ACCESS_READ)
         return re.findall(re_str.encode(), data)
 
 
-def get_contract_info(contract_addr: str) -> Tuple[Union[str, List[Any]], Union[str, List[Any]]]:
+def get_contract_info(contract_addr: str) -> tuple[Union[str, list[Any]], Union[str, list[Any]]]:
     print(f"Getting info for contracts... {contract_addr}")
     file_name1 = "tmp/" + contract_addr + "_txs.html"
     file_name2 = "tmp/" + contract_addr + ".html"
     # get number of txs
-    txs: Union[str, List[Any]] = "unknown"
-    value: Union[str, List[Any]] = "unknown"
+    txs: Union[str, list[Any]] = "unknown"
+    value: Union[str, list[Any]] = "unknown"
     re_txs_value = r"<span>A total of (.+?) transactions found for address</span>"
     re_str_value = r"<td>ETH Balance:\n<\/td>\n<td>\n(.+?)\n<\/td>"
     try:
@@ -310,7 +307,7 @@ def run_command(cmd: str) -> str:
         return result.decode("utf-8", "strict")
 
 
-def run_command_with_err(cmd: str) -> Tuple[str, str]:
+def run_command_with_err(cmd: str) -> tuple[str, str]:
     solc_p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # noqa: S603
     out_bytes, err_bytes = solc_p.communicate()
     out = out_bytes.decode("utf-8", "strict")
