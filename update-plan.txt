@@ -1,21 +1,17 @@
 Updating dependencies
 Resolving dependencies...
 
-Package operations: 0 installs, 16 updates, 0 removals, 110 skipped
+Package operations: 0 installs, 12 updates, 0 removals, 114 skipped
 
-  - Updating pydantic-core (2.41.1 -> 2.41.4)
-  - Updating toolz (1.0.0 -> 1.1.0)
-  - Updating cytoolz (1.0.1 -> 1.1.0)
-  - Updating pydantic (2.12.0 -> 2.12.3)
-  - Updating regex (2025.9.18 -> 2025.10.23)
-  - Updating charset-normalizer (3.4.3 -> 3.4.4)
-  - Updating cryptography (43.0.3 -> 46.0.3)
-  - Updating aiohttp (3.13.0 -> 3.13.1)
-  - Updating cbor2 (5.7.0 -> 5.7.1)
-  - Updating dulwich (0.24.2 -> 0.24.7)
-  - Updating faker (37.11.0 -> 37.12.0)
-  - Updating pbs-installer (2025.10.10 -> 2025.10.14)
-  - Updating pytokens (0.1.10 -> 0.2.0)
+  - Updating pydantic-core (2.41.4 -> 2.41.5)
+  - Updating pydantic (2.12.3 -> 2.12.4)
+  - Updating regex (2025.10.23 -> 2025.11.3)
+  - Updating bitarray (3.7.2 -> 3.8.0)
+  - Updating aiohttp (3.13.1 -> 3.13.2)
+  - Updating dulwich (0.24.7 -> 0.24.8)
+  - Updating pbs-installer (2025.10.14 -> 2025.10.31)
+  - Updating pytokens (0.2.0 -> 0.3.0)
+  - Updating virtualenv (20.35.3 -> 20.35.4)
   - Installing aiohappyeyeballs (2.6.1): Skipped for the following reason: Already installed
   - Installing aiosignal (1.4.0): Skipped for the following reason: Already installed
   - Installing annotated-types (0.7.0): Skipped for the following reason: Already installed
@@ -23,19 +19,22 @@ Package operations: 0 installs, 16 updates, 0 removals, 110 skipped
   - Installing async-timeout (5.0.1): Skipped for the following reason: Already installed
   - Installing attrs (25.4.0): Skipped for the following reason: Already installed
   - Installing backports-tarfile (1.2.0): Skipped for the following reason: Already installed
-  - Installing bitarray (3.7.2): Skipped for the following reason: Already installed
-  - Installing black (25.9.0): Skipped for the following reason: Already installed
+  - Updating black (25.9.0 -> 25.11.0)
   - Installing build (1.3.0): Skipped for the following reason: Already installed
   - Installing cachecontrol (0.14.3): Skipped for the following reason: Already installed
+  - Installing cbor2 (5.7.1): Skipped for the following reason: Already installed
   - Installing certifi (2025.10.5): Skipped for the following reason: Already installed
   - Installing cffi (2.0.0): Skipped for the following reason: Already installed
   - Installing cfgv (3.4.0): Skipped for the following reason: Already installed
+  - Installing charset-normalizer (3.4.4): Skipped for the following reason: Already installed
   - Installing ckzg (2.1.5): Skipped for the following reason: Already installed
   - Installing cleo (2.1.0): Skipped for the following reason: Already installed
   - Installing click (8.1.8): Skipped for the following reason: Already installed
   - Installing coverage (7.10.7): Skipped for the following reason: Already installed
   - Installing crashtest (0.4.1): Skipped for the following reason: Already installed
+  - Installing cryptography (46.0.3): Skipped for the following reason: Already installed
   - Installing crytic-compile (0.3.8): Skipped for the following reason: Already installed
+  - Installing cytoolz (1.1.0): Skipped for the following reason: Already installed
   - Installing distlib (0.4.0): Skipped for the following reason: Already installed
   - Installing eth-abi (5.2.0): Skipped for the following reason: Already installed
   - Installing eth-account (0.13.7): Skipped for the following reason: Already installed
@@ -48,84 +47,85 @@ Package operations: 0 installs, 16 updates, 0 removals, 110 skipped
   - Installing exceptiongroup (1.3.0): Skipped for the following reason: Already installed
   - Installing execnet (2.1.1): Skipped for the following reason: Already installed
   - Installing factory-boy (3.3.3): Skipped for the following reason: Already installed
+  - Installing faker (37.12.0): Skipped for the following reason: Already installed
   - Installing fastjsonschema (2.21.2): Skipped for the following reason: Already installed
   - Installing filelock (3.19.1): Skipped for the following reason: Already installed
   - Installing findpython (0.7.0): Skipped for the following reason: Already installed
-  - Installing frozenlist (1.8.0): Skipped for the following reason: Already installed
   - Installing h11 (0.16.0): Skipped for the following reason: Already installed
   - Installing hexbytes (1.3.1): Skipped for the following reason: Already installed
   - Installing httpcore (1.0.9): Skipped for the following reason: Already installed
-  - Installing httpx (0.28.1): Skipped for the following reason: Already installed
-  - Updating hypothesis (6.140.3 -> 6.141.1)
+  - Installing hypothesis (6.141.1): Skipped for the following reason: Already installed
   - Installing identify (2.6.15): Skipped for the following reason: Already installed
-  - Installing idna (3.11): Skipped for the following reason: Already installed
+  - Installing httpx (0.28.1): Skipped for the following reason: Already installed
   - Installing importlib-metadata (8.7.0): Skipped for the following reason: Already installed
   - Installing iniconfig (2.1.0): Skipped for the following reason: Already installed
-  - Installing installer (0.7.0): Skipped for the following reason: Already installed
   - Installing jaraco-classes (3.4.0): Skipped for the following reason: Already installed
   - Installing jaraco-context (6.0.1): Skipped for the following reason: Already installed
   - Installing jaraco-functools (4.3.0): Skipped for the following reason: Already installed
+  - Installing jeepney (0.9.0): Skipped for the following reason: Already installed
   - Installing keyring (25.6.0): Skipped for the following reason: Already installed
   - Installing markdown-it-py (3.0.0): Skipped for the following reason: Already installed
-  - Installing jeepney (0.9.0): Skipped for the following reason: Already installed
-  - Installing more-itertools (10.8.0): Skipped for the following reason: Already installed
   - Installing mdurl (0.1.2): Skipped for the following reason: Already installed
+  - Installing more-itertools (10.8.0): Skipped for the following reason: Already installed
+  - Installing msgpack (1.1.2): Skipped for the following reason: Already installed
+  - Installing multidict (6.7.0): Skipped for the following reason: Already installed
   - Installing mypy (1.18.2): Skipped for the following reason: Already installed
   - Installing mypy-extensions (1.1.0): Skipped for the following reason: Already installed
   - Installing nodeenv (1.9.1): Skipped for the following reason: Already installed
   - Installing packaging (25.0): Skipped for the following reason: Already installed
-  - Installing msgpack (1.1.2): Skipped for the following reason: Already installed
-  - Installing multidict (6.7.0): Skipped for the following reason: Already installed
-  - Installing pkginfo (1.12.1.2): Skipped for the following reason: Already installed
-  - Installing pluggy (1.6.0): Skipped for the following reason: Already installed
-  - Installing pathspec (0.12.1): Skipped for the following reason: Already installed
   - Installing parsimonious (0.10.0): Skipped for the following reason: Already installed
+  - Installing pathspec (0.12.1): Skipped for the following reason: Already installed
+  - Installing pkginfo (1.12.1.2): Skipped for the following reason: Already installed
   - Installing platformdirs (4.4.0): Skipped for the following reason: Already installed
+  - Installing idna (3.11): Skipped for the following reason: Already installed
+  - Installing poetry (2.2.1): Skipped for the following reason: Already installed
+  - Installing poetry-core (2.2.1): Skipped for the following reason: Already installed
+  - Installing pprintpp (0.4.0): Skipped for the following reason: Already installed
   - Installing pre-commit (4.3.0): Skipped for the following reason: Already installed
   - Installing propcache (0.4.1): Skipped for the following reason: Already installed
-  - Installing pprintpp (0.4.0): Skipped for the following reason: Already installed
+  - Installing py-cpuinfo (9.0.0): Skipped for the following reason: Already installed
   - Installing pycparser (2.23): Skipped for the following reason: Already installed
   - Installing pycryptodome (3.23.0): Skipped for the following reason: Already installed
   - Installing pygments (2.19.2): Skipped for the following reason: Already installed
   - Installing pyproject-hooks (1.2.0): Skipped for the following reason: Already installed
   - Installing pytest (8.4.2): Skipped for the following reason: Already installed
-  - Installing pytest-benchmark (5.1.0): Skipped for the following reason: Already installed
-  - Installing py-cpuinfo (9.0.0): Skipped for the following reason: Already installed
+  - Updating pytest-benchmark (5.1.0 -> 5.2.3)
+  - Installing pytest-clarity (1.0.1): Skipped for the following reason: Already installed
   - Installing pytest-cov (7.0.0): Skipped for the following reason: Already installed
   - Installing pytest-mock (3.15.1): Skipped for the following reason: Already installed
   - Installing pytest-sugar (1.1.1): Skipped for the following reason: Already installed
   - Installing pytest-timeout (2.4.0): Skipped for the following reason: Already installed
-  - Installing pytest-clarity (1.0.1): Skipped for the following reason: Already installed
+  - Installing pytest-xdist (3.8.0): Skipped for the following reason: Already installed
   - Installing pyunormalize (17.0.0): Skipped for the following reason: Already installed
   - Installing pyyaml (6.0.3): Skipped for the following reason: Already installed
   - Installing rapidfuzz (3.13.0): Skipped for the following reason: Already installed
   - Installing requests (2.32.5): Skipped for the following reason: Already installed
-  - Installing requests-toolbelt (1.0.0): Skipped for the following reason: Already installed
-  - Installing poetry-core (2.2.1): Skipped for the following reason: Already installed
-  - Installing rlp (4.1.0): Skipped for the following reason: Already installed
-  - Updating ruff (0.14.0 -> 0.14.2)
+  - Installing installer (0.7.0): Skipped for the following reason: Already installed
+  - Installing rich (14.2.0): Skipped for the following reason: Already installed
+  - Installing frozenlist (1.8.0): Skipped for the following reason: Already installed
+  - Updating ruff (0.14.2 -> 0.14.4)
+  - Installing secretstorage (3.3.3): Skipped for the following reason: Already installed
   - Installing shellingham (1.5.4): Skipped for the following reason: Already installed
-  - Installing poetry (2.2.1): Skipped for the following reason: Already installed
   - Installing sniffio (1.3.1): Skipped for the following reason: Already installed
   - Installing solc-select (1.1.0): Skipped for the following reason: Already installed
   - Installing sortedcontainers (2.4.0): Skipped for the following reason: Already installed
-  - Installing pytest-xdist (3.8.0): Skipped for the following reason: Already installed
+  - Installing termcolor (3.1.0): Skipped for the following reason: Already installed
   - Installing tomli (2.3.0): Skipped for the following reason: Already installed
-  - Installing tomlkit (0.13.3): Skipped for the following reason: Already installed
+  - Installing rlp (4.1.0): Skipped for the following reason: Already installed
+  - Installing toolz (1.1.0): Skipped for the following reason: Already installed
   - Installing trove-classifiers (2025.9.11.17): Skipped for the following reason: Already installed
   - Installing types-requests (2.32.4.20250913): Skipped for the following reason: Already installed
   - Installing typing-extensions (4.15.0): Skipped for the following reason: Already installed
   - Installing typing-inspection (0.4.2): Skipped for the following reason: Already installed
   - Installing tzdata (2025.2): Skipped for the following reason: Already installed
-  - Installing termcolor (3.1.0): Skipped for the following reason: Already installed
-  - Installing virtualenv (20.35.3): Skipped for the following reason: Already installed
-  - Updating web3 (7.13.0 -> 7.14.0)
+  - Installing urllib3 (2.5.0): Skipped for the following reason: Already installed
+  - Installing web3 (7.14.0): Skipped for the following reason: Already installed
   - Installing websockets (15.0.1): Skipped for the following reason: Already installed
   - Installing yarl (1.22.0): Skipped for the following reason: Already installed
-  - Installing z3-solver (4.14.1.0): Skipped for the following reason: Already installed
+  - Installing pluggy (1.6.0): Skipped for the following reason: Already installed
   - Installing zipp (3.23.0): Skipped for the following reason: Already installed
   - Installing zstandard (0.25.0): Skipped for the following reason: Already installed
   - Installing ethutils (0.1.1 10f15fa): Skipped for the following reason: Already installed
-  - Installing secretstorage (3.3.3): Skipped for the following reason: Already installed
-  - Installing urllib3 (2.5.0): Skipped for the following reason: Already installed
-  - Installing rich (14.2.0): Skipped for the following reason: Already installed
+  - Installing tomlkit (0.13.3): Skipped for the following reason: Already installed
+  - Installing z3-solver (4.14.1.0): Skipped for the following reason: Already installed
+  - Installing requests-toolbelt (1.0.0): Skipped for the following reason: Already installed
