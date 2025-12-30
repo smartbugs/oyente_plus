@@ -44,8 +44,8 @@ make test-cov TEST=tests/unit/test_vulnerability.py       # Single file with cov
 - **`oyente/oyente.py`**: Main CLI entry point and configuration
 - **`oyente/input_helper.py`**: Input handling for Solidity/bytecode using crytic-compile
 - **`oyente/symExec.py`**: Symbolic execution engine with Z3 constraint solving
-- **`oyente/vulnerability.py`**: Vulnerability detection classes (100% test coverage ✅)
-- **`oyente/ast_helper.py`**: AST processing and contract analysis (comprehensive test coverage ✅)
+- **`oyente/vulnerability.py`**: Vulnerability detection classes (100% test coverage)
+- **`oyente/ast_helper.py`**: AST processing and contract analysis (comprehensive test coverage)
 - **`oyente/analysis.py`**: Analysis state management and vulnerability reporting
 
 ### Analysis Flow
@@ -190,10 +190,10 @@ The project uses a focused GitHub Actions pipeline with three essential stages:
 #### **Quality Gates**
 
 All code must pass:
-- ✅ 100% test success rate
-- ✅ Zero linting errors
-- ✅ Zero type checking errors
-- ✅ >80% code coverage
+- 100% test success rate
+- Zero linting errors
+- Zero type checking errors
+- >80% code coverage
 
 #### **Development Integration**
 

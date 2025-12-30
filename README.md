@@ -14,10 +14,11 @@ An Analysis Tool for Smart Contracts
 
 ## ✨ Features
 
+- **Detection of smart contract weaknesses:** reentrancy issues, integer over-/underflow, timestamp dependence, transaction order dependence, assertion failures
 - **Symbolic Execution**: Deep analysis using the Z3 constraint solver
 - **Multi-format Support**: Analyze Solidity source code, EVM bytecode, or remote on-chain contracts
 
-As one of the earliest tools in the field, Oyente has been served as a foundation for extensions and as a reference point for evaluating new approaches. Over time, however, it has become increasingly difficult to use: it cannot analyze newer contracts that rely on EVM instructions introduced after its initial release (for example, the shift opcodes or PUSH0), and it depends on Python 2 and outdated libraries, which complicates installation.
+As one of the earliest tools in the field, Oyente has served as a foundation for extensions and as a reference point for evaluating new approaches. Over time, however, it has become increasingly difficult to use: it cannot analyze newer contracts that rely on EVM instructions introduced after its initial release (for example, the shift opcodes or PUSH0), and it depends on Python 2 and outdated libraries, which complicates installation.
 
 Oyente+ preserves Oyente's analysis capabilities while providing full support for the complete EVM instruction set. The codebase has been ported to Python 3 and updated to follow contemporary software-engineering practices. In particular, Oyente+ offers:
 
@@ -139,7 +140,7 @@ We welcome contributions! Please:
 2. **Submit PRs**: Feel free to send us a PR for changes you want to see!
 3. **Follow Standards**: Ensure all quality checks pass with `make all`
 
-See the [development guide](https://github.com/smartbugs/oyente_plus/development.md) for more information on the architecture of Oyente+ and the development environment.
+See the [development guide](https://github.com/smartbugs/oyente_plus/blob/master/development.md) for more information on the architecture of Oyente+ and the development environment.
 
 
 [license-badge]: https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=flat-square
