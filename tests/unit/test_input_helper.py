@@ -34,7 +34,6 @@ from hypothesis import strategies as st
 from tests.mocks.mock_crytic_compile import MockCryticCompile
 from tests.mocks.mock_crytic_compile import MockInvalidCompilationError
 
-
 # Use central mocking approach
 with patch.dict(
     "sys.modules",
@@ -71,7 +70,6 @@ import crytic_compile
 from tests.mocks.mock_crytic_compile import CommonBytecodes
 from tests.mocks.mock_crytic_compile import create_standard_json_output
 from tests.mocks.mock_subprocess import MockSubprocessContext
-
 
 # The module is now mocked from the patch.dict above
 crytic_compile.CryticCompile = Mock()

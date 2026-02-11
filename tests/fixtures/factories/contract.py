@@ -12,7 +12,6 @@ from typing import Any
 import factory
 from faker import Faker
 
-
 fake = Faker()
 
 

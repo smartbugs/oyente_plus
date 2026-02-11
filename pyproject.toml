@@ -110,7 +110,7 @@ select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
     "F",   # pyflakes
-    "I",   # isort
+#    "I",   # isort # conflict with black
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
@@ -127,6 +127,7 @@ ignore = [
     "T201",  # print statements (allow for debugging/logging)
     "S608",  # possible SQL injection (allow for dynamic queries)
     "UP007", # use X | Y for type annotations (compatibility with older Python)
+    "I",   # isort # conflict with black
 ]
 exclude = [
     ".git",

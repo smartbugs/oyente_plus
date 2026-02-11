@@ -11,7 +11,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 # Mock dependencies before importing source_map module
 with patch.dict(
     "sys.modules",

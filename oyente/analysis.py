@@ -48,7 +48,6 @@ from z3 import simplify
 from z3 import unsat
 from z3.z3util import get_vars
 
-
 log = logging.getLogger(__name__)
 
 # Global variable to track current file being analyzed

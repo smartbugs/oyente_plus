@@ -9,7 +9,6 @@ from .analysis import AnalysisFactory
 from .contract import ContractFactory
 from .vulnerability import VulnerabilityFactory
 
-
 __all__ = [
     "AnalysisFactory",
     "ContractFactory",

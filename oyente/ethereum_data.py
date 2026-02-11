@@ -6,7 +6,6 @@ from typing import Any
 
 import requests
 
-
 log = logging.getLogger(__name__)
 
 

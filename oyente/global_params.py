@@ -7,7 +7,6 @@ can be modified at runtime based on command-line arguments.
 
 from typing import Optional
 
-
 # enable reporting of the result
 REPORT_MODE: int = 0
 """Enable generation of detailed analysis reports (0=disabled, 1=enabled)."""

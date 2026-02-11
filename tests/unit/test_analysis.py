@@ -12,7 +12,6 @@ import pytest
 
 from tests.mocks.mock_z3 import create_mock_z3_module
 
-
 # Create mock z3 constants using our infrastructure
 mock_z3 = create_mock_z3_module()
 mock_sat = "sat"

@@ -16,7 +16,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 # Mock dependencies before importing oyente module
 with patch.dict(
     "sys.modules",

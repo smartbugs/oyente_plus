@@ -77,7 +77,6 @@ from z3 import sat
 from z3 import simplify
 from z3 import unsat
 
-
 # Z3 type definitions
 Z3Expr: TypeAlias = Any  # Until Z3 stubs are available
 Z3Model: TypeAlias = Any

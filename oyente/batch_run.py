@@ -6,7 +6,6 @@ import sys
 
 from tqdm import tqdm
 
-
 contract_dir = "contract_data"
 
 cfiles = glob.glob(contract_dir + "/contract1.json")

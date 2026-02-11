@@ -14,7 +14,6 @@ from tests.mocks.mock_crytic_compile import MockCryticCompile
 from tests.mocks.mock_crytic_compile import MockInvalidCompilationError
 from tests.mocks.mock_subprocess import MockSubprocessContext
 
-
 # Mock the heavy dependencies for integration testing
 with patch.dict(
     "sys.modules",
