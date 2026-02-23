@@ -63,7 +63,8 @@ def _create_contract_fixtures(contracts_dir: Path) -> None:
     # Simple safe contract
     simple_safe = contracts_dir / "simple_safe.sol"
     if not simple_safe.exists():
-        simple_safe.write_text("""
+        simple_safe.write_text(
+            """
 pragma solidity ^0.8.0;
 
 contract SimpleSafe {
@@ -77,12 +78,14 @@ contract SimpleSafe {
         return value;
     }
 }
-""")
+"""
+        )
 
     # Reentrancy vulnerable contract
     reentrancy_vulnerable = contracts_dir / "reentrancy_vulnerable.sol"
     if not reentrancy_vulnerable.exists():
-        reentrancy_vulnerable.write_text("""
+        reentrancy_vulnerable.write_text(
+            """
 pragma solidity ^0.8.0;
 
 contract ReentrancyVulnerable {
@@ -103,12 +106,14 @@ contract ReentrancyVulnerable {
         balances[msg.sender] += msg.value;
     }
 }
-""")
+"""
+        )
 
     # Safe reentrancy pattern
     reentrancy_safe = contracts_dir / "reentrancy_safe.sol"
     if not reentrancy_safe.exists():
-        reentrancy_safe.write_text("""
+        reentrancy_safe.write_text(
+            """
 pragma solidity ^0.8.0;
 
 contract ReentrancySafe {
@@ -136,12 +141,14 @@ contract ReentrancySafe {
         balances[msg.sender] += msg.value;
     }
 }
-""")
+"""
+        )
 
     # Contract with syntax error for testing error handling
     syntax_error = contracts_dir / "syntax_error.sol"
     if not syntax_error.exists():
-        syntax_error.write_text("""
+        syntax_error.write_text(
+            """
 pragma solidity ^0.8.0;
 
 contract SyntaxError {
@@ -152,7 +159,8 @@ contract SyntaxError {
         value = _value;
     }
 }
-""")
+"""
+        )
 
 
 def _create_bytecode_fixtures(bytecode_dir: Path) -> None:
