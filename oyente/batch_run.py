@@ -43,7 +43,7 @@ if len(sys.argv) >= 3:
 for c in tqdm(contracts):
     with open("tmp.evm", "w") as of:
         of.write(cjson[c][1][2:])
-    subprocess.run([sys.executable, "oyente.py", "-ll", "30", "-s", "tmp.evm", "-j", "-b"], check=False)  # noqa: S603
+    subprocess.run([sys.executable, "oyente.py", "-ll", "30", "-s", "tmp.evm", "-j", "-b"], check=False)
     try:
         with open("tmp.evm.json") as f:
             results[c] = json.loads(f.read())
