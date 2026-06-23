@@ -1712,7 +1712,7 @@ test = ["hypothesis (>=4.43.0)", "mypy (==1.18.2)", "pytest (>=7.0.0)", "pytest-
 
 [[package]]
 name = "ethutils"
-version = "0.1.1"
+version = "0.1.2"
 description = "Utilities for the Analysis of Ethereum Smart Contracts"
 optional = false
 python-versions = "^3.8"
