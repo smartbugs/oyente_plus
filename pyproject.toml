@@ -12,7 +12,7 @@ license = { text = "GPL-3.0" }
 # Python 3.12.0 is excluded due to upstream library incompatibilities present
 # specifically in the initial 3.12.0 release; patch releases (3.12.1+) resolve
 # these issues and are allowed.
-requires-python = ">=3.9,!=3.12.0,<4.0"
+requires-python = ">=3.10,!=3.12.0,<4.0"
 dependencies = [
     "requests>=2.25.0",
     "web3>=6.0.0",
@@ -47,7 +47,7 @@ package-mode = true
 # Keep in sync with [project.requires-python]. Exclude 3.12.0 due to
 # transient upstream incompatibilities in that specific patch release; 3.12.1+
 # are permitted.
-python = ">=3.9,!=3.12.0,<4.0"
+python = ">=3.10,!=3.12.0,<4.0"
 requests = ">=2.25.0"
 web3 = ">=6.0.0"
 z3-solver = "4.14.1.0"
@@ -161,7 +161,7 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 platform = "linux"
 warn_return_any = true
 warn_unused_configs = true
