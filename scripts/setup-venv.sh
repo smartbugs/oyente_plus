@@ -20,6 +20,10 @@ source "$PROJECT_ROOT/venv/bin/activate"
 echo "📦 Installing pip, wheel, and Poetry..."
 pip install --upgrade pip wheel
 pip install "poetry>=2.0.0"
+# pip install requests z3-solver typing-extensions crytic-compile
+# pip install git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils
+# --dev:
+# pip install pytest-cov pytest-mock factory-boy hypothesis black ruff
 
 POETRY_VERSION=$(poetry --version)
 echo "✅ Installed $POETRY_VERSION"
