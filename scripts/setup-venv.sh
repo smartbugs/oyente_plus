@@ -28,6 +28,42 @@ pip install "poetry>=2.0.0"
 POETRY_VERSION=$(poetry --version)
 echo "✅ Installed $POETRY_VERSION"
 
+echo "🔍 Diagnosing Poetry environment..."
+which python
+python -VV
+python -m pip --version
+which poetry
+poetry --version
+
+python -m pip show virtualenv
+python -m pip show -f virtualenv
+
+python - <<'PY'
+from importlib.metadata import distribution
+
+dist = distribution("virtualenv")
+target = dist.locate_file(
+    "virtualenv/activation/cshell/deactivate.csh"
+)
+
+print("virtualenv version:", dist.version)
+print("virtualenv root:", dist.locate_file(""))
+print("expected file:", target)
+print("file exists:", target.exists())
+
+missing = [
+    str(path)
+    for path in dist.files or ()
+    if not dist.locate_file(path).exists()
+]
+print("files listed but missing:", len(missing))
+for path in missing:
+    print("MISSING:", path)
+PY
+
+echo "🔍 Testing virtualenv directly..."
+python -m virtualenv /tmp/virtualenv-smoke-test
+
 echo "📦 Installing all dependencies with Poetry..."
 # In CI with matrix builds, skip initial install to allow per-version lock regeneration
 if [ "$CI_SKIP_INSTALL" = "true" ]; then
