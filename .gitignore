@@ -20,6 +20,7 @@ wheels/
 # Virtual environments
 venv/
 .venv/
+.poetry-venv/
 
 # Testing and coverage
 .benchmarks

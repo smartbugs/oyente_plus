@@ -1,100 +1,39 @@
-#!/bin/bash
-# Setup virtual environment for Oyente+ development using Poetry
-set -e
+#!/usr/bin/env bash
 
-# Get the directory where this script is located
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+POETRY_VERSION="${POETRY_VERSION:-2.4.3}"
+POETRY_ENV="$PROJECT_ROOT/.poetry-venv"
+POETRY="$POETRY_ENV/bin/poetry"
 
-# Change to project root to ensure venv is created there
 cd "$PROJECT_ROOT"
 
-echo "🚀 Setting up Python development environment with Poetry..."
+echo "Installing Oyente+ development dependencies"
+echo "Python: $(python3 --version)"
 
-# Create virtual environment with the current Python version
-echo "📦 Creating virtual environment with $(python3 --version)..."
-python3 -m venv "$PROJECT_ROOT/venv"
-source "$PROJECT_ROOT/venv/bin/activate"
-
-# Upgrade pip and install Poetry in the venv
-echo "📦 Installing pip, wheel, and Poetry..."
-pip install --upgrade pip wheel
-pip install "poetry>=2.0.0"
-# pip install requests z3-solver typing-extensions crytic-compile
-# pip install git+https://github.com/gsalzer/ethutils.git@main#egg=ethutils
-# --dev:
-# pip install pytest-cov pytest-mock factory-boy hypothesis black ruff
-
-POETRY_VERSION=$(poetry --version)
-echo "✅ Installed $POETRY_VERSION"
-
-echo "🔍 Diagnosing Poetry environment..."
-which python
-python -VV
-python -m pip --version
-which poetry
-poetry --version
-
-python -m pip show virtualenv
-python -m pip show -f virtualenv
-
-python - <<'PY'
-from importlib.metadata import distribution
-
-dist = distribution("virtualenv")
-target = dist.locate_file(
-    "virtualenv/activation/cshell/deactivate.csh"
-)
-
-print("virtualenv version:", dist.version)
-print("virtualenv root:", dist.locate_file(""))
-print("expected file:", target)
-print("file exists:", target.exists())
-
-missing = [
-    str(path)
-    for path in dist.files or ()
-    if not dist.locate_file(path).exists()
-]
-print("files listed but missing:", len(missing))
-for path in missing:
-    print("MISSING:", path)
-PY
-
-echo "🔍 Testing virtualenv directly..."
-python -m virtualenv /tmp/virtualenv-smoke-test
-
-echo "📦 Installing all dependencies with Poetry..."
-# In CI with matrix builds, skip initial install to allow per-version lock regeneration
-if [ "$CI_SKIP_INSTALL" = "true" ]; then
-    echo "Skipping dependency installation (will be done after lock regeneration)"
-else
-    # Clear any existing lock issues and install fresh
-    poetry install --with dev --no-interaction -vvv
+# Poetry is a build tool, not a project dependency. Keep it in its own
+# environment so resolving project dependencies cannot modify Poetry.
+if [[ ! -x "$POETRY" ]] || [[ "$($POETRY --version)" != "Poetry (version $POETRY_VERSION)" ]]; then
+    rm -rf "$POETRY_ENV"
+    python3 -m venv "$POETRY_ENV"
+    "$POETRY_ENV/bin/python" -m pip install --upgrade pip
+    "$POETRY_ENV/bin/python" -m pip install "poetry==$POETRY_VERSION"
 fi
 
-echo "🔗 Setting up pre-commit hooks..."
-# Only install pre-commit hooks if not in CI environment
-if [ -z "$CI" ]; then
-    poetry run pre-commit install
-else
-    echo "Skipping pre-commit hook installation in CI environment"
+echo "Poetry: $($POETRY --version)"
+
+# Keep the project environment predictable and local to the checkout.
+export POETRY_VIRTUALENVS_IN_PROJECT=true
+"$POETRY" env use "$(command -v python3)"
+"$POETRY" check --lock
+"$POETRY" sync --with dev --no-interaction
+
+if [[ -z "${CI:-}" ]]; then
+    "$POETRY" run pre-commit install
 fi
 
-echo "✅ Setup complete!"
-echo ""
-echo "To activate the environment, run:"
-echo "   source $PROJECT_ROOT/venv/bin/activate"
-echo ""
-echo "Or run commands directly with:"
-echo "   poetry run <command>"
-echo ""
-echo "Available make targets:"
-echo "   make test      # Run pytest tests"
-echo "   make test-cov  # Run tests with coverage"
-echo "   make lint      # Run code linting"
-echo "   make format    # Format code with Black"
-echo "   make all       # Run all quality checks"
-echo ""
-echo "Pre-commit hooks are installed and will run automatically on commit."
-echo "To run manually: poetry run pre-commit run --all-files"
+echo "Setup complete"
+echo "Project environment: $PROJECT_ROOT/.venv"
+echo "Run commands with: $POETRY run <command>"
