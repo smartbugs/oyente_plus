@@ -1,19 +1,14 @@
 # Variables for better maintainability
 PYTHON := python3
 SRC_DIRS := oyente/ tests/
-VENV_DIR := venv
+VENV_DIR := .venv
 
-# Poetry and virtual environment detection
-POETRY := poetry
-VENV_ACTIVE := $(shell echo $$VIRTUAL_ENV)
-ifeq ($(VENV_ACTIVE),)
-    POETRY_RUN := $(POETRY) run
-else
-    POETRY_RUN :=
-endif
+# Poetry is installed by scripts/setup-venv.sh in an isolated tool environment.
+POETRY := .poetry-venv/bin/poetry
+POETRY_RUN := $(POETRY) run
 
 .DEFAULT_GOAL := help
-.PHONY: help format lint type-check test test-unit test-integration test-cov test-unit-cov test-integration-cov all clean install install-dev setup libs-bump-latest libs-bump-dev libs-bump-all
+.PHONY: help format format-check lint type-check test test-unit test-integration test-cov test-unit-cov test-integration-cov all clean install install-dev setup libs-bump-latest libs-bump-dev libs-bump-all
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -22,22 +17,25 @@ help: ## Show this help message
 ##@ Development Setup
 
 setup: ## Create virtual environment and install all dependencies using Poetry
-	@echo "🚀 Setting up development environment..."
-	@$(POETRY) install --with dev && echo "✅ Setup complete" || (echo "❌ Setup failed" && exit 1)
+	@./scripts/setup-venv.sh
 
 install: ## Install production dependencies only
 	@echo "📦 Installing production dependencies..."
-	@$(POETRY) install --only main && echo "✅ Installation complete" || (echo "❌ Installation failed" && exit 1)
+	@$(POETRY) sync --only main && echo "✅ Installation complete" || (echo "❌ Installation failed" && exit 1)
 
 install-dev: ## Install all dependencies including dev group
 	@echo "🔧 Installing all dependencies..."
-	@$(POETRY) install --with dev && echo "✅ Development installation complete" || (echo "❌ Development installation failed" && exit 1)
+	@$(POETRY) sync --with dev && echo "✅ Development installation complete" || (echo "❌ Development installation failed" && exit 1)
 
 ##@ Code Quality
 
 format: ## Format code with Black
 	@echo "🔧 Formatting code with Black..."
 	@$(POETRY_RUN) black $(SRC_DIRS) && echo "✅ Code formatting complete" || (echo "❌ Formatting failed" && exit 1)
+
+format-check: ## Check formatting with Black without changing files
+	@echo "🔍 Checking code formatting with Black..."
+	@$(POETRY_RUN) black --check $(SRC_DIRS) && echo "✅ Formatting check complete" || (echo "❌ Formatting check failed" && exit 1)
 
 lint: ## Check code with Ruff
 	@echo "🔍 Linting code with Ruff..."
@@ -105,8 +103,8 @@ clean: ## Clean up temporary files and caches
 	@echo "✅ Cleanup complete"
 
 clean-all: clean ## Remove virtual environment and all generated files
-	@rm -rf $(VENV_DIR)
-	@echo "✅ Virtual environment and caches removed"
+	@rm -rf $(VENV_DIR) .poetry-venv
+	@echo "✅ Project and Poetry environments removed"
 
 ##@ Dependencies
 
