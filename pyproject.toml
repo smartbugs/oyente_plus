@@ -1,5 +1,5 @@
 [build-system]
-requires = ["poetry-core>=1.0.0,<3.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "An analysis tool for smart contracts"
 authors = [{ name = "Thomas Fenninger" }]
 readme = "README.md"
-license = { text = "GPL-3.0" }
+license = "GPL-3.0-only"
 # Python 3.12.0 is excluded due to upstream library incompatibilities present
 # specifically in the initial 3.12.0 release; patch releases (3.12.1+) resolve
 # these issues and are allowed.
@@ -20,7 +20,7 @@ dependencies = [
     "crytic-compile==0.3.8",
     "solc-select>=1.0.0",
     "cbor2>=5.0.0",
-    "ethutils @ git+https://github.com/gsalzer/ethutils.git@main",
+    "ethutils @ git+https://github.com/gsalzer/ethutils.git@b2c349a4e6eaf654de26386b518e5195e1641013",
 ]
 
 [project.scripts]
@@ -33,53 +33,31 @@ Issues = "https://github.com/smartbugs/oyente_plus/issues"
 Documentation = "https://github.com/smartbugs/oyente_plus/blob/main/README.md"
 
 [tool.poetry]
-name = "oyente_plus"
-version = "1.0.0"
-description = "An analysis tool for smart contracts"
-authors = ["Thomas Fenninger"]
-readme = "README.md"
-license = "GPL-3.0"
 packages = [{ include = "oyente" }]
-# Maintained for compatibility - prefer [project] section above
-package-mode = true
 
-[tool.poetry.dependencies]
-# Keep in sync with [project.requires-python]. Exclude 3.12.0 due to
-# transient upstream incompatibilities in that specific patch release; 3.12.1+
-# are permitted.
-python = ">=3.10,!=3.12.0,<4.0"
-requests = ">=2.25.0"
-web3 = ">=6.0.0"
-z3-solver = "4.14.1.0"
-crytic-compile = "0.3.8"
-solc-select = ">=1.0.0"
-cbor2 = ">=5.0.0"
-ethutils = {git = "https://github.com/gsalzer/ethutils.git", branch = "main"}
+[dependency-groups]
+dev = [
+    # Code formatting and linting
+    "black>=24.0.0",
+    "ruff>=0.7.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.0.0",
 
-[tool.poetry.group.dev.dependencies]
-# Build and dependency management
-poetry = ">=2.0.0"
+    # Testing framework and plugins
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.2.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-sugar>=0.9.0",
+    "pytest-clarity>=1.0.0",
+    "pytest-timeout>=2.1.0",
 
-# Code formatting and linting
-black = ">=24.0.0"
-ruff = ">=0.7.0"
-mypy = ">=1.8.0"
-pre-commit = ">=3.0.0"
-
-# Testing framework and plugins
-pytest = ">=8.0.0"
-pytest-cov = ">=4.0.0"
-pytest-mock = ">=3.10.0"
-pytest-xdist = ">=3.2.0"
-pytest-benchmark = ">=4.0.0"
-pytest-sugar = ">=0.9.0"
-pytest-clarity = ">=1.0.0"
-pytest-timeout = ">=2.1.0"
-
-# Test data generation
-hypothesis = ">=6.68.0"
-factory-boy = ">=3.2.0"
-faker = ">=18.0.0"
+    # Test data generation
+    "hypothesis>=6.68.0",
+    "factory-boy>=3.2.0",
+    "faker>=18.0.0",
+]
 
 [tool.black]
 line-length = 120
