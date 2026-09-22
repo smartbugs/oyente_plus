@@ -68,6 +68,49 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Diagnose Python packaging environment
+        shell: bash
+        run: |
+          set -x
+
+          which python
+          python -VV
+          python -m pip --version
+
+          which poetry || true
+          poetry --version || true
+          poetry debug info || true
+
+          python -m pip show virtualenv || true
+          python -m pip show -f virtualenv || true
+
+          python - <<'PY'
+          from importlib.metadata import PackageNotFoundError, distribution
+
+          try:
+            dist = distribution("virtualenv")
+          except PackageNotFoundError:
+            print("virtualenv is not installed in the active environment")
+          else:
+            print("virtualenv version:", dist.version)
+            print("distribution root:", dist.locate_file(""))
+
+            target = dist.locate_file(
+              "virtualenv/activation/cshell/deactivate.csh"
+            )
+            print("expected file:", target)
+            print("file exists:", target.exists())
+
+            missing = [
+              str(path)
+              for path in dist.files or ()
+              if not dist.locate_file(path).exists()
+            ]
+            print("files listed but missing:", len(missing))
+            for path in missing[:100]:
+              print("MISSING:", path)
+          PY
+
       - name: Set up development environment
         env:
           CI_SKIP_INSTALL: true

@@ -34,7 +34,7 @@ if [ "$CI_SKIP_INSTALL" = "true" ]; then
     echo "Skipping dependency installation (will be done after lock regeneration)"
 else
     # Clear any existing lock issues and install fresh
-    poetry install --with dev --no-interaction --verbose
+    poetry install --with dev --no-interaction -vvv
 fi
 
 echo "🔗 Setting up pre-commit hooks..."
