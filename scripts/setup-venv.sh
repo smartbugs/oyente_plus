@@ -35,5 +35,5 @@ if [[ -z "${CI:-}" ]]; then
 fi
 
 echo "Setup complete"
-echo "Project environment: $PROJECT_ROOT/.venv"
+echo "Project environment: $($POETRY env info --path)"
 echo "Run commands with: $POETRY run <command>"

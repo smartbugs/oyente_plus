@@ -72,6 +72,7 @@ extend-exclude = '''
   | \.ruff_cache
   | \.tox
   | \.venv
+  | \.poetry-venv
   | venv
   | build
   | dist
@@ -114,6 +115,7 @@ exclude = [
     ".ruff_cache",
     ".tox",
     ".venv",
+    ".poetry-venv",
     "venv",
     "build",
     "dist",
@@ -188,7 +190,7 @@ addopts = [
     "-m", "not integration",  # Exclude integration tests by default
 ]
 testpaths = ["tests"]
-norecursedirs = [".*venv*", "build", "dist", ".git", ".pytest_cache", ".mypy_cache", ".ruff_cache"]
+norecursedirs = [".*venv*", "build", "dist", ".git", ".pytest_cache", ".mypy_cache", ".ruff_cache", "venv"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",

@@ -43,9 +43,8 @@ jobs:
         id: check-deps
         timeout-minutes: 5
         run: |
-          source venv/bin/activate
           # Get current dependency state
-          poetry show --outdated > outdated-before.txt || true
+          .poetry-venv/bin/poetry show --outdated > outdated-before.txt || true
 
           if [ -s outdated-before.txt ]; then
             echo "has_updates=true" >> $GITHUB_OUTPUT
@@ -60,10 +59,8 @@ jobs:
         if: steps.check-deps.outputs.has_updates == 'true'
         timeout-minutes: 10
         run: |
-          source venv/bin/activate
-
           # Update dependencies while respecting version constraints
-          poetry update --dry-run > update-plan.txt
+          .poetry-venv/bin/poetry update --dry-run > update-plan.txt
           echo "📋 Update plan:"
           cat update-plan.txt
 
@@ -77,10 +74,8 @@ jobs:
         if: steps.check-deps.outputs.has_updates == 'true'
         timeout-minutes: 15
         run: |
-          source venv/bin/activate
-
           # Install with updated dependencies
-          poetry install --with dev
+          .poetry-venv/bin/poetry install --with dev
 
           # Run quick validation using Makefile
           make format
