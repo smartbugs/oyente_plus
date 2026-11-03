@@ -65,10 +65,10 @@ jobs:
           cat update-plan.txt
 
           # Perform the actual update
-          poetry update
+          .poetry-venv/bin/poetry update
 
           # Show what was updated
-          poetry show --outdated > outdated-after.txt || true
+          .poetry-venv/bin/poetry show --outdated > outdated-after.txt || true
 
       - name: Test updated dependencies
         if: steps.check-deps.outputs.has_updates == 'true'
